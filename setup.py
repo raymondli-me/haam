@@ -2,9 +2,15 @@
 """Setup script for HAAM package."""
 
 from setuptools import setup, find_packages
+import os
 
-with open("haam_readme.md", "r", encoding="utf-8") as fh:
-    long_description = fh.read()
+# Try to read README, but don't fail if it doesn't exist
+long_description = ""
+if os.path.exists("haam_readme.md"):
+    with open("haam_readme.md", "r", encoding="utf-8") as fh:
+        long_description = fh.read()
+else:
+    long_description = "Human-AI Accuracy Model (HAAM) - Analyze how humans and AI use information"
 
 setup(
     name="haam",
