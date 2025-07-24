@@ -138,7 +138,20 @@
 
   # Display Mediation Analysis Results with Visualization
   print("\n📊 MEDIATION ANALYSIS (PoMA):")
-  haam.analysis.display_mediation_results()
+  if hasattr(haam.analysis, 'display_mediation_results'):
+      haam.analysis.display_mediation_results()
+  else:
+      # Fallback: display mediation results manually
+      if 'mediation_analysis' in haam.analysis.results:
+          ma = haam.analysis.results['mediation_analysis']
+          for outcome, results in ma.items():
+              if results:
+                  total = results.get('total_effect', 0)
+                  direct = results.get('direct_effect', 0)
+                  indirect = results.get('indirect_effect', 0)
+                  if total != 0:
+                      poma = 1 - (direct / total)
+                      print(f"  {outcome}: PoMA = {poma:.3f} (Total={total:.3f}, Direct={direct:.3f}, Indirect={indirect:.3f})")
 
   # =======================================================================
   =======
