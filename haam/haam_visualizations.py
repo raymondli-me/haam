@@ -166,6 +166,16 @@ class HAAMVisualizer:
         html_content = html_content.replace('%%TOTAL_EFFECT_Y_HU%%', f"{metrics['total_effect_y_hu']:.3f}")
         html_content = html_content.replace('%%TOTAL_EFFECT_HU_AI%%', f"{metrics['total_effect_hu_ai']:.3f}")
         
+        # DML Check Betas
+        html_content = html_content.replace('%%DML_CHECK_Y_AI%%', f"{metrics['dml_check_y_ai']:.3f}")
+        html_content = html_content.replace('%%DML_CHECK_Y_HU%%', f"{metrics['dml_check_y_hu']:.3f}")
+        html_content = html_content.replace('%%DML_CHECK_HU_AI%%', f"{metrics['dml_check_hu_ai']:.3f}")
+        
+        # Residual Correlations
+        html_content = html_content.replace('%%C_AI_HU%%', f"{metrics['c_ai_hu']:.3f}")
+        html_content = html_content.replace('%%C_Y_AI%%', f"{metrics['c_y_ai']:.3f}")
+        html_content = html_content.replace('%%C_Y_HU%%', f"{metrics['c_y_hu']:.3f}")
+        
         # Value-Prediction Correlations
         html_content = html_content.replace('%%R_Y_YHAT%%', f"{metrics['r_y_yhat']:.3f}")
         html_content = html_content.replace('%%R_AI_AIHAT%%', f"{metrics['r_ai_aihat']:.3f}")
@@ -223,11 +233,31 @@ class HAAMVisualizer:
             metrics['total_effect_y_ai'] = te.get('Y_AI', {}).get('coefficient', 0.0)
             metrics['total_effect_y_hu'] = te.get('Y_HU', {}).get('coefficient', 0.0)
             metrics['total_effect_hu_ai'] = te.get('HU_AI', {}).get('coefficient', 0.0)
+            
+            # DML check betas
+            metrics['dml_check_y_ai'] = te.get('Y_AI', {}).get('check_beta', 0.0)
+            metrics['dml_check_y_hu'] = te.get('Y_HU', {}).get('check_beta', 0.0)
+            metrics['dml_check_hu_ai'] = te.get('HU_AI', {}).get('check_beta', 0.0)
         else:
-            # Calculate from mediation analysis if available
+            # Default values
             metrics['total_effect_y_ai'] = 0.0
             metrics['total_effect_y_hu'] = 0.0
             metrics['total_effect_hu_ai'] = 0.0
+            metrics['dml_check_y_ai'] = 0.0
+            metrics['dml_check_y_hu'] = 0.0
+            metrics['dml_check_hu_ai'] = 0.0
+        
+        # Residual Correlations (C's) - all pairwise
+        if 'residual_correlations' in self.results:
+            rc = self.results['residual_correlations']
+            metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # Main one: AI-HU after controlling for Y
+            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # Should be ~0 if Y exogenous
+            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # Should be ~0 if Y exogenous
+        else:
+            # Default values
+            metrics['c_ai_hu'] = 0.0
+            metrics['c_y_ai'] = 0.0
+            metrics['c_y_hu'] = 0.0
         
         # Value-Prediction Correlations: r(Y, Y_hat), r(AI, AI_hat), r(HU, HU_hat)
         # These are the square roots of R² values
@@ -833,30 +863,46 @@ class HAAMVisualizer:
                 
                 <!-- Total Effects Column -->
                 <g transform="translate(0, 10)">
-                    <text font-size="14" font-weight="600" fill="#1e293b">Total Effects (DML)</text>
+                    <text font-size="14" font-weight="600" fill="#1e293b">Total Effects (β)</text>
                     <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%TOTAL_EFFECT_Y_AI%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%TOTAL_EFFECT_Y_HU%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%TOTAL_EFFECT_HU_AI%%</tspan></text>
                 </g>
                 
+                <!-- DML Check Betas -->
+                <g transform="translate(150, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">DML β<tspan font-size="10" baseline-shift="sub">check</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%DML_CHECK_Y_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%DML_CHECK_Y_HU%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%DML_CHECK_HU_AI%%</tspan></text>
+                </g>
+                
+                <!-- Residual Correlations -->
+                <g transform="translate(300, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Residual Corr. (C)</text>
+                    <text x="0" y="25" font-size="12" fill="#334155">C(AI, HU): <tspan font-weight="600" fill="#9333ea">%%C_AI_HU%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">C(Y, AI): <tspan font-weight="600">%%C_Y_AI%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">C(Y, HU): <tspan font-weight="600">%%C_Y_HU%%</tspan></text>
+                </g>
+                
                 <!-- Value-Prediction Correlations -->
-                <g transform="translate(200, 10)">
-                    <text font-size="14" font-weight="600" fill="#1e293b">Value-Prediction Corr.</text>
+                <g transform="translate(450, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Value-Pred Corr.</text>
                     <text x="0" y="25" font-size="12" fill="#334155">r(Y, Ŷ): <tspan font-weight="600">%%R_Y_YHAT%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">r(AI, AI): <tspan font-weight="600" fill="#be123c">%%R_AI_AIHAT%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">r(HU, HU): <tspan font-weight="600" fill="#d97706">%%R_HU_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- Policy Similarities -->
-                <g transform="translate(400, 10)">
-                    <text font-size="14" font-weight="600" fill="#1e293b">Policy Similarities</text>
+                <g transform="translate(600, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim.</text>
                     <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, AI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, HU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">r(AI, HU): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- PoMA Analysis -->
-                <g transform="translate(600, 10)">
+                <g transform="translate(750, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Proportion Mediated (PoMA)</text>
                     <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%POMA_AI%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%POMA_HU%%</tspan></text>
@@ -864,7 +910,7 @@ class HAAMVisualizer:
                 </g>
                 
                 <!-- Legend -->
-                <g transform="translate(850, 10)">
+                <g transform="translate(950, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Legend</text>
                     <g transform="translate(0, 25)">
                         <circle cx="5" cy="0" r="5" class="positive-fill" />
@@ -883,7 +929,7 @@ class HAAMVisualizer:
                 </g>
                 
                 <!-- Model Selection Info -->
-                <g transform="translate(1000, 10)">
+                <g transform="translate(1100, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Feature Selection</text>
                     <text x="0" y="25" font-size="11" fill="#334155">Y model: <tspan font-weight="600">%%N_SELECTED_Y%%</tspan> PCs</text>
                     <text x="0" y="45" font-size="11" fill="#334155">AI model: <tspan font-weight="600" fill="#be123c">%%N_SELECTED_AI%%</tspan> PCs</text>

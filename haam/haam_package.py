@@ -343,10 +343,202 @@ class HAAMAnalysis:
         return np.mean(cv_scores)
     
     def _calculate_treatment_effects(self):
-        """Calculate DML treatment effects."""
-        # Implementation would go here
-        # For now, storing placeholder
-        self.results['treatment_effects'] = {}
+        """Calculate comprehensive metrics including DML treatment effects, residual correlations, and policy similarities."""
+        print("\nCalculating comprehensive metrics...")
+        
+        # Initialize results storage
+        self.results['total_effects'] = {}
+        self.results['residual_correlations'] = {}
+        self.results['policy_similarities'] = {}
+        self.results['mediation_analysis'] = {}
+        
+        # Calculate total effects (DML coefficients)
+        self._calculate_total_effects_dml()
+        
+        # Calculate residual correlations
+        self._calculate_residual_correlations()
+        
+        # Calculate policy similarities
+        self._calculate_policy_similarities()
+        
+        # Calculate mediation analysis (PoMA)
+        self._calculate_mediation_analysis()
+    
+    def _calculate_total_effects_dml(self):
+        """Calculate Double Machine Learning (DML) total effects."""
+        # Get predictions from each model
+        predictions = {}
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome in self.results['debiased_lasso']:
+                X = self.results['pca_features']
+                coefs = self.results['debiased_lasso'][outcome]['coefs_std']
+                predictions[outcome] = X @ coefs
+        
+        # Calculate total effects for key paths
+        # Y -> AI (direct effect of criterion on AI)
+        if 'SC' in predictions and 'AI' in self.results['debiased_lasso']:
+            mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
+            if mask.sum() > 50:
+                # Simple OLS for total effect
+                X = sm.add_constant(self.criterion[mask])
+                y = self.ai_judgment[mask]
+                model = sm.OLS(y, X).fit()
+                self.results['total_effects']['Y_AI'] = {
+                    'coefficient': model.params[1],
+                    'se': model.bse[1],
+                    'check_beta': np.corrcoef(predictions['SC'][mask], self.ai_judgment[mask])[0, 1]
+                }
+        
+        # Y -> HU (direct effect of criterion on human)
+        if 'SC' in predictions and 'HU' in self.results['debiased_lasso']:
+            mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
+            if mask.sum() > 50:
+                X = sm.add_constant(self.criterion[mask])
+                y = self.human_judgment[mask]
+                model = sm.OLS(y, X).fit()
+                self.results['total_effects']['Y_HU'] = {
+                    'coefficient': model.params[1],
+                    'se': model.bse[1],
+                    'check_beta': np.corrcoef(predictions['SC'][mask], self.human_judgment[mask])[0, 1]
+                }
+        
+        # HU -> AI (effect of human on AI)
+        if 'HU' in predictions and 'AI' in self.results['debiased_lasso']:
+            mask = ~(np.isnan(self.human_judgment) | np.isnan(self.ai_judgment))
+            if mask.sum() > 50:
+                X = sm.add_constant(self.human_judgment[mask])
+                y = self.ai_judgment[mask]
+                model = sm.OLS(y, X).fit()
+                self.results['total_effects']['HU_AI'] = {
+                    'coefficient': model.params[1],
+                    'se': model.bse[1],
+                    'check_beta': np.corrcoef(predictions['HU'][mask], self.ai_judgment[mask])[0, 1]
+                }
+    
+    def _calculate_residual_correlations(self):
+        """Calculate residual correlations (C's) after controlling for criterion."""
+        # C(AI,HU) - residual correlation between AI and HU after controlling for Y
+        mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
+        if mask.sum() > 50:
+            # Residualize AI and HU with respect to Y
+            X = sm.add_constant(self.criterion[mask])
+            
+            # Get AI residuals
+            model_ai = sm.OLS(self.ai_judgment[mask], X).fit()
+            resid_ai = model_ai.resid
+            
+            # Get HU residuals
+            model_hu = sm.OLS(self.human_judgment[mask], X).fit()
+            resid_hu = model_hu.resid
+            
+            # Calculate correlation between residuals
+            self.results['residual_correlations']['AI_HU'] = np.corrcoef(resid_ai, resid_hu)[0, 1]
+        else:
+            self.results['residual_correlations']['AI_HU'] = 0.0
+        
+        # C(Y,AI) and C(Y,HU) should be close to 0 if Y is exogenous
+        # But we calculate them for completeness
+        if mask.sum() > 50:
+            self.results['residual_correlations']['Y_AI'] = np.corrcoef(
+                self.criterion[mask], self.ai_judgment[mask]
+            )[0, 1]
+            self.results['residual_correlations']['Y_HU'] = np.corrcoef(
+                self.criterion[mask], self.human_judgment[mask]
+            )[0, 1]
+        else:
+            self.results['residual_correlations']['Y_AI'] = 0.0
+            self.results['residual_correlations']['Y_HU'] = 0.0
+    
+    def _calculate_policy_similarities(self):
+        """Calculate correlations between model predictions (policy similarities)."""
+        # Get predictions from each model
+        predictions = {}
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome in self.results['debiased_lasso']:
+                X = self.results['pca_features']
+                coefs = self.results['debiased_lasso'][outcome]['coefs_std']
+                predictions[outcome] = X @ coefs
+        
+        # Calculate pairwise correlations between predictions
+        if 'SC' in predictions and 'AI' in predictions:
+            mask = ~(np.isnan(predictions['SC']) | np.isnan(predictions['AI']))
+            if mask.sum() > 50:
+                self.results['policy_similarities']['Y_AI'] = np.corrcoef(
+                    predictions['SC'][mask], predictions['AI'][mask]
+                )[0, 1]
+            else:
+                self.results['policy_similarities']['Y_AI'] = 0.0
+        
+        if 'SC' in predictions and 'HU' in predictions:
+            mask = ~(np.isnan(predictions['SC']) | np.isnan(predictions['HU']))
+            if mask.sum() > 50:
+                self.results['policy_similarities']['Y_HU'] = np.corrcoef(
+                    predictions['SC'][mask], predictions['HU'][mask]
+                )[0, 1]
+            else:
+                self.results['policy_similarities']['Y_HU'] = 0.0
+        
+        if 'AI' in predictions and 'HU' in predictions:
+            mask = ~(np.isnan(predictions['AI']) | np.isnan(predictions['HU']))
+            if mask.sum() > 50:
+                self.results['policy_similarities']['AI_HU'] = np.corrcoef(
+                    predictions['AI'][mask], predictions['HU'][mask]
+                )[0, 1]
+            else:
+                self.results['policy_similarities']['AI_HU'] = 0.0
+    
+    def _calculate_mediation_analysis(self):
+        """Calculate proportion of maximum achievable (PoMA) mediation."""
+        # For Y -> AI path
+        if 'Y_AI' in self.results['total_effects'] and 'SC' in self.results['debiased_lasso']:
+            total_effect = self.results['total_effects']['Y_AI']['coefficient']
+            
+            # Calculate indirect effect through PCs
+            # This is simplified - a full implementation would use proper mediation analysis
+            X = self.results['pca_features']
+            sc_coefs = self.results['debiased_lasso']['SC']['coefs_std']
+            ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
+            
+            # Indirect effect approximation
+            indirect_effect = np.sum(sc_coefs * ai_coefs) * np.std(self.criterion) * np.std(self.ai_judgment)
+            
+            self.results['mediation_analysis']['AI'] = {
+                'total_effect': total_effect,
+                'indirect_effect': indirect_effect,
+                'direct_effect': total_effect - indirect_effect
+            }
+        
+        # For Y -> HU path
+        if 'Y_HU' in self.results['total_effects'] and 'SC' in self.results['debiased_lasso']:
+            total_effect = self.results['total_effects']['Y_HU']['coefficient']
+            
+            X = self.results['pca_features']
+            sc_coefs = self.results['debiased_lasso']['SC']['coefs_std']
+            hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
+            
+            indirect_effect = np.sum(sc_coefs * hu_coefs) * np.std(self.criterion) * np.std(self.human_judgment)
+            
+            self.results['mediation_analysis']['HU'] = {
+                'total_effect': total_effect,
+                'indirect_effect': indirect_effect,
+                'direct_effect': total_effect - indirect_effect
+            }
+        
+        # For HU -> AI path
+        if 'HU_AI' in self.results['total_effects'] and 'HU' in self.results['debiased_lasso']:
+            total_effect = self.results['total_effects']['HU_AI']['coefficient']
+            
+            X = self.results['pca_features']
+            hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros(self.n_components)
+            ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros(self.n_components)
+            
+            indirect_effect = np.sum(hu_coefs * ai_coefs) * np.std(self.human_judgment) * np.std(self.ai_judgment)
+            
+            self.results['mediation_analysis']['HU_AI'] = {
+                'total_effect': total_effect,
+                'indirect_effect': indirect_effect,
+                'direct_effect': total_effect - indirect_effect
+            }
         
     def get_top_pcs(self, 
                    n_top: int = 9,
