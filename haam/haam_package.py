@@ -416,37 +416,62 @@ class HAAMAnalysis:
                 }
     
     def _calculate_residual_correlations(self):
-        """Calculate residual correlations (C's) after controlling for criterion."""
-        # C(AI,HU) - residual correlation between AI and HU after controlling for Y
+        """Calculate residual correlations (C's) between residuals after controlling for other variables."""
+        # C(AI,HU) - residual correlation between e_AI and e_HU after controlling for Y
         mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
         if mask.sum() > 50:
             # Residualize AI and HU with respect to Y
             X = sm.add_constant(self.criterion[mask])
             
-            # Get AI residuals
+            # Get AI residuals (e_AI)
             model_ai = sm.OLS(self.ai_judgment[mask], X).fit()
             resid_ai = model_ai.resid
             
-            # Get HU residuals
+            # Get HU residuals (e_HU)
             model_hu = sm.OLS(self.human_judgment[mask], X).fit()
             resid_hu = model_hu.resid
             
-            # Calculate correlation between residuals
+            # C(AI,HU) = corr(e_AI, e_HU)
             self.results['residual_correlations']['AI_HU'] = np.corrcoef(resid_ai, resid_hu)[0, 1]
         else:
             self.results['residual_correlations']['AI_HU'] = 0.0
         
-        # C(Y,AI) and C(Y,HU) should be close to 0 if Y is exogenous
-        # But we calculate them for completeness
-        if mask.sum() > 50:
-            self.results['residual_correlations']['Y_AI'] = np.corrcoef(
-                self.criterion[mask], self.ai_judgment[mask]
-            )[0, 1]
-            self.results['residual_correlations']['Y_HU'] = np.corrcoef(
-                self.criterion[mask], self.human_judgment[mask]
-            )[0, 1]
+        # C(Y,AI) - residual correlation between e_Y and e_AI after controlling for HU
+        mask_y_ai = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
+        if mask_y_ai.sum() > 50:
+            # Control for HU
+            X_hu = sm.add_constant(self.human_judgment[mask_y_ai])
+            
+            # Get Y residuals after controlling for HU
+            model_y = sm.OLS(self.criterion[mask_y_ai], X_hu).fit()
+            resid_y = model_y.resid
+            
+            # Get AI residuals after controlling for HU
+            model_ai = sm.OLS(self.ai_judgment[mask_y_ai], X_hu).fit()
+            resid_ai = model_ai.resid
+            
+            # C(Y,AI) = corr(e_Y, e_AI)
+            self.results['residual_correlations']['Y_AI'] = np.corrcoef(resid_y, resid_ai)[0, 1]
         else:
             self.results['residual_correlations']['Y_AI'] = 0.0
+        
+        # C(Y,HU) - residual correlation between e_Y and e_HU after controlling for AI
+        mask_y_hu = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment) | np.isnan(self.ai_judgment))
+        if mask_y_hu.sum() > 50:
+            # Control for AI
+            X_ai = sm.add_constant(self.ai_judgment[mask_y_hu])
+            
+            # Get Y residuals after controlling for AI
+            model_y = sm.OLS(self.criterion[mask_y_hu], X_ai).fit()
+            resid_y = model_y.resid
+            
+            # Get HU residuals after controlling for AI
+            model_hu = sm.OLS(self.human_judgment[mask_y_hu], X_ai).fit()
+            resid_hu = model_hu.resid
+            
+            # C(Y,HU) = corr(e_Y, e_HU)
+            self.results['residual_correlations']['Y_HU'] = np.corrcoef(resid_y, resid_hu)[0, 1]
+        else:
             self.results['residual_correlations']['Y_HU'] = 0.0
     
     def _calculate_policy_similarities(self):

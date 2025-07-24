@@ -250,9 +250,9 @@ class HAAMVisualizer:
         # Residual Correlations (C's) - all pairwise
         if 'residual_correlations' in self.results:
             rc = self.results['residual_correlations']
-            metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # Main one: AI-HU after controlling for Y
-            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # Should be ~0 if Y exogenous
-            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # Should be ~0 if Y exogenous
+            metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # corr(e_AI, e_HU) after controlling for Y
+            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # corr(e_Y, e_AI) after controlling for HU
+            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # corr(e_Y, e_HU) after controlling for AI
         else:
             # Default values
             metrics['c_ai_hu'] = 0.0
