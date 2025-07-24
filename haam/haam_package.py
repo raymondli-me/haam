@@ -655,63 +655,57 @@ class HAAMAnalysis:
                 self.results['policy_similarities']['AI_HU'] = 0.0
     
     def _calculate_mediation_analysis(self):
-        """Calculate proportion of maximum achievable (PoMA) mediation."""
+        """
+        Calculate proportion of maximum achievable (PoMA) mediation using DML.
+        
+        PoMA = 1 - (β_check / β_total)
+        
+        Where:
+        - β_total = total effect (from simple regression)
+        - β_check = DML check beta (direct effect after controlling for mediators)
+        """
         # For Y -> AI path
-        if 'Y_AI' in self.results['total_effects'] and 'SC' in self.results['debiased_lasso']:
+        if 'Y_AI' in self.results['total_effects']:
             total_effect = self.results['total_effects']['Y_AI']['coefficient']
+            check_beta = self.results['total_effects']['Y_AI']['check_beta']
             
-            # Calculate indirect effect through PCs
-            # This is simplified - a full implementation would use proper mediation analysis
-            X = self.results['pca_features']
-            sc_coefs = self.results['debiased_lasso']['SC']['coefs_std']
-            ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
-            
-            # Indirect effect approximation
-            indirect_effect = np.sum(sc_coefs * ai_coefs) * np.nanstd(self.criterion) * np.nanstd(self.ai_judgment)
+            # PoMA = 1 - (direct effect / total effect)
+            # The indirect effect is what's mediated through PCs
+            direct_effect = check_beta  # DML check beta is the direct effect
+            indirect_effect = total_effect - direct_effect
             
             self.results['mediation_analysis']['AI'] = {
                 'total_effect': total_effect,
                 'indirect_effect': indirect_effect,
-                'direct_effect': total_effect - indirect_effect
+                'direct_effect': direct_effect
             }
         
         # For Y -> HU path
-        if 'Y_HU' in self.results['total_effects'] and 'SC' in self.results['debiased_lasso']:
+        if 'Y_HU' in self.results['total_effects']:
             total_effect = self.results['total_effects']['Y_HU']['coefficient']
+            check_beta = self.results['total_effects']['Y_HU']['check_beta']
             
-            X = self.results['pca_features']
-            sc_coefs = self.results['debiased_lasso']['SC']['coefs_std']
-            hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
-            
-            # Calculate standard deviations, ignoring NaN values
-            std_criterion = np.nanstd(self.criterion)
-            std_human = np.nanstd(self.human_judgment)
-            
-            if not np.isnan(std_criterion) and not np.isnan(std_human):
-                indirect_effect = np.sum(sc_coefs * hu_coefs) * std_criterion * std_human
-            else:
-                indirect_effect = 0.0
+            direct_effect = check_beta
+            indirect_effect = total_effect - direct_effect
             
             self.results['mediation_analysis']['HU'] = {
                 'total_effect': total_effect,
                 'indirect_effect': indirect_effect,
-                'direct_effect': total_effect - indirect_effect
+                'direct_effect': direct_effect
             }
         
         # For HU -> AI path
-        if 'HU_AI' in self.results['total_effects'] and 'HU' in self.results['debiased_lasso']:
+        if 'HU_AI' in self.results['total_effects']:
             total_effect = self.results['total_effects']['HU_AI']['coefficient']
+            check_beta = self.results['total_effects']['HU_AI']['check_beta']
             
-            X = self.results['pca_features']
-            hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros(self.n_components)
-            ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros(self.n_components)
-            
-            indirect_effect = np.sum(hu_coefs * ai_coefs) * np.nanstd(self.human_judgment) * np.nanstd(self.ai_judgment)
+            direct_effect = check_beta
+            indirect_effect = total_effect - direct_effect
             
             self.results['mediation_analysis']['HU_AI'] = {
                 'total_effect': total_effect,
                 'indirect_effect': indirect_effect,
-                'direct_effect': total_effect - indirect_effect
+                'direct_effect': direct_effect
             }
         
     def get_top_pcs(self, 
