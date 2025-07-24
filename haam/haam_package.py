@@ -604,10 +604,13 @@ class HAAMAnalysis:
             
         else:
             # Rank by single outcome
-            if ranking_method not in self.results['debiased_lasso']:
+            # Handle Y -> SC mapping for criterion
+            outcome_key = 'SC' if ranking_method == 'Y' else ranking_method
+            
+            if outcome_key not in self.results['debiased_lasso']:
                 raise ValueError(f"No results for outcome: {ranking_method}")
                 
-            coefs = np.abs(self.results['debiased_lasso'][ranking_method]['coefs_std'])
+            coefs = np.abs(self.results['debiased_lasso'][outcome_key]['coefs_std'])
             return np.argsort(coefs)[::-1][:n_top].tolist()
     
     def export_results(self, 
