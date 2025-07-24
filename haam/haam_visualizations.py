@@ -754,7 +754,7 @@ class HAAMVisualizer:
 </head>
 <body class="flex items-center justify-center min-h-screen bg-slate-50 p-4">
     <div class="w-full max-w-screen-2xl bg-white p-8 rounded-xl shadow-lg border border-slate-200">
-        <svg id="haam-diagram" viewBox="0 0 1500 850" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+        <svg id="haam-diagram" viewBox="0 0 1500 1000" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
             <!-- Defs: Contains markers and gradients for styling -->
             <defs>
                 <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
@@ -858,7 +858,7 @@ class HAAMVisualizer:
             </g>
 
             <!-- Comprehensive Metrics Panel -->
-            <g id="metrics-panel" transform="translate(50, 630)">
+            <g id="metrics-panel" transform="translate(50, 720)">
                 <rect x="-20" y="-10" width="1420" height="200" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
                 
                 <!-- Total Effects Column -->

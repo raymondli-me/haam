@@ -365,7 +365,7 @@ class HAAMAnalysis:
         self._calculate_mediation_analysis()
     
     def _calculate_total_effects_dml(self):
-        """Calculate Double Machine Learning (DML) total effects."""
+        """Calculate Double Machine Learning (DML) total effects with proper residual-on-residual regression."""
         # Get predictions from each model
         predictions = {}
         for outcome in ['SC', 'AI', 'HU']:
@@ -376,44 +376,160 @@ class HAAMAnalysis:
         
         # Calculate total effects for key paths
         # Y -> AI (direct effect of criterion on AI)
-        if 'SC' in predictions and 'AI' in self.results['debiased_lasso']:
+        if 'SC' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
             if mask.sum() > 50:
                 # Simple OLS for total effect
                 X = sm.add_constant(self.criterion[mask])
                 y = self.ai_judgment[mask]
                 model = sm.OLS(y, X).fit()
+                
+                # Calculate beta_check using DML residual-on-residual regression
+                check_beta = self._calculate_dml_check_beta(
+                    self.criterion[mask], 
+                    self.ai_judgment[mask], 
+                    self.results['pca_features'][mask],
+                    self.results['debiased_lasso']['SC']['selected'],
+                    self.results['debiased_lasso']['AI']['selected']
+                )
+                
                 self.results['total_effects']['Y_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': np.corrcoef(predictions['SC'][mask], self.ai_judgment[mask])[0, 1]
+                    'check_beta': check_beta
                 }
         
         # Y -> HU (direct effect of criterion on human)
-        if 'SC' in predictions and 'HU' in self.results['debiased_lasso']:
+        if 'SC' in self.results['debiased_lasso'] and 'HU' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
             if mask.sum() > 50:
                 X = sm.add_constant(self.criterion[mask])
                 y = self.human_judgment[mask]
                 model = sm.OLS(y, X).fit()
+                
+                # Calculate beta_check using DML
+                check_beta = self._calculate_dml_check_beta(
+                    self.criterion[mask], 
+                    self.human_judgment[mask], 
+                    self.results['pca_features'][mask],
+                    self.results['debiased_lasso']['SC']['selected'],
+                    self.results['debiased_lasso']['HU']['selected']
+                )
+                
                 self.results['total_effects']['Y_HU'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': np.corrcoef(predictions['SC'][mask], self.human_judgment[mask])[0, 1]
+                    'check_beta': check_beta
                 }
         
         # HU -> AI (effect of human on AI)
-        if 'HU' in predictions and 'AI' in self.results['debiased_lasso']:
+        if 'HU' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.human_judgment) | np.isnan(self.ai_judgment))
             if mask.sum() > 50:
                 X = sm.add_constant(self.human_judgment[mask])
                 y = self.ai_judgment[mask]
                 model = sm.OLS(y, X).fit()
+                
+                # Calculate beta_check using DML
+                check_beta = self._calculate_dml_check_beta(
+                    self.human_judgment[mask], 
+                    self.ai_judgment[mask], 
+                    self.results['pca_features'][mask],
+                    self.results['debiased_lasso']['HU']['selected'],
+                    self.results['debiased_lasso']['AI']['selected']
+                )
+                
                 self.results['total_effects']['HU_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': np.corrcoef(predictions['HU'][mask], self.ai_judgment[mask])[0, 1]
+                    'check_beta': check_beta
                 }
+    
+    def _calculate_dml_check_beta(self, X_var, Y_var, pca_features, X_selected, Y_selected):
+        """
+        Calculate DML check beta using residual-on-residual regression with cross-validation.
+        
+        This implements the proper DML procedure:
+        1. Use 5-fold cross-validation
+        2. For each fold:
+           - Train models on training folds
+           - Get residuals on test fold
+           - Regress residuals on residuals
+        3. Average the coefficients across folds
+        
+        Parameters
+        ----------
+        X_var : np.ndarray
+            Treatment variable (e.g., criterion for Y->AI)
+        Y_var : np.ndarray
+            Outcome variable (e.g., AI judgment for Y->AI)
+        pca_features : np.ndarray
+            PCA features for predictions
+        X_selected : np.ndarray
+            Selected features for X model
+        Y_selected : np.ndarray
+            Selected features for Y model
+            
+        Returns
+        -------
+        float
+            DML check beta coefficient
+        """
+        from sklearn.model_selection import KFold
+        
+        n_samples = len(X_var)
+        kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
+        
+        check_betas = []
+        
+        for train_idx, test_idx in kf.split(X_var):
+            # Split data
+            X_train, X_test = X_var[train_idx], X_var[test_idx]
+            Y_train, Y_test = Y_var[train_idx], Y_var[test_idx]
+            pca_train, pca_test = pca_features[train_idx], pca_features[test_idx]
+            
+            # Standardize
+            scaler_X = StandardScaler()
+            scaler_Y = StandardScaler()
+            
+            X_train_std = scaler_X.fit_transform(X_train.reshape(-1, 1)).ravel()
+            X_test_std = scaler_X.transform(X_test.reshape(-1, 1)).ravel()
+            Y_train_std = scaler_Y.fit_transform(Y_train.reshape(-1, 1)).ravel()
+            Y_test_std = scaler_Y.transform(Y_test.reshape(-1, 1)).ravel()
+            
+            # Get residuals for X (treatment)
+            if len(X_selected) > 0:
+                X_features_train = pca_train[:, X_selected]
+                X_features_test = pca_test[:, X_selected]
+                
+                # Fit model on train
+                model_X = sm.OLS(X_train_std, sm.add_constant(X_features_train)).fit()
+                # Predict on test
+                X_pred_test = model_X.predict(sm.add_constant(X_features_test))
+                X_resid_test = X_test_std - X_pred_test
+            else:
+                X_resid_test = X_test_std
+            
+            # Get residuals for Y (outcome)
+            if len(Y_selected) > 0:
+                Y_features_train = pca_train[:, Y_selected]
+                Y_features_test = pca_test[:, Y_selected]
+                
+                # Fit model on train
+                model_Y = sm.OLS(Y_train_std, sm.add_constant(Y_features_train)).fit()
+                # Predict on test
+                Y_pred_test = model_Y.predict(sm.add_constant(Y_features_test))
+                Y_resid_test = Y_test_std - Y_pred_test
+            else:
+                Y_resid_test = Y_test_std
+            
+            # Residual-on-residual regression
+            if len(X_resid_test) > 10:  # Need enough test samples
+                model_resid = sm.OLS(Y_resid_test, sm.add_constant(X_resid_test)).fit()
+                check_betas.append(model_resid.params[1])
+        
+        # Return average check beta across folds
+        return np.mean(check_betas) if check_betas else 0.0
     
     def _calculate_residual_correlations(self):
         """Calculate residual correlations (C's) between residuals after controlling for other variables."""
