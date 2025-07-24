@@ -54,8 +54,9 @@ class HAAMVisualizer:
     def _display_in_colab(self, content, title=""):
         """Display HTML content in Google Colab if available."""
         try:
-            from IPython.display import display, HTML
+            from IPython.display import display, HTML, IFrame
             import google.colab
+            import base64
             in_colab = True
         except ImportError:
             in_colab = False
@@ -64,11 +65,15 @@ class HAAMVisualizer:
         if in_colab:
             if title:
                 display(HTML(f"<h3>{title}</h3>"))
-            # For full HTML documents, extract the body content or display link
+            # For full HTML documents, use data URL in iframe
             if isinstance(content, str) and content.startswith('<!DOCTYPE html>'):
-                # Just show a message that the file was saved
-                # The full interactive visualizations are too large for inline display
-                display(HTML(f"<p><em>Interactive visualization saved. Open the HTML file to view.</em></p>"))
+                # Encode the HTML content as base64 data URL
+                html_bytes = content.encode('utf-8')
+                base64_html = base64.b64encode(html_bytes).decode('utf-8')
+                data_url = f"data:text/html;base64,{base64_html}"
+                
+                # Display in iframe with appropriate height
+                display(IFrame(src=data_url, width='100%', height='800'))
             else:
                 # For HTML snippets
                 display(HTML(content))
