@@ -23,8 +23,8 @@ class TopicAnalyzer:
     def __init__(self, texts: List[str], 
                  embeddings: np.ndarray,
                  pca_features: np.ndarray,
-                 min_cluster_size: int = 5,
-                 min_samples: int = 3,
+                 min_cluster_size: int = 3,
+                 min_samples: int = 2,
                  cluster_selection_epsilon: float = 0.0):
         """
         Initialize topic analyzer.
@@ -38,9 +38,9 @@ class TopicAnalyzer:
         pca_features : np.ndarray
             PCA-transformed features
         min_cluster_size : int
-            Minimum cluster size for HDBSCAN (default: 5 for fine-grained clusters)
+            Minimum cluster size for HDBSCAN (default: 3 for fine-grained clusters)
         min_samples : int
-            Minimum samples for core points (default: 3)
+            Minimum samples for core points (default: 2)
         cluster_selection_epsilon : float
             Epsilon for cluster selection (default: 0.0)
         """
@@ -61,6 +61,20 @@ class TopicAnalyzer:
         """Cluster documents using HDBSCAN."""
         print("Clustering documents...")
         
+        # Use UMAP to reduce dimensionality for better clustering
+        print("  Reducing dimensions with UMAP for clustering...")
+        import umap
+        
+        # Use UMAP to get better clustering space
+        umap_reducer = umap.UMAP(
+            n_components=10,  # Reduce to 10D for clustering
+            n_neighbors=15,
+            min_dist=0.0,
+            metric='cosine',
+            random_state=42
+        )
+        clustering_embeddings = umap_reducer.fit_transform(self.embeddings)
+        
         # Check HDBSCAN version compatibility
         import inspect
         hdbscan_params = inspect.signature(HDBSCAN.__init__).parameters
@@ -80,7 +94,7 @@ class TopicAnalyzer:
             
         clusterer = HDBSCAN(**params)
         
-        self.cluster_labels = clusterer.fit_predict(self.embeddings)
+        self.cluster_labels = clusterer.fit_predict(clustering_embeddings)
         self.n_clusters = len(set(self.cluster_labels)) - (1 if -1 in self.cluster_labels else 0)
         
         print(f"Found {self.n_clusters} clusters")

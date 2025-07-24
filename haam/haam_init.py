@@ -32,8 +32,8 @@ class HAAM:
                  texts: Optional[List[str]] = None,
                  n_components: int = 200,
                  auto_run: bool = True,
-                 min_cluster_size: int = 5,
-                 min_samples: int = 3,
+                 min_cluster_size: int = 3,
+                 min_samples: int = 2,
                  cluster_selection_epsilon: float = 0.0):
         """
         Initialize HAAM analysis.
@@ -54,9 +54,9 @@ class HAAM:
             Number of PCA components
         auto_run : bool, default=True
             Whether to automatically run the full analysis
-        min_cluster_size : int, default=5
+        min_cluster_size : int, default=3
             Minimum cluster size for HDBSCAN (smaller = more fine-grained)
-        min_samples : int, default=3
+        min_samples : int, default=2
             Minimum samples for core points in HDBSCAN
         cluster_selection_epsilon : float, default=0.0
             Epsilon for HDBSCAN cluster selection

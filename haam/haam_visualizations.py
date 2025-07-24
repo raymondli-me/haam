@@ -88,8 +88,17 @@ class HAAMVisualizer:
             
             # Add topic information
             if pc_idx in self.topic_summaries:
-                pc_info['pos'] = self.topic_summaries[pc_idx]['high']
-                pc_info['neg'] = self.topic_summaries[pc_idx]['low']
+                # Handle both old and new format
+                if 'high_topics' in self.topic_summaries[pc_idx]:
+                    # New format - join first few topics
+                    high_topics = self.topic_summaries[pc_idx]['high_topics'][:2]
+                    low_topics = self.topic_summaries[pc_idx]['low_topics'][:2]
+                    pc_info['pos'] = ' | '.join(high_topics) if high_topics else 'None'
+                    pc_info['neg'] = ' | '.join(low_topics) if low_topics else 'None'
+                else:
+                    # Old format
+                    pc_info['pos'] = self.topic_summaries[pc_idx].get('high', 'None')
+                    pc_info['neg'] = self.topic_summaries[pc_idx].get('low', 'None')
             else:
                 pc_info['pos'] = 'loading...'
                 pc_info['neg'] = 'loading...'
