@@ -91,7 +91,8 @@ class HAAMVisualizer:
     def create_main_visualization(self, 
                                  pc_indices: List[int],
                                  output_file: Optional[str] = None,
-                                 pc_names: Optional[Dict[int, str]] = None) -> str:
+                                 pc_names: Optional[Dict[int, str]] = None,
+                                 ranking_method: str = 'HU') -> str:
         """
         Create main HAAM framework visualization with dynamic metrics.
         
@@ -111,6 +112,8 @@ class HAAMVisualizer:
             Manual names for PCs. Keys are PC indices (0-based), values are names.
             If not provided, uses "-" for all PCs.
             Example: {0: "Formality", 3: "Complexity", 6: "Sentiment"}
+        ranking_method : str, default='HU'
+            Method used to rank PCs: 'HU', 'AI', 'Y', or 'triple'
             
         Returns
         -------
@@ -183,6 +186,15 @@ class HAAMVisualizer:
         # Calculate all metrics
         metrics = self._calculate_visualization_metrics()
         
+        # Determine ranking description
+        ranking_descriptions = {
+            'HU': 'Human judgment coefficients',
+            'AI': 'AI judgment coefficients',
+            'Y': 'Criterion (Y) coefficients',
+            'triple': 'Triple selection (top 3 from each outcome)'
+        }
+        ranking_desc = ranking_descriptions.get(ranking_method, 'Human judgment coefficients')
+        
         # Generate HTML
         html_template = self._get_main_visualization_template()
         
@@ -235,6 +247,15 @@ class HAAMVisualizer:
         html_content = html_content.replace('%%N_SELECTED_Y%%', str(metrics['n_selected_y']))
         html_content = html_content.replace('%%N_SELECTED_AI%%', str(metrics['n_selected_ai']))
         html_content = html_content.replace('%%N_SELECTED_HU%%', str(metrics['n_selected_hu']))
+        
+        # Ranking method description
+        html_content = html_content.replace('%%RANKING_METHOD%%', ranking_desc)
+        
+        # Total number of PCs
+        n_total_pcs = self.results.get('pca_features', np.array([])).shape[1]
+        if n_total_pcs == 0:
+            n_total_pcs = 200  # Default if not found
+        html_content = html_content.replace('%%N_TOTAL_PCS%%', str(n_total_pcs))
         
         if output_file:
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -868,7 +889,7 @@ class HAAMVisualizer:
             <g>
                 <!-- Box surrounding the PC grid -->
                 <rect x="400" y="120" width="700" height="480" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
-                <text x="750" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#475569">Principal Components (Mediators)</text>
+                <text x="750" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#475569">Principal Components (Mediators) - Top 9 of %%N_TOTAL_PCS%%</text>
                
                 <!-- Arrows for the mediated path -->
                 <g fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)">
@@ -1006,7 +1027,7 @@ class HAAMVisualizer:
                 
                 <!-- Notes -->
                 <text x="0" y="170" font-size="10" fill="#64748b" font-style="italic">
-                    *Top 9 PCs shown are ranked by Human judgment coefficients. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
+                    *Top 9 PCs shown (from %%N_TOTAL_PCS%% total) are ranked by %%RANKING_METHOD%%. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
                 </text>
             </g>
 

@@ -224,7 +224,7 @@ for ranking_method, description in ranking_methods.items():
         
         # Create visualization
         output_file = os.path.join(output_dir, f'haam_main_visualization_{ranking_method.lower()}.html')
-        haam.visualizer.create_main_visualization(top_pcs, output_file)
+        haam.visualizer.create_main_visualization(top_pcs, output_file, ranking_method=ranking_method)
         
         print(f"✓ Saved: {output_file}")
         
