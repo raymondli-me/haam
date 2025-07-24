@@ -25,7 +25,8 @@ class TopicAnalyzer:
                  pca_features: np.ndarray,
                  min_cluster_size: int = 3,
                  min_samples: int = 2,
-                 cluster_selection_epsilon: float = 0.0):
+                 cluster_selection_epsilon: float = 0.0,
+                 umap_n_components: int = 3):
         """
         Initialize topic analyzer.
         
@@ -43,6 +44,8 @@ class TopicAnalyzer:
             Minimum samples for core points (default: 2)
         cluster_selection_epsilon : float
             Epsilon for cluster selection (default: 0.0)
+        umap_n_components : int
+            Number of UMAP components for clustering (default: 3)
         """
         self.texts = texts
         self.embeddings = embeddings
@@ -50,6 +53,7 @@ class TopicAnalyzer:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self.cluster_selection_epsilon = cluster_selection_epsilon
+        self.umap_n_components = umap_n_components
         
         # Perform clustering
         self._cluster_documents()
@@ -67,13 +71,16 @@ class TopicAnalyzer:
         
         # Use UMAP to get better clustering space
         umap_reducer = umap.UMAP(
-            n_components=10,  # Reduce to 10D for clustering
+            n_components=self.umap_n_components,  # 3D by default
             n_neighbors=15,
             min_dist=0.0,
             metric='cosine',
             random_state=42
         )
         clustering_embeddings = umap_reducer.fit_transform(self.embeddings)
+        
+        # Store UMAP embeddings for later visualization
+        self.umap_embeddings = clustering_embeddings
         
         # Check HDBSCAN version compatibility
         import inspect

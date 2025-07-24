@@ -34,7 +34,8 @@ class HAAM:
                  auto_run: bool = True,
                  min_cluster_size: int = 3,
                  min_samples: int = 2,
-                 cluster_selection_epsilon: float = 0.0):
+                 cluster_selection_epsilon: float = 0.0,
+                 umap_n_components: int = 3):
         """
         Initialize HAAM analysis.
         
@@ -60,6 +61,8 @@ class HAAM:
             Minimum samples for core points in HDBSCAN
         cluster_selection_epsilon : float, default=0.0
             Epsilon for HDBSCAN cluster selection
+        umap_n_components : int, default=3
+            Number of UMAP components for clustering (3D by default)
         """
         # Convert inputs to numpy arrays
         self.criterion = self._to_numpy(criterion)
@@ -76,6 +79,7 @@ class HAAM:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self.cluster_selection_epsilon = cluster_selection_epsilon
+        self.umap_n_components = umap_n_components
         
         # Initialize components
         self.analysis = None
@@ -135,7 +139,8 @@ class HAAM:
                 pca_features=self.analysis.results['pca_features'],
                 min_cluster_size=self.min_cluster_size,
                 min_samples=self.min_samples,
-                cluster_selection_epsilon=self.cluster_selection_epsilon
+                cluster_selection_epsilon=self.cluster_selection_epsilon,
+                umap_n_components=self.umap_n_components
             )
             
             # Get top PCs
