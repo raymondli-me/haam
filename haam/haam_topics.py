@@ -92,14 +92,15 @@ class TopicAnalyzer:
             'min_cluster_size': self.min_cluster_size,
             'min_samples': self.min_samples,
             'cluster_selection_method': 'eom',
-            'metric': 'euclidean',
-            'core_dist_n_jobs': -1  # Added to match my_colab.py
+            'metric': 'euclidean'
         }
-        # Note: cluster_selection_epsilon removed to match my_colab.py
         
-        # Add prediction_data only if supported
+        # Add version-specific parameters only if supported
         if 'prediction_data' in hdbscan_params:
             params['prediction_data'] = True
+            
+        if 'core_dist_n_jobs' in hdbscan_params:
+            params['core_dist_n_jobs'] = -1
             
         clusterer = HDBSCAN(**params)
         
