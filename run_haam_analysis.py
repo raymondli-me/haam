@@ -169,10 +169,32 @@ print("\n4. CREATING VISUALIZATIONS...")
 print("-"*60)
 
 # Create main visualization (default: shows "-" for PC names)
+# You can choose different ranking methods:
+# - 'triple': Top 3 from each model (default)
+# - 'SC' or 'Y': Top 9 by criterion
+# - 'AI': Top 9 by AI
+# - 'HU': Top 9 by Human
+
+# Example: Use top 9 by Human judgment
+ranking_method = 'HU'  # Change this to 'Y' for criterion, 'AI' for AI, etc.
+
 try:
-    print("Creating main framework visualization...")
+    print(f"Creating main framework visualization (ranking by {ranking_method})...")
+    
+    # Get top PCs using desired ranking method
+    top_pcs = haam.analysis.get_top_pcs(n_top=9, ranking_method=ranking_method)
+    
+    # Create visualization with these PCs
+    main_viz_path = os.path.join(output_dir, f'haam_main_visualization_{ranking_method.lower()}.html')
+    haam.visualizer.create_main_visualization(top_pcs, main_viz_path)
+    
+    print(f"✓ Saved: {main_viz_path}")
+    
+    # Also create the default triple version for comparison
+    print("Creating default triple-method visualization...")
     main_viz = haam.create_main_visualization(output_dir=output_dir)
     print(f"✓ Saved: {main_viz}")
+    
 except Exception as e:
     print(f"⚠️  Main visualization error: {str(e)[:100]}...")
 
