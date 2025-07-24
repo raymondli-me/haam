@@ -896,14 +896,12 @@ class HAAMVisualizer:
                
                 <!-- Arrows for the mediated path -->
                 <g fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)">
-                    <!-- Arrow from Criterion to PC Box -->
-                    <path d="M 200,360 H 400" />
+                    <!-- Arrow from PC Box back to Criterion (DML direction) -->
+                    <path d="M 400,360 H 200" />
                     <!-- Arrow from PC Box to AI Judgment -->
                     <path d="M 1100,260 H 1300" />
                     <!-- Arrow from PC Box to Human Judgment -->
                     <path d="M 1100,460 H 1300" />
-                    <!-- DML feedback arrow from PC Box back to Criterion -->
-                    <path d="M 400,360 Q 300,420 200,380" stroke="#9333ea" opacity="0.6"/>
                 </g>
             </g>
             
@@ -919,13 +917,13 @@ class HAAMVisualizer:
             <g text-anchor="middle" font-size="13" fill="#334155">
                 <!-- R-squared labels under/over nodes -->
                 <text x="125" y="400" font-size="12">Cue Validity</text>
-                <text x="125" y="418" font-size="12" font-weight="600">R² = %%R2_Y%%</text>
+                <text x="125" y="418" font-size="12" font-weight="600">R²(CV) = %%R2_Y%%</text>
 
                 <text x="1375" y="220" font-size="12">AI Cue Use</text>
-                <text x="1375" y="202" font-size="12" font-weight="600" fill="#be123c">R² = %%R2_AI%%</text>
+                <text x="1375" y="202" font-size="12" font-weight="600" fill="#be123c">R²(CV) = %%R2_AI%%</text>
 
                 <text x="1375" y="500" font-size="12">Human Cue Use</text>
-                <text x="1375" y="518" font-size="12" font-weight="600" fill="#d97706">R² = %%R2_HU%%</text>
+                <text x="1375" y="518" font-size="12" font-weight="600" fill="#d97706">R²(CV) = %%R2_HU%%</text>
                 
                 <!-- Combined Direct and Mediated Effect Labels -->
                 <text x="750" y="65" font-style="italic">Unmodeled Path (AI): <tspan font-weight="bold" fill="#be123c">%%UNMODELED_AI%%</tspan>  |  Mediated Path (PoMA): <tspan font-weight="bold" fill="#be123c">%%POMA_AI%%</tspan></text>
