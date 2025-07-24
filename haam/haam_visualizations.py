@@ -123,7 +123,8 @@ class HAAMVisualizer:
         # Get coefficient data
         pc_data = []
         
-        for i, pc_idx in enumerate(pc_indices[:9]):  # Max 9 PCs
+        # Use all provided pc_indices (may be less than 9 for triple selection)
+        for i, pc_idx in enumerate(pc_indices):
             pc_info = {
                 'pc': pc_idx + 1,  # 1-based for display
                 'name': '',  # Will be set based on topics
@@ -251,11 +252,13 @@ class HAAMVisualizer:
         # Ranking method description
         html_content = html_content.replace('%%RANKING_METHOD%%', ranking_desc)
         
-        # Total number of PCs
+        # Total number of PCs and number shown
         n_total_pcs = self.results.get('pca_features', np.array([])).shape[1]
         if n_total_pcs == 0:
             n_total_pcs = 200  # Default if not found
+        n_shown_pcs = len(pc_indices)
         html_content = html_content.replace('%%N_TOTAL_PCS%%', str(n_total_pcs))
+        html_content = html_content.replace('%%N_SHOWN_PCS%%', str(n_shown_pcs))
         
         if output_file:
             with open(output_file, 'w', encoding='utf-8') as f:
@@ -889,7 +892,7 @@ class HAAMVisualizer:
             <g>
                 <!-- Box surrounding the PC grid -->
                 <rect x="400" y="120" width="700" height="480" rx="15" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
-                <text x="750" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#475569">Principal Components (Mediators) - Top 9 of %%N_TOTAL_PCS%%</text>
+                <text x="750" y="105" text-anchor="middle" font-size="16" font-weight="600" fill="#475569">Principal Components - Top %%N_SHOWN_PCS%% of %%N_TOTAL_PCS%% Visualized</text>
                
                 <!-- Arrows for the mediated path -->
                 <g fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrowhead)">
@@ -899,6 +902,8 @@ class HAAMVisualizer:
                     <path d="M 1100,260 H 1300" />
                     <!-- Arrow from PC Box to Human Judgment -->
                     <path d="M 1100,460 H 1300" />
+                    <!-- DML feedback arrow from PC Box back to Criterion -->
+                    <path d="M 400,360 Q 300,420 200,380" stroke="#9333ea" opacity="0.6"/>
                 </g>
             </g>
             
@@ -1027,7 +1032,7 @@ class HAAMVisualizer:
                 
                 <!-- Notes -->
                 <text x="0" y="170" font-size="10" fill="#64748b" font-style="italic">
-                    *Top 9 PCs shown (from %%N_TOTAL_PCS%% total) are ranked by %%RANKING_METHOD%%. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
+                    *Top %%N_SHOWN_PCS%% PCs shown (from %%N_TOTAL_PCS%% total) are ranked by %%RANKING_METHOD%%. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
                 </text>
             </g>
 
