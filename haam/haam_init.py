@@ -299,6 +299,33 @@ class HAAM:
         
         return output_file
     
+    def create_metrics_summary(self, output_dir: Optional[str] = None) -> str:
+        """
+        Create and save comprehensive metrics summary.
+        
+        Parameters
+        ----------
+        output_dir : str, optional
+            Directory to save output. If None, uses current directory
+            
+        Returns
+        -------
+        str
+            Path to saved JSON file
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+            
+        if output_dir is None:
+            output_dir = os.getcwd()
+            
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'haam_metrics_summary.json')
+        
+        self.visualizer.create_metrics_summary(output_file)
+        
+        return output_file
+    
     def explore_pc_topics(self, 
                          pc_indices: Optional[List[int]] = None,
                          n_topics: int = 10) -> pd.DataFrame:
