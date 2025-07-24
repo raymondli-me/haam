@@ -532,61 +532,87 @@ class HAAMAnalysis:
         return np.mean(check_betas) if check_betas else 0.0
     
     def _calculate_residual_correlations(self):
-        """Calculate residual correlations (C's) between residuals after controlling for other variables."""
-        # C(AI,HU) - residual correlation between e_AI and e_HU after controlling for Y
-        mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
-        if mask.sum() > 50:
-            # Residualize AI and HU with respect to Y
-            X = sm.add_constant(self.criterion[mask])
-            
-            # Get AI residuals (e_AI)
-            model_ai = sm.OLS(self.ai_judgment[mask], X).fit()
-            resid_ai = model_ai.resid
-            
-            # Get HU residuals (e_HU)
-            model_hu = sm.OLS(self.human_judgment[mask], X).fit()
-            resid_hu = model_hu.resid
+        """
+        Calculate residual correlations (C's) between residuals after controlling for PCs.
+        
+        These are the correlations between the residuals of each variable after
+        regressing on the selected PCs (mediators). This is similar to DML but
+        just computes the correlation between residuals.
+        """
+        # Get the actual values for each outcome
+        outcome_values = {
+            'SC': self.criterion,
+            'AI': self.ai_judgment,
+            'HU': self.human_judgment
+        }
+        
+        # Standardize each outcome variable (ignoring NaNs)
+        standardized_values = {}
+        for outcome, values in outcome_values.items():
+            mask = ~np.isnan(values)
+            if mask.sum() > 0:
+                mean_val = np.nanmean(values)
+                std_val = np.nanstd(values)
+                standardized = (values - mean_val) / std_val if std_val > 0 else values - mean_val
+                standardized_values[outcome] = standardized
+            else:
+                standardized_values[outcome] = values
+        
+        # Get predictions from PC models (standardized scale)
+        predictions = {}
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome in self.results['debiased_lasso']:
+                selected = self.results['debiased_lasso'][outcome]['selected']
+                if len(selected) > 0:
+                    X = self.results['pca_features'][:, selected]
+                    # Get the fitted values on standardized scale
+                    coefs = self.results['debiased_lasso'][outcome]['coefs_std'][selected]
+                    predictions[outcome] = X @ coefs
+                else:
+                    predictions[outcome] = np.zeros(len(self.criterion))
+        
+        # C(AI,HU) - correlation between AI and HU residuals after controlling for their PC predictions
+        mask = ~(np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
+        if mask.sum() > 50 and 'AI' in predictions and 'HU' in predictions:
+            # Get residuals after controlling for PCs (on standardized scale)
+            resid_ai = standardized_values['AI'][mask] - predictions['AI'][mask]
+            resid_hu = standardized_values['HU'][mask] - predictions['HU'][mask]
             
             # C(AI,HU) = corr(e_AI, e_HU)
-            self.results['residual_correlations']['AI_HU'] = np.corrcoef(resid_ai, resid_hu)[0, 1]
+            if np.std(resid_ai) > 0 and np.std(resid_hu) > 0:
+                self.results['residual_correlations']['AI_HU'] = np.corrcoef(resid_ai, resid_hu)[0, 1]
+            else:
+                self.results['residual_correlations']['AI_HU'] = 0.0
         else:
             self.results['residual_correlations']['AI_HU'] = 0.0
         
-        # C(Y,AI) - residual correlation between e_Y and e_AI after controlling for HU
-        mask_y_ai = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment) | np.isnan(self.human_judgment))
-        if mask_y_ai.sum() > 50:
-            # Control for HU
-            X_hu = sm.add_constant(self.human_judgment[mask_y_ai])
-            
-            # Get Y residuals after controlling for HU
-            model_y = sm.OLS(self.criterion[mask_y_ai], X_hu).fit()
-            resid_y = model_y.resid
-            
-            # Get AI residuals after controlling for HU
-            model_ai = sm.OLS(self.ai_judgment[mask_y_ai], X_hu).fit()
-            resid_ai = model_ai.resid
+        # C(Y,AI) - correlation between Y and AI residuals after controlling for their PC predictions
+        mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
+        if mask.sum() > 50 and 'SC' in predictions and 'AI' in predictions:
+            # Get residuals after controlling for PCs (on standardized scale)
+            resid_y = standardized_values['SC'][mask] - predictions['SC'][mask]
+            resid_ai = standardized_values['AI'][mask] - predictions['AI'][mask]
             
             # C(Y,AI) = corr(e_Y, e_AI)
-            self.results['residual_correlations']['Y_AI'] = np.corrcoef(resid_y, resid_ai)[0, 1]
+            if np.std(resid_y) > 0 and np.std(resid_ai) > 0:
+                self.results['residual_correlations']['Y_AI'] = np.corrcoef(resid_y, resid_ai)[0, 1]
+            else:
+                self.results['residual_correlations']['Y_AI'] = 0.0
         else:
             self.results['residual_correlations']['Y_AI'] = 0.0
         
-        # C(Y,HU) - residual correlation between e_Y and e_HU after controlling for AI
-        mask_y_hu = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment) | np.isnan(self.ai_judgment))
-        if mask_y_hu.sum() > 50:
-            # Control for AI
-            X_ai = sm.add_constant(self.ai_judgment[mask_y_hu])
-            
-            # Get Y residuals after controlling for AI
-            model_y = sm.OLS(self.criterion[mask_y_hu], X_ai).fit()
-            resid_y = model_y.resid
-            
-            # Get HU residuals after controlling for AI
-            model_hu = sm.OLS(self.human_judgment[mask_y_hu], X_ai).fit()
-            resid_hu = model_hu.resid
+        # C(Y,HU) - correlation between Y and HU residuals after controlling for their PC predictions
+        mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
+        if mask.sum() > 50 and 'SC' in predictions and 'HU' in predictions:
+            # Get residuals after controlling for PCs (on standardized scale)
+            resid_y = standardized_values['SC'][mask] - predictions['SC'][mask]
+            resid_hu = standardized_values['HU'][mask] - predictions['HU'][mask]
             
             # C(Y,HU) = corr(e_Y, e_HU)
-            self.results['residual_correlations']['Y_HU'] = np.corrcoef(resid_y, resid_hu)[0, 1]
+            if np.std(resid_y) > 0 and np.std(resid_hu) > 0:
+                self.results['residual_correlations']['Y_HU'] = np.corrcoef(resid_y, resid_hu)[0, 1]
+            else:
+                self.results['residual_correlations']['Y_HU'] = 0.0
         else:
             self.results['residual_correlations']['Y_HU'] = 0.0
     
@@ -641,7 +667,7 @@ class HAAMAnalysis:
             ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
             
             # Indirect effect approximation
-            indirect_effect = np.sum(sc_coefs * ai_coefs) * np.std(self.criterion) * np.std(self.ai_judgment)
+            indirect_effect = np.sum(sc_coefs * ai_coefs) * np.nanstd(self.criterion) * np.nanstd(self.ai_judgment)
             
             self.results['mediation_analysis']['AI'] = {
                 'total_effect': total_effect,
@@ -657,7 +683,14 @@ class HAAMAnalysis:
             sc_coefs = self.results['debiased_lasso']['SC']['coefs_std']
             hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros_like(sc_coefs)
             
-            indirect_effect = np.sum(sc_coefs * hu_coefs) * np.std(self.criterion) * np.std(self.human_judgment)
+            # Calculate standard deviations, ignoring NaN values
+            std_criterion = np.nanstd(self.criterion)
+            std_human = np.nanstd(self.human_judgment)
+            
+            if not np.isnan(std_criterion) and not np.isnan(std_human):
+                indirect_effect = np.sum(sc_coefs * hu_coefs) * std_criterion * std_human
+            else:
+                indirect_effect = 0.0
             
             self.results['mediation_analysis']['HU'] = {
                 'total_effect': total_effect,
@@ -673,7 +706,7 @@ class HAAMAnalysis:
             hu_coefs = self.results['debiased_lasso']['HU']['coefs_std'] if 'HU' in self.results['debiased_lasso'] else np.zeros(self.n_components)
             ai_coefs = self.results['debiased_lasso']['AI']['coefs_std'] if 'AI' in self.results['debiased_lasso'] else np.zeros(self.n_components)
             
-            indirect_effect = np.sum(hu_coefs * ai_coefs) * np.std(self.human_judgment) * np.std(self.ai_judgment)
+            indirect_effect = np.sum(hu_coefs * ai_coefs) * np.nanstd(self.human_judgment) * np.nanstd(self.ai_judgment)
             
             self.results['mediation_analysis']['HU_AI'] = {
                 'total_effect': total_effect,

@@ -250,9 +250,9 @@ class HAAMVisualizer:
         # Residual Correlations (C's) - all pairwise
         if 'residual_correlations' in self.results:
             rc = self.results['residual_correlations']
-            metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # corr(e_AI, e_HU) after controlling for Y
-            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # corr(e_Y, e_AI) after controlling for HU
-            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # corr(e_Y, e_HU) after controlling for AI
+            metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # corr(e_AI, e_HU) after controlling for PCs
+            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # corr(e_Y, e_AI) after controlling for PCs
+            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # corr(e_Y, e_HU) after controlling for PCs
         else:
             # Default values
             metrics['c_ai_hu'] = 0.0
@@ -300,15 +300,21 @@ class HAAMVisualizer:
             if 'HU' in med and med['HU'] is not None:
                 total_effect_hu = med['HU'].get('total_effect', 0)
                 indirect_effect_hu = med['HU'].get('indirect_effect', 0)
-                if abs(total_effect_hu) > 0:
-                    metrics['poma_hu'] = (indirect_effect_hu / total_effect_hu) * 100
-                    metrics['unmodeled_hu'] = 100 - metrics['poma_hu']
+                if abs(total_effect_hu) > 0 and not np.isnan(total_effect_hu) and not np.isnan(indirect_effect_hu):
+                    poma_value = (indirect_effect_hu / total_effect_hu) * 100
+                    # Check for NaN or invalid values
+                    if np.isnan(poma_value) or np.isinf(poma_value):
+                        metrics['poma_hu'] = 0.0
+                        metrics['unmodeled_hu'] = 100.0
+                    else:
+                        metrics['poma_hu'] = poma_value
+                        metrics['unmodeled_hu'] = 100 - poma_value
                 else:
                     metrics['poma_hu'] = 0.0
                     metrics['unmodeled_hu'] = 100.0
             else:
-                metrics['poma_hu'] = 50.0  # Default if not calculated
-                metrics['unmodeled_hu'] = 50.0
+                metrics['poma_hu'] = 0.0  # Default if not calculated
+                metrics['unmodeled_hu'] = 100.0
                 
             # For HU→AI path
             if 'HU_AI' in med and med['HU_AI'] is not None:
@@ -889,16 +895,16 @@ class HAAMVisualizer:
                 <g transform="translate(450, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Value-Pred Corr.</text>
                     <text x="0" y="25" font-size="12" fill="#334155">r(Y, Ŷ): <tspan font-weight="600">%%R_Y_YHAT%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">r(AI, AI): <tspan font-weight="600" fill="#be123c">%%R_AI_AIHAT%%</tspan></text>
-                    <text x="0" y="65" font-size="12" fill="#334155">r(HU, HU): <tspan font-weight="600" fill="#d97706">%%R_HU_HUHAT%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">r(AI, ÂI): <tspan font-weight="600" fill="#be123c">%%R_AI_AIHAT%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">r(HU, ĤU): <tspan font-weight="600" fill="#d97706">%%R_HU_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- Policy Similarities -->
                 <g transform="translate(600, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim.</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, AI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, HU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
-                    <text x="0" y="65" font-size="12" fill="#334155">r(AI, HU): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, ÂI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, ĤU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">r(ÂI, ĤU): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- PoMA Analysis -->
