@@ -5,7 +5,7 @@ HAAM Package - Simplified API
 Main module providing a simplified interface for HAAM analysis.
 """
 
-from .haam_core import HAAMAnalysis
+from .haam_package import HAAMAnalysis
 from .haam_topics import TopicAnalyzer
 from .haam_visualizations import HAAMVisualizer
 import numpy as np
