@@ -53,13 +53,23 @@ class TopicAnalyzer:
         """Cluster documents using HDBSCAN."""
         print("Clustering documents...")
         
-        clusterer = HDBSCAN(
-            min_cluster_size=self.min_cluster_size,
-            min_samples=5,
-            metric='euclidean',
-            cluster_selection_epsilon=0.0,
-            prediction_data=True
-        )
+        # Check HDBSCAN version compatibility
+        import inspect
+        hdbscan_params = inspect.signature(HDBSCAN.__init__).parameters
+        
+        # Base parameters
+        params = {
+            'min_cluster_size': self.min_cluster_size,
+            'min_samples': 5,
+            'metric': 'euclidean',
+            'cluster_selection_epsilon': 0.0
+        }
+        
+        # Add prediction_data only if supported
+        if 'prediction_data' in hdbscan_params:
+            params['prediction_data'] = True
+            
+        clusterer = HDBSCAN(**params)
         
         self.cluster_labels = clusterer.fit_predict(self.embeddings)
         self.n_clusters = len(set(self.cluster_labels)) - (1 if -1 in self.cluster_labels else 0)

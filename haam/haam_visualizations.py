@@ -346,6 +346,73 @@ class HAAMVisualizer:
             
         return fig
     
+    def create_pc_effects_plot(self, 
+                              pc_indices: List[int],
+                              output_file: Optional[str] = None) -> go.Figure:
+        """
+        Create bar chart showing PC effects.
+        
+        Parameters
+        ----------
+        pc_indices : List[int]
+            List of PC indices to plot
+        output_file : str, optional
+            Path to save HTML file
+            
+        Returns
+        -------
+        go.Figure
+            Plotly figure
+        """
+        import plotly.graph_objects as go
+        
+        # Get coefficient data
+        coef_data = []
+        outcomes = ['SC', 'AI', 'HU']
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+        
+        for outcome in outcomes:
+            if outcome in self.results['debiased_lasso']:
+                coefs = self.results['debiased_lasso'][outcome]['coefs_std']
+                coef_values = [coefs[pc] for pc in pc_indices]
+                coef_data.append(coef_values)
+            else:
+                coef_data.append([0] * len(pc_indices))
+        
+        # Create figure
+        fig = go.Figure()
+        
+        # Add bars for each outcome
+        for i, (outcome, coefs, color) in enumerate(zip(outcomes, coef_data, colors)):
+            fig.add_trace(go.Bar(
+                name=outcome,
+                x=[f'PC{pc+1}' for pc in pc_indices],
+                y=coefs,
+                marker_color=color,
+                offsetgroup=i
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title=f'Top {len(pc_indices)} Principal Components - Standardized Coefficients',
+            xaxis_title='Principal Component',
+            yaxis_title='Standardized Coefficient',
+            barmode='group',
+            template='plotly_white',
+            width=1000,
+            height=600,
+            hovermode='x unified'
+        )
+        
+        # Add zero line
+        fig.add_hline(y=0, line_color='black', line_width=0.5)
+        
+        if output_file:
+            fig.write_html(output_file)
+            print(f"PC effects visualization saved to: {output_file}")
+            
+        return fig
+    
     def _get_main_visualization_template(self) -> str:
         """Get HTML template for main visualization."""
         return '''<!DOCTYPE html>

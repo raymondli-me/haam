@@ -242,6 +242,44 @@ class HAAM:
         
         return output_file
     
+    def create_pc_effects_visualization(self, 
+                                      output_dir: Optional[str] = None,
+                                      n_top: int = 20) -> str:
+        """
+        Create PC effects bar chart visualization.
+        
+        Parameters
+        ----------
+        output_dir : str, optional
+            Directory to save output. If None, uses current directory
+        n_top : int
+            Number of top PCs to display
+            
+        Returns
+        -------
+        str
+            Path to saved HTML file
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+            
+        if output_dir is None:
+            output_dir = os.getcwd()
+            
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, 'haam_pc_effects.html')
+        
+        # Get top PCs
+        top_pcs = self.analysis.get_top_pcs(n_top=n_top, ranking_method='triple')
+        
+        # Create the visualization
+        self.visualizer.create_pc_effects_plot(
+            pc_indices=top_pcs,
+            output_file=output_file
+        )
+        
+        return output_file
+    
     def explore_pc_topics(self, 
                          pc_indices: Optional[List[int]] = None,
                          n_topics: int = 10) -> pd.DataFrame:
