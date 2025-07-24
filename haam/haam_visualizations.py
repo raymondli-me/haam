@@ -161,11 +161,28 @@ class HAAMVisualizer:
         html_content = html_content.replace('%%R2_AI%%', f"{metrics['r2_ai']:.3f}")
         html_content = html_content.replace('%%R2_HU%%', f"{metrics['r2_hu']:.3f}")
         
+        # Total Effects (DML coefficients)
+        html_content = html_content.replace('%%TOTAL_EFFECT_Y_AI%%', f"{metrics['total_effect_y_ai']:.3f}")
+        html_content = html_content.replace('%%TOTAL_EFFECT_Y_HU%%', f"{metrics['total_effect_y_hu']:.3f}")
+        html_content = html_content.replace('%%TOTAL_EFFECT_HU_AI%%', f"{metrics['total_effect_hu_ai']:.3f}")
+        
+        # Value-Prediction Correlations
+        html_content = html_content.replace('%%R_Y_YHAT%%', f"{metrics['r_y_yhat']:.3f}")
+        html_content = html_content.replace('%%R_AI_AIHAT%%', f"{metrics['r_ai_aihat']:.3f}")
+        html_content = html_content.replace('%%R_HU_HUHAT%%', f"{metrics['r_hu_huhat']:.3f}")
+        
+        # Policy Similarities
+        html_content = html_content.replace('%%R_YHAT_AIHAT%%', f"{metrics['r_yhat_aihat']:.3f}")
+        html_content = html_content.replace('%%R_YHAT_HUHAT%%', f"{metrics['r_yhat_huhat']:.3f}")
+        html_content = html_content.replace('%%R_AIHAT_HUHAT%%', f"{metrics['r_aihat_huhat']:.3f}")
+        
         # PoMA and Unmodeled paths
         html_content = html_content.replace('%%POMA_AI%%', f"{metrics['poma_ai']:.1f}%")
         html_content = html_content.replace('%%POMA_HU%%', f"{metrics['poma_hu']:.1f}%")
+        html_content = html_content.replace('%%POMA_HU_AI%%', f"{metrics['poma_hu_ai']:.1f}%")
         html_content = html_content.replace('%%UNMODELED_AI%%', f"{metrics['unmodeled_ai']:.1f}%")
         html_content = html_content.replace('%%UNMODELED_HU%%', f"{metrics['unmodeled_hu']:.1f}%")
+        html_content = html_content.replace('%%UNMODELED_HU_AI%%', f"{metrics['unmodeled_hu_ai']:.1f}%")
         
         # Number of selected components
         html_content = html_content.replace('%%N_SELECTED_Y%%', str(metrics['n_selected_y']))
@@ -200,12 +217,42 @@ class HAAMVisualizer:
         metrics['n_selected_ai'] = self.results['debiased_lasso'].get('AI', {}).get('n_selected', 0)
         metrics['n_selected_hu'] = self.results['debiased_lasso'].get('HU', {}).get('n_selected', 0)
         
+        # Total Effects (DML coefficients)
+        if 'total_effects' in self.results:
+            te = self.results['total_effects']
+            metrics['total_effect_y_ai'] = te.get('Y_AI', {}).get('coefficient', 0.0)
+            metrics['total_effect_y_hu'] = te.get('Y_HU', {}).get('coefficient', 0.0)
+            metrics['total_effect_hu_ai'] = te.get('HU_AI', {}).get('coefficient', 0.0)
+        else:
+            # Calculate from mediation analysis if available
+            metrics['total_effect_y_ai'] = 0.0
+            metrics['total_effect_y_hu'] = 0.0
+            metrics['total_effect_hu_ai'] = 0.0
+        
+        # Value-Prediction Correlations: r(Y, Y_hat), r(AI, AI_hat), r(HU, HU_hat)
+        # These are the square roots of R² values
+        metrics['r_y_yhat'] = np.sqrt(metrics['r2_y'])
+        metrics['r_ai_aihat'] = np.sqrt(metrics['r2_ai'])
+        metrics['r_hu_huhat'] = np.sqrt(metrics['r2_hu'])
+        
+        # Policy Similarities: correlations between predictions
+        if 'policy_similarities' in self.results:
+            ps = self.results['policy_similarities']
+            metrics['r_yhat_aihat'] = ps.get('Y_AI', 0.0)
+            metrics['r_yhat_huhat'] = ps.get('Y_HU', 0.0)
+            metrics['r_aihat_huhat'] = ps.get('AI_HU', 0.0)
+        else:
+            # Default values if not calculated
+            metrics['r_yhat_aihat'] = 0.0
+            metrics['r_yhat_huhat'] = 0.0
+            metrics['r_aihat_huhat'] = 0.0
+        
         # Calculate PoMA (Proportion of Maximum Achievable)
         # This requires the total effects and mediated effects
         if 'mediation_analysis' in self.results:
             med = self.results['mediation_analysis']
             
-            # For AI
+            # For Y→AI path
             if 'AI' in med and med['AI'] is not None:
                 total_effect_ai = med['AI'].get('total_effect', 0)
                 indirect_effect_ai = med['AI'].get('indirect_effect', 0)
@@ -219,7 +266,7 @@ class HAAMVisualizer:
                 metrics['poma_ai'] = 50.0  # Default if not calculated
                 metrics['unmodeled_ai'] = 50.0
                 
-            # For Human
+            # For Y→HU path
             if 'HU' in med and med['HU'] is not None:
                 total_effect_hu = med['HU'].get('total_effect', 0)
                 indirect_effect_hu = med['HU'].get('indirect_effect', 0)
@@ -232,12 +279,28 @@ class HAAMVisualizer:
             else:
                 metrics['poma_hu'] = 50.0  # Default if not calculated
                 metrics['unmodeled_hu'] = 50.0
+                
+            # For HU→AI path
+            if 'HU_AI' in med and med['HU_AI'] is not None:
+                total_effect_hu_ai = med['HU_AI'].get('total_effect', 0)
+                indirect_effect_hu_ai = med['HU_AI'].get('indirect_effect', 0)
+                if abs(total_effect_hu_ai) > 0:
+                    metrics['poma_hu_ai'] = (indirect_effect_hu_ai / total_effect_hu_ai) * 100
+                    metrics['unmodeled_hu_ai'] = 100 - metrics['poma_hu_ai']
+                else:
+                    metrics['poma_hu_ai'] = 0.0
+                    metrics['unmodeled_hu_ai'] = 100.0
+            else:
+                metrics['poma_hu_ai'] = 0.0
+                metrics['unmodeled_hu_ai'] = 100.0
         else:
             # Use defaults if mediation analysis not available
             metrics['poma_ai'] = 65.6
             metrics['unmodeled_ai'] = 34.4
             metrics['poma_hu'] = 44.6
             metrics['unmodeled_hu'] = 55.4
+            metrics['poma_hu_ai'] = 0.0
+            metrics['unmodeled_hu_ai'] = 100.0
             
         return metrics
     
@@ -764,39 +827,73 @@ class HAAMVisualizer:
                 </script>
             </g>
 
-            <!-- Legend -->
-            <g id="legend" transform="translate(450, 720)">
-                <rect x="-200" y="-15" width="800" height="120" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+            <!-- Comprehensive Metrics Panel -->
+            <g id="metrics-panel" transform="translate(50, 630)">
+                <rect x="-20" y="-10" width="1420" height="200" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
                 
-                <g id="legend-color" transform="translate(-180, 10)">
-                    <text font-size="13" font-weight="600" fill="#1e293b">Correlation</text>
-                    <circle cx="5" cy="25" r="5" class="positive-fill" />
-                    <text x="15" y="30" font-size="12" fill="#334155">Positive</text>
-                    <circle cx="5" cy="50" r="5" class="negative-fill" />
-                    <text x="15" y="55" font-size="12" fill="#334155">Negative</text>
+                <!-- Total Effects Column -->
+                <g transform="translate(0, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Total Effects (DML)</text>
+                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%TOTAL_EFFECT_Y_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%TOTAL_EFFECT_Y_HU%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%TOTAL_EFFECT_HU_AI%%</tspan></text>
                 </g>
-
-                <g id="legend-size" transform="translate(-40, 10)">
-                    <text font-size="13" font-weight="600" fill="#1e293b">Cue Usage Strength</text>
-                    <circle cx="5" cy="25" r="8" class="neutral-fill" />
-                    <text x="18" y="30" font-size="12" fill="#334155">Strong</text>
-                    <circle cx="5" cy="50" r="5" class="neutral-fill" />
-                    <text x="18" y="55" font-size="12" fill="#334155">Medium</text>
-                    <circle cx="5" cy="75" r="2" class="neutral-fill" />
-                    <text x="18" y="80" font-size="12" fill="#334155">Weak</text>
+                
+                <!-- Value-Prediction Correlations -->
+                <g transform="translate(200, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Value-Prediction Corr.</text>
+                    <text x="0" y="25" font-size="12" fill="#334155">r(Y, Ŷ): <tspan font-weight="600">%%R_Y_YHAT%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">r(AI, AI): <tspan font-weight="600" fill="#be123c">%%R_AI_AIHAT%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">r(HU, HU): <tspan font-weight="600" fill="#d97706">%%R_HU_HUHAT%%</tspan></text>
                 </g>
-
-                <line x1="120" y1="0" x2="120" y2="85" stroke="#e2e8f0" />
-
-                <g id="legend-order" transform="translate(140, 10)">
-                    <text font-size="13" font-weight="600" fill="#1e293b">Dot Order &amp; Tooltips</text>
-                    <text x="0" y="30" font-size="12" fill="#475569">(1) Cue Validity (Y)</text>
-                    <text x="0" y="55" font-size="12" fill="#be123c">(2) AI Use</text>
-                    <text x="0" y="80" font-size="12" fill="#d97706">(3) Human Use</text>
-                    <text x="200" y="30" font-size="11" fill="#64748b" font-style="italic">Hover over dots on the chart for specific values.</text>
+                
+                <!-- Policy Similarities -->
+                <g transform="translate(400, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Policy Similarities</text>
+                    <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, AI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, HU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">r(AI, HU): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
                 </g>
-                <text x="250" y="-25" text-anchor="middle" font-size="11" fill="#64748b" font-style="italic">
-                    *Note: Initial Lasso models selected a larger set of components (Y: %%N_SELECTED_Y%%, AI: %%N_SELECTED_AI%%, HU: %%N_SELECTED_HU%%) before these top 9 were chosen for the final model.
+                
+                <!-- PoMA Analysis -->
+                <g transform="translate(600, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Proportion Mediated (PoMA)</text>
+                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%POMA_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%POMA_HU%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%POMA_HU_AI%%</tspan></text>
+                </g>
+                
+                <!-- Legend -->
+                <g transform="translate(850, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Legend</text>
+                    <g transform="translate(0, 25)">
+                        <circle cx="5" cy="0" r="5" class="positive-fill" />
+                        <text x="15" y="5" font-size="11" fill="#334155">Positive</text>
+                        <circle cx="5" cy="20" r="5" class="negative-fill" />
+                        <text x="15" y="25" font-size="11" fill="#334155">Negative</text>
+                    </g>
+                    <g transform="translate(80, 25)">
+                        <circle cx="5" cy="0" r="8" class="neutral-fill" />
+                        <text x="18" y="5" font-size="11" fill="#334155">Strong</text>
+                        <circle cx="5" cy="20" r="5" class="neutral-fill" />
+                        <text x="18" y="25" font-size="11" fill="#334155">Medium</text>
+                        <circle cx="5" cy="40" r="2" class="neutral-fill" />
+                        <text x="18" y="45" font-size="11" fill="#334155">Weak</text>
+                    </g>
+                </g>
+                
+                <!-- Model Selection Info -->
+                <g transform="translate(1000, 10)">
+                    <text font-size="14" font-weight="600" fill="#1e293b">Feature Selection</text>
+                    <text x="0" y="25" font-size="11" fill="#334155">Y model: <tspan font-weight="600">%%N_SELECTED_Y%%</tspan> PCs</text>
+                    <text x="0" y="45" font-size="11" fill="#334155">AI model: <tspan font-weight="600" fill="#be123c">%%N_SELECTED_AI%%</tspan> PCs</text>
+                    <text x="0" y="65" font-size="11" fill="#334155">HU model: <tspan font-weight="600" fill="#d97706">%%N_SELECTED_HU%%</tspan> PCs</text>
+                    <text x="0" y="85" font-size="10" fill="#64748b" font-style="italic">(out of 200 total)</text>
+                </g>
+                
+                <!-- Notes -->
+                <text x="0" y="170" font-size="10" fill="#64748b" font-style="italic">
+                    *Top 9 PCs shown are ranked by Human judgment coefficients. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
                 </text>
             </g>
 

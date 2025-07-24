@@ -237,7 +237,8 @@ class HAAM:
         os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, 'haam_main_visualization.html')
         
-        top_pcs = self.analysis.get_top_pcs(n_top=9)
+        # Default to Human ranking (HU) for visualization
+        top_pcs = self.analysis.get_top_pcs(n_top=9, ranking_method='HU')
         self.visualizer.create_main_visualization(top_pcs, output_file, pc_names)
         
         return output_file
