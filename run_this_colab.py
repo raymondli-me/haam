@@ -108,16 +108,13 @@
       print("\n📊 TOTAL EFFECTS (DML Coefficients):")
       te = haam.analysis.results['total_effects']
       if 'Y_AI' in te:
-          print(f"  Y → AI: β = {te['Y_AI']['coefficient']:.3f} (SE = 
-  {te['Y_AI']['se']:.3f})")
+          print(f"  Y → AI: β = {te['Y_AI']['coefficient']:.3f} (SE = {te['Y_AI']['se']:.3f})")
           print(f"         β_check = {te['Y_AI']['check_beta']:.3f}")
       if 'Y_HU' in te:
-          print(f"  Y → HU: β = {te['Y_HU']['coefficient']:.3f} (SE = 
-  {te['Y_HU']['se']:.3f})")
+          print(f"  Y → HU: β = {te['Y_HU']['coefficient']:.3f} (SE = {te['Y_HU']['se']:.3f})")
           print(f"         β_check = {te['Y_HU']['check_beta']:.3f}")
       if 'HU_AI' in te:
-          print(f"  HU → AI: β = {te['HU_AI']['coefficient']:.3f} (SE = 
-  {te['HU_AI']['se']:.3f})")
+          print(f"  HU → AI: β = {te['HU_AI']['coefficient']:.3f} (SE = {te['HU_AI']['se']:.3f})")
           print(f"          β_check = {te['HU_AI']['check_beta']:.3f}")
 
   # Display Residual Correlations
@@ -138,6 +135,10 @@
       print(f"  r(Ŷ, ÂI) = {ps.get('Y_AI', 0):.3f}")
       print(f"  r(Ŷ, ĤU) = {ps.get('Y_HU', 0):.3f}")
       print(f"  r(ÂI, ĤU) = {ps.get('AI_HU', 0):.3f}")
+
+  # Display Mediation Analysis Results with Visualization
+  print("\n📊 MEDIATION ANALYSIS (PoMA):")
+  haam.analysis.display_mediation_results()
 
   # =======================================================================
   =======

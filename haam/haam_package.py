@@ -826,4 +826,148 @@ class HAAMAnalysis:
         print(f"  - {coef_path}")
         print(f"  - {summary_path}")
         
+        # Display in Colab if available
+        self._display_in_colab(coef_df, summary_df)
+        
         return self.results['exports']
+    
+    def _display_in_colab(self, *dataframes):
+        """Display dataframes and visualizations in Google Colab if available."""
+        try:
+            from IPython.display import display, HTML
+            import google.colab
+            in_colab = True
+        except ImportError:
+            in_colab = False
+            return
+            
+        if in_colab:
+            for df in dataframes:
+                if isinstance(df, pd.DataFrame):
+                    display(HTML("<h4>" + df.name + "</h4>" if hasattr(df, 'name') else "<h4>Results</h4>"))
+                    display(df)
+                    
+    def display_mediation_results(self):
+        """Display mediation analysis results with visualization in Colab."""
+        if 'mediation_analysis' not in self.results:
+            print("No mediation analysis results available.")
+            return
+            
+        # Create summary dataframe
+        med_data = []
+        for outcome, results in self.results['mediation_analysis'].items():
+            total_effect = results.get('total_effect', 0)
+            direct_effect = results.get('direct_effect', 0)
+            indirect_effect = results.get('indirect_effect', 0)
+            
+            if total_effect != 0:
+                poma = 1 - (direct_effect / total_effect)
+            else:
+                poma = np.nan
+                
+            med_data.append({
+                'Path': f'Y -> {outcome}' if outcome != 'HU_AI' else 'HU -> AI',
+                'Total Effect': total_effect,
+                'Direct Effect': direct_effect,
+                'Indirect Effect': indirect_effect,
+                'PoMA': poma,
+                'PoMA (%)': poma * 100 if not np.isnan(poma) else np.nan
+            })
+            
+        med_df = pd.DataFrame(med_data)
+        
+        # Display in Colab if available
+        try:
+            from IPython.display import display, HTML
+            import google.colab
+            
+            # Create HTML table with styling
+            html = """
+            <div style="margin: 20px 0;">
+                <h3>Mediation Analysis Results (Difference of Coefficients Method)</h3>
+                <style>
+                    .mediation-table {
+                        border-collapse: collapse;
+                        width: 100%;
+                        margin: 20px 0;
+                    }
+                    .mediation-table th, .mediation-table td {
+                        border: 1px solid #ddd;
+                        padding: 12px;
+                        text-align: left;
+                    }
+                    .mediation-table th {
+                        background-color: #4CAF50;
+                        color: white;
+                    }
+                    .mediation-table tr:nth-child(even) {
+                        background-color: #f2f2f2;
+                    }
+                    .formula {
+                        background-color: #e8f4f8;
+                        padding: 10px;
+                        margin: 10px 0;
+                        border-radius: 5px;
+                        font-family: monospace;
+                    }
+                </style>
+            """
+            
+            # Convert dataframe to HTML
+            html += med_df.to_html(index=False, classes='mediation-table', float_format=lambda x: f'{x:.4f}')
+            
+            # Add formula explanation
+            html += """
+            <div class="formula">
+                <strong>PoMA (Proportion of Mediated Accuracy)</strong> = 1 - (Direct Effect / Total Effect)<br>
+                <strong>Indirect Effect</strong> = Total Effect - Direct Effect<br>
+                <br>
+                Where:<br>
+                - Total Effect: Simple regression coefficient (no controls)<br>
+                - Direct Effect: DML check beta (controlling for PC mediators)<br>
+                - Indirect Effect: Effect mediated through the PCs
+            </div>
+            </div>
+            """
+            
+            display(HTML(html))
+            
+            # Create visualization
+            fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 6))
+            
+            # Effects comparison
+            paths = med_df['Path'].values
+            x = np.arange(len(paths))
+            width = 0.25
+            
+            ax1.bar(x - width, med_df['Total Effect'], width, label='Total Effect', alpha=0.8)
+            ax1.bar(x, med_df['Direct Effect'], width, label='Direct Effect', alpha=0.8)
+            ax1.bar(x + width, med_df['Indirect Effect'], width, label='Indirect Effect', alpha=0.8)
+            ax1.set_xlabel('Causal Path')
+            ax1.set_ylabel('Effect Size')
+            ax1.set_title('Effect Decomposition by Path')
+            ax1.set_xticks(x)
+            ax1.set_xticklabels(paths, rotation=45)
+            ax1.legend()
+            ax1.grid(axis='y', alpha=0.3)
+            
+            # PoMA values
+            ax2.bar(paths, med_df['PoMA (%)'], alpha=0.8, color='green')
+            ax2.set_xlabel('Causal Path')
+            ax2.set_ylabel('PoMA (%)')
+            ax2.set_title('Proportion of Mediated Accuracy')
+            ax2.set_ylim(0, 100)
+            ax2.grid(axis='y', alpha=0.3)
+            
+            # Add value labels
+            for i, v in enumerate(med_df['PoMA (%)'].values):
+                if not np.isnan(v):
+                    ax2.text(i, v + 2, f'{v:.1f}%', ha='center', va='bottom')
+            
+            plt.tight_layout()
+            plt.show()
+            
+        except ImportError:
+            # Not in Colab, just print results
+            print("\nMediation Analysis Results:")
+            print(med_df.to_string(index=False))

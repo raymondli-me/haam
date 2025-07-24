@@ -50,6 +50,30 @@ class HAAMVisualizer:
         """
         self.results = haam_results
         self.topic_summaries = topic_summaries or {}
+    
+    def _display_in_colab(self, content, title=""):
+        """Display HTML content in Google Colab if available."""
+        try:
+            from IPython.display import display, HTML, IFrame
+            import google.colab
+            in_colab = True
+        except ImportError:
+            in_colab = False
+            return
+            
+        if in_colab:
+            if title:
+                display(HTML(f"<h3>{title}</h3>"))
+            if isinstance(content, str) and content.startswith('<!DOCTYPE html>'):
+                # For full HTML documents, use IFrame
+                import tempfile
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.html', delete=False) as f:
+                    f.write(content)
+                    temp_path = f.name
+                display(IFrame(src=temp_path, width='100%', height='800px'))
+            else:
+                # For HTML snippets
+                display(HTML(content))
         
     def create_main_visualization(self, 
                                  pc_indices: List[int],
@@ -203,6 +227,9 @@ class HAAMVisualizer:
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(html_content)
             print(f"Main visualization saved to: {output_file}")
+            
+            # Display in Colab if available
+            self._display_in_colab(html_content, "Main HAAM Visualization")
             
         return html_content
     
@@ -393,6 +420,9 @@ class HAAMVisualizer:
                 f.write(html_content)
             print(f"Mini visualization saved to: {output_file}")
             
+            # Display in Colab if available
+            self._display_in_colab(html_content, "Mini Coefficient Grid")
+            
         return html_content
     
     def plot_pc_effects(self, 
@@ -564,6 +594,14 @@ class HAAMVisualizer:
             fig.write_html(output_file)
             print(f"UMAP visualization saved to: {output_file}")
             
+        # Display in Colab if available
+        try:
+            from IPython.display import display
+            import google.colab
+            display(fig)
+        except ImportError:
+            pass
+            
         return fig
     
     def create_pc_effects_plot(self, 
@@ -630,6 +668,14 @@ class HAAMVisualizer:
         if output_file:
             fig.write_html(output_file)
             print(f"PC effects visualization saved to: {output_file}")
+            
+        # Display in Colab if available
+        try:
+            from IPython.display import display
+            import google.colab
+            display(fig)
+        except ImportError:
+            pass
             
         return fig
     
