@@ -70,7 +70,7 @@ Core requirements:
 from haam import HAAM
 
 # Your data
-criterion = [...]        # Ground truth (e.g., social class)
+criterion = [...]        # Ground truth (any criterion variable, not just social class)
 ai_judgment = [...]      # AI predictions/ratings
 human_judgment = [...]   # Human ratings
 texts = [...]           # Text documents (optional if you have embeddings)
@@ -144,7 +144,7 @@ print(f"Human Model R² (CV): {metrics['model_performance']['HU']['r2_cv']:.3f}"
 ```python
 # Initialize and run analysis
 haam = HAAM(
-    criterion,           # Ground truth variable
+    criterion,           # Ground truth variable (any criterion)
     ai_judgment,         # AI predictions
     human_judgment,      # Human ratings
     texts=None,          # Optional: texts for topic modeling

@@ -56,7 +56,13 @@ class HAAMVisualizer:
                                  output_file: Optional[str] = None,
                                  pc_names: Optional[Dict[int, str]] = None) -> str:
         """
-        Create main HAAM framework visualization.
+        Create main HAAM framework visualization with dynamic metrics.
+        
+        The visualization now shows:
+        - Generic "Y" label instead of "SC" for criterion
+        - Dynamically calculated R², PoMA, and unmodeled path percentages
+        - Custom PC names when provided (shows "-" otherwise)
+        - Enhanced topic display using c-TF-IDF
         
         Parameters
         ----------
@@ -67,6 +73,7 @@ class HAAMVisualizer:
         pc_names : Dict[int, str], optional
             Manual names for PCs. Keys are PC indices (0-based), values are names.
             If not provided, uses "-" for all PCs.
+            Example: {0: "Formality", 3: "Complexity", 6: "Sentiment"}
             
         Returns
         -------
@@ -531,6 +538,13 @@ class HAAMVisualizer:
         """
         Create a comprehensive summary of all HAAM metrics.
         
+        This method exports:
+        - Model performance metrics (R² values for Y, AI, HU)
+        - Policy similarities between predictions
+        - Mediation analysis results (PoMA percentages)
+        - Feature selection statistics
+        - Compatible with the new generic "Y" labeling
+        
         Parameters
         ----------
         output_file : str, optional
@@ -539,7 +553,11 @@ class HAAMVisualizer:
         Returns
         -------
         Dict[str, Any]
-            Dictionary containing all metrics
+            Dictionary containing all metrics including:
+            - model_performance: R² values for each model
+            - policy_similarities: Correlations between predictions
+            - mediation_analysis: PoMA and effect decomposition
+            - feature_selection: Number and indices of selected PCs
         """
         summary = {
             'model_performance': {},

@@ -27,7 +27,12 @@ class TopicAnalyzer:
                  min_samples: int = 2,
                  umap_n_components: int = 3):
         """
-        Initialize topic analyzer.
+        Initialize topic analyzer with enhanced parameters.
+        
+        Now uses optimized hyperparameters:
+        - UMAP: n_neighbors=5, min_dist=0.0, metric='cosine'
+        - HDBSCAN: min_cluster_size=10, min_samples=2
+        - c-TF-IDF: BERTopic formula for better topic extraction
         
         Parameters
         ----------
@@ -106,6 +111,11 @@ class TopicAnalyzer:
     def _extract_keywords(self, n_keywords: int = 10):
         """
         Extract keywords for each cluster using c-TF-IDF (BERTopic style).
+        
+        Enhanced implementation with:
+        - max_features=1000 for richer vocabulary
+        - ngram_range=(1,2) for unigrams and bigrams
+        - min_df=2 for noise reduction
         
         c-TF-IDF formula: tf_td * log(1 + (A / tf_t))
         where:

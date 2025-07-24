@@ -36,12 +36,18 @@ class HAAM:
                  min_samples: int = 2,
                  umap_n_components: int = 3):
         """
-        Initialize HAAM analysis.
+        Initialize HAAM analysis with enhanced parameters.
+        
+        Recent updates:
+        - UMAP: n_neighbors=5, min_dist=0.0, metric='cosine'
+        - HDBSCAN: min_cluster_size=10, min_samples=2
+        - c-TF-IDF implementation with BERTopic formula
+        - Generic "Y" labeling instead of "SC" in visualizations
         
         Parameters
         ----------
         criterion : array-like
-            Criterion variable (e.g., social class)
+            Criterion variable (any ground truth variable, not limited to social class)
         ai_judgment : array-like
             AI predictions/ratings
         human_judgment : array-like
@@ -304,9 +310,15 @@ class HAAM:
         
         return output_file
     
-    def create_metrics_summary(self, output_dir: Optional[str] = None) -> str:
+    def create_metrics_summary(self, output_dir: Optional[str] = None) -> Dict[str, Any]:
         """
         Create and save comprehensive metrics summary.
+        
+        Exports all key metrics including:
+        - Model performance (R² values for Y, AI, HU)
+        - Policy similarities between predictions
+        - Mediation analysis (PoMA percentages)
+        - Feature selection statistics
         
         Parameters
         ----------
@@ -315,8 +327,8 @@ class HAAM:
             
         Returns
         -------
-        str
-            Path to saved JSON file
+        Dict[str, Any]
+            Dictionary containing all metrics (also saved to JSON file)
         """
         if self.visualizer is None:
             raise RuntimeError("Must run analysis first")
@@ -327,9 +339,9 @@ class HAAM:
         os.makedirs(output_dir, exist_ok=True)
         output_file = os.path.join(output_dir, 'haam_metrics_summary.json')
         
-        self.visualizer.create_metrics_summary(output_file)
+        metrics = self.visualizer.create_metrics_summary(output_file)
         
-        return output_file
+        return metrics
     
     def explore_pc_topics(self, 
                          pc_indices: Optional[List[int]] = None,
