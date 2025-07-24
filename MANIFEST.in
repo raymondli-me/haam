@@ -1,0 +1,4 @@
+include LICENSE
+include haam_readme.md
+include pyproject.toml
+recursive-include haam *.py
