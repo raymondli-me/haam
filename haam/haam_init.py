@@ -203,7 +203,9 @@ class HAAM:
                 })
         return pd.DataFrame(data)
     
-    def create_main_visualization(self, output_dir: Optional[str] = None) -> str:
+    def create_main_visualization(self, 
+                                    output_dir: Optional[str] = None,
+                                    pc_names: Optional[Dict[int, str]] = None) -> str:
         """
         Create and save main HAAM visualization.
         
@@ -211,6 +213,9 @@ class HAAM:
         ----------
         output_dir : str, optional
             Directory to save output. If None, uses current directory
+        pc_names : Dict[int, str], optional
+            Manual names for PCs. Keys are PC indices (0-based), values are names.
+            Example: {4: "Lifestyle & Work", 7: "Professions", 1: "Narrative Style"}
             
         Returns
         -------
@@ -227,7 +232,7 @@ class HAAM:
         output_file = os.path.join(output_dir, 'haam_main_visualization.html')
         
         top_pcs = self.analysis.get_top_pcs(n_top=9)
-        self.visualizer.create_main_visualization(top_pcs, output_file)
+        self.visualizer.create_main_visualization(top_pcs, output_file, pc_names)
         
         return output_file
     

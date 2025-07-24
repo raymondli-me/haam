@@ -53,7 +53,8 @@ class HAAMVisualizer:
         
     def create_main_visualization(self, 
                                  pc_indices: List[int],
-                                 output_file: Optional[str] = None) -> str:
+                                 output_file: Optional[str] = None,
+                                 pc_names: Optional[Dict[int, str]] = None) -> str:
         """
         Create main HAAM framework visualization.
         
@@ -63,6 +64,9 @@ class HAAMVisualizer:
             List of PC indices to display (0-based)
         output_file : str, optional
             Path to save HTML file
+        pc_names : Dict[int, str], optional
+            Manual names for PCs. Keys are PC indices (0-based), values are names.
+            If not provided, uses "-" for all PCs.
             
         Returns
         -------
@@ -114,8 +118,11 @@ class HAAMVisualizer:
                     pc_info['pos'] = self.topic_summaries[pc_idx].get('high', 'None')
                     pc_info['neg'] = self.topic_summaries[pc_idx].get('low', 'None')
                     
-                # Generate descriptive name based on dominant effect
-                pc_info['name'] = self._generate_pc_name(pc_idx, pc_info['corrs'], pc_info['pos'], pc_info['neg'])
+                # Use manual name if provided, otherwise use dash
+                if pc_names and pc_idx in pc_names:
+                    pc_info['name'] = pc_names[pc_idx]
+                else:
+                    pc_info['name'] = '-'
             else:
                 pc_info['pos'] = 'loading...'
                 pc_info['neg'] = 'loading...'
@@ -227,61 +234,6 @@ class HAAMVisualizer:
             
         return metrics
     
-    def _generate_pc_name(self, pc_idx: int, corrs: List[float], pos_keywords: str, neg_keywords: str) -> str:
-        """
-        Generate a descriptive name for a PC based on its effects and topics.
-        
-        Parameters
-        ----------
-        pc_idx : int
-            PC index (0-based)
-        corrs : List[float]
-            Correlations [Y, AI, HU]
-        pos_keywords : str
-            Positive keywords
-        neg_keywords : str
-            Negative keywords
-            
-        Returns
-        -------
-        str
-            Descriptive name for the PC
-        """
-        # Determine dominant effect
-        abs_corrs = [abs(c) for c in corrs]
-        max_idx = np.argmax(abs_corrs)
-        outcomes = ['Y', 'AI', 'HU']
-        
-        # Check if effects are aligned (all same sign)
-        non_zero_corrs = [c for c in corrs if abs(c) > 0.005]
-        if len(non_zero_corrs) > 1:
-            aligned = all(c * non_zero_corrs[0] > 0 for c in non_zero_corrs)
-        else:
-            aligned = False
-        
-        # Special cases based on patterns
-        if aligned and len(non_zero_corrs) >= 2:
-            # All effects in same direction
-            if abs_corrs[1] > abs_corrs[2]:  # AI > Human
-                return "AI-Dominant Signal"
-            elif abs_corrs[2] > abs_corrs[1]:  # Human > AI
-                return "Human-Dominant Signal"
-            else:
-                return "Aligned Signal"
-        elif abs(corrs[0]) < 0.01 and abs(corrs[1]) < 0.01 and abs(corrs[2]) < 0.01:
-            return "Weak Signal"
-        elif abs(corrs[1]) > 0.1 and abs(corrs[2]) < 0.05:
-            return "AI-Specific"
-        elif abs(corrs[2]) > 0.1 and abs(corrs[1]) < 0.05:
-            return "Human-Specific"
-        else:
-            # Default: use dominant outcome
-            if max_idx == 0:
-                return "Criterion Factor"
-            elif max_idx == 1:
-                return "AI Factor"
-            else:
-                return "Human Factor"
     
     def create_mini_visualization(self,
                                  n_components: int = 200,
