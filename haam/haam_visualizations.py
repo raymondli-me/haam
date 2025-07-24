@@ -947,9 +947,9 @@ class HAAMVisualizer:
                 <!-- Residual Correlations -->
                 <g transform="translate(300, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Residual Corr. (C)</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">C(AI, HU): <tspan font-weight="600" fill="#9333ea">%%C_AI_HU%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">C(Y, AI): <tspan font-weight="600">%%C_Y_AI%%</tspan></text>
-                    <text x="0" y="65" font-size="12" fill="#334155">C(Y, HU): <tspan font-weight="600">%%C_Y_HU%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">C(Y, AI): <tspan font-weight="600">%%C_Y_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">C(Y, HU): <tspan font-weight="600">%%C_Y_HU%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">C(AI, HU): <tspan font-weight="600" fill="#9333ea">%%C_AI_HU%%</tspan></text>
                 </g>
                 
                 <!-- Value-Prediction Correlations -->
@@ -965,7 +965,7 @@ class HAAMVisualizer:
                     <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim.</text>
                     <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, ÂI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, ĤU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
-                    <text x="0" y="65" font-size="12" fill="#334155">r(ÂI, ĤU): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
+                    <text x="0" y="65" font-size="12" fill="#334155">r(ĤU, ÂI): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- PoMA Analysis -->
