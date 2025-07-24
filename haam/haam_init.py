@@ -143,14 +143,14 @@ class HAAM:
                 umap_n_components=self.umap_n_components
             )
             
-            # Get top PCs
-            top_pcs = self.analysis.get_top_pcs(n_top=20, ranking_method='triple')
+            # Get ALL PCs (not just top ones)
+            all_pcs = list(range(self.n_components))
             
-            # Get topic summaries for all top PCs
+            # Get topic summaries for ALL PCs with many topics
             self.topic_summaries = self.topic_analyzer.create_topic_summary_for_pcs(
-                top_pcs,
-                n_keywords=5,
-                n_topics_per_side=5
+                all_pcs,  # All 200 PCs
+                n_keywords=10,  # More keywords per topic
+                n_topics_per_side=30  # Top 30 and bottom 30
             )
         else:
             print("\n3. Skipping topic analysis (no texts provided)")

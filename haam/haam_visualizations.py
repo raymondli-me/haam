@@ -90,11 +90,21 @@ class HAAMVisualizer:
             if pc_idx in self.topic_summaries:
                 # Handle both old and new format
                 if 'high_topics' in self.topic_summaries[pc_idx]:
-                    # New format - join first few topics
-                    high_topics = self.topic_summaries[pc_idx]['high_topics'][:2]
-                    low_topics = self.topic_summaries[pc_idx]['low_topics'][:2]
-                    pc_info['pos'] = ' | '.join(high_topics) if high_topics else 'None'
-                    pc_info['neg'] = ' | '.join(low_topics) if low_topics else 'None'
+                    # New format - show first topic only for visualization
+                    high_topics = self.topic_summaries[pc_idx]['high_topics'][:1]
+                    low_topics = self.topic_summaries[pc_idx]['low_topics'][:1]
+                    # Extract just the first few keywords from each topic
+                    if high_topics and high_topics[0] != 'No significant high topics':
+                        keywords = high_topics[0].split(' | ')[:3]
+                        pc_info['pos'] = ', '.join(keywords)
+                    else:
+                        pc_info['pos'] = 'None'
+                    
+                    if low_topics and low_topics[0] != 'No significant low topics':
+                        keywords = low_topics[0].split(' | ')[:3]
+                        pc_info['neg'] = ', '.join(keywords)
+                    else:
+                        pc_info['neg'] = 'None'
                 else:
                     # Old format
                     pc_info['pos'] = self.topic_summaries[pc_idx].get('high', 'None')
