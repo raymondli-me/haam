@@ -23,7 +23,9 @@ class TopicAnalyzer:
     def __init__(self, texts: List[str], 
                  embeddings: np.ndarray,
                  pca_features: np.ndarray,
-                 min_cluster_size: int = 10):
+                 min_cluster_size: int = 5,
+                 min_samples: int = 3,
+                 cluster_selection_epsilon: float = 0.0):
         """
         Initialize topic analyzer.
         
@@ -36,12 +38,18 @@ class TopicAnalyzer:
         pca_features : np.ndarray
             PCA-transformed features
         min_cluster_size : int
-            Minimum cluster size for HDBSCAN
+            Minimum cluster size for HDBSCAN (default: 5 for fine-grained clusters)
+        min_samples : int
+            Minimum samples for core points (default: 3)
+        cluster_selection_epsilon : float
+            Epsilon for cluster selection (default: 0.0)
         """
         self.texts = texts
         self.embeddings = embeddings
         self.pca_features = pca_features
         self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
+        self.cluster_selection_epsilon = cluster_selection_epsilon
         
         # Perform clustering
         self._cluster_documents()
@@ -60,9 +68,10 @@ class TopicAnalyzer:
         # Base parameters
         params = {
             'min_cluster_size': self.min_cluster_size,
-            'min_samples': 5,
+            'min_samples': self.min_samples,
             'metric': 'euclidean',
-            'cluster_selection_epsilon': 0.0
+            'cluster_selection_epsilon': self.cluster_selection_epsilon,
+            'cluster_selection_method': 'eom'  # Use EOM for better small clusters
         }
         
         # Add prediction_data only if supported
@@ -229,7 +238,8 @@ class TopicAnalyzer:
     
     def create_topic_summary_for_pcs(self, 
                                     pc_indices: List[int],
-                                    n_keywords: int = 3) -> Dict[int, Dict[str, str]]:
+                                    n_keywords: int = 5,
+                                    n_topics_per_side: int = 3) -> Dict[int, Dict[str, List[str]]]:
         """
         Create concise topic summaries for specified PCs.
         
@@ -239,34 +249,38 @@ class TopicAnalyzer:
             PC indices to summarize
         n_keywords : int
             Number of keywords to show per topic
+        n_topics_per_side : int
+            Number of high/low topics to include
             
         Returns
         -------
-        Dict[int, Dict[str, str]]
-            PC index -> {'high': keywords, 'low': keywords}
+        Dict[int, Dict[str, List[str]]]
+            PC index -> {'high_topics': [...], 'low_topics': [...]}
         """
         summaries = {}
         
         for pc_idx in pc_indices:
-            high_low = self.get_pc_high_low_topics(pc_idx, n_high=1, n_low=1)
+            high_low = self.get_pc_high_low_topics(
+                pc_idx, 
+                n_high=n_topics_per_side, 
+                n_low=n_topics_per_side
+            )
             
-            # Extract keywords
-            high_kw = 'none'
-            low_kw = 'none'
-            
-            if high_low['high']:
-                high_topic = high_low['high'][0]
-                kw_list = high_topic['keywords'].split(' | ')[:n_keywords]
-                high_kw = ', '.join(kw_list)
+            # Extract high topics
+            high_topics = []
+            for topic in high_low['high']:
+                kw_list = topic['keywords'].split(' | ')[:n_keywords]
+                high_topics.append(' | '.join(kw_list))
                 
-            if high_low['low']:
-                low_topic = high_low['low'][0]
-                kw_list = low_topic['keywords'].split(' | ')[:n_keywords]
-                low_kw = ', '.join(kw_list)
+            # Extract low topics  
+            low_topics = []
+            for topic in high_low['low']:
+                kw_list = topic['keywords'].split(' | ')[:n_keywords]
+                low_topics.append(' | '.join(kw_list))
                 
             summaries[pc_idx] = {
-                'high': high_kw,
-                'low': low_kw,
+                'high_topics': high_topics if high_topics else ['No significant high topics'],
+                'low_topics': low_topics if low_topics else ['No significant low topics'],
                 'name': f'PC{pc_idx + 1}'  # 1-based for display
             }
             

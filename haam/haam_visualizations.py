@@ -17,6 +17,20 @@ from typing import Dict, List, Optional, Tuple, Union
 import os
 
 
+class NumpyEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles numpy types."""
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.floating):
+            return float(obj)
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if pd.isna(obj):
+            return None
+        return super(NumpyEncoder, self).default(obj)
+
+
 class HAAMVisualizer:
     """
     Create visualizations for HAAM analysis results.
@@ -102,7 +116,7 @@ class HAAMVisualizer:
         # Insert data
         html_content = html_template.replace(
             '%%PC_DATA%%', 
-            json.dumps(pc_data, indent=2)
+            json.dumps(pc_data, indent=2, cls=NumpyEncoder)
         )
         
         # Insert R² values
@@ -165,7 +179,7 @@ class HAAMVisualizer:
         # Insert data
         html_content = html_template.replace(
             '%%COEFFICIENT_DATA%%',
-            json.dumps(coef_data, indent=2)
+            json.dumps(coef_data, indent=2, cls=NumpyEncoder)
         )
         
         if output_file:

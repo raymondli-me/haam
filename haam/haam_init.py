@@ -31,7 +31,10 @@ class HAAM:
                  embeddings: Optional[Union[np.ndarray, pd.DataFrame]] = None,
                  texts: Optional[List[str]] = None,
                  n_components: int = 200,
-                 auto_run: bool = True):
+                 auto_run: bool = True,
+                 min_cluster_size: int = 5,
+                 min_samples: int = 3,
+                 cluster_selection_epsilon: float = 0.0):
         """
         Initialize HAAM analysis.
         
@@ -51,6 +54,12 @@ class HAAM:
             Number of PCA components
         auto_run : bool, default=True
             Whether to automatically run the full analysis
+        min_cluster_size : int, default=5
+            Minimum cluster size for HDBSCAN (smaller = more fine-grained)
+        min_samples : int, default=3
+            Minimum samples for core points in HDBSCAN
+        cluster_selection_epsilon : float, default=0.0
+            Epsilon for HDBSCAN cluster selection
         """
         # Convert inputs to numpy arrays
         self.criterion = self._to_numpy(criterion)
@@ -64,6 +73,9 @@ class HAAM:
             
         self.texts = texts
         self.n_components = n_components
+        self.min_cluster_size = min_cluster_size
+        self.min_samples = min_samples
+        self.cluster_selection_epsilon = cluster_selection_epsilon
         
         # Initialize components
         self.analysis = None
@@ -120,14 +132,21 @@ class HAAM:
             self.topic_analyzer = TopicAnalyzer(
                 texts=self.texts,
                 embeddings=self.analysis.embeddings,
-                pca_features=self.analysis.results['pca_features']
+                pca_features=self.analysis.results['pca_features'],
+                min_cluster_size=self.min_cluster_size,
+                min_samples=self.min_samples,
+                cluster_selection_epsilon=self.cluster_selection_epsilon
             )
             
             # Get top PCs
-            top_pcs = self.analysis.get_top_pcs(n_top=9, ranking_method='triple')
+            top_pcs = self.analysis.get_top_pcs(n_top=20, ranking_method='triple')
             
-            # Get topic summaries
-            self.topic_summaries = self.topic_analyzer.create_topic_summary_for_pcs(top_pcs)
+            # Get topic summaries for all top PCs
+            self.topic_summaries = self.topic_analyzer.create_topic_summary_for_pcs(
+                top_pcs,
+                n_keywords=5,
+                n_topics_per_side=5
+            )
         else:
             print("\n3. Skipping topic analysis (no texts provided)")
             self.topic_summaries = {}
