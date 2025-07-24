@@ -75,7 +75,7 @@ class HAAMVisualizer:
         for i, pc_idx in enumerate(pc_indices[:9]):  # Max 9 PCs
             pc_info = {
                 'pc': pc_idx + 1,  # 1-based for display
-                'name': f'PC{pc_idx + 1}',
+                'name': '',  # Will be set based on topics
                 'corrs': []
             }
             
@@ -102,20 +102,24 @@ class HAAMVisualizer:
                         keywords = high_topics[0].split(' | ')[:3]
                         pc_info['pos'] = ', '.join(keywords)
                     else:
-                        pc_info['pos'] = 'None'
+                        pc_info['pos'] = ''  # Empty instead of 'None'
                     
                     if low_topics and low_topics[0] != 'No significant low topics':
                         keywords = low_topics[0].split(' | ')[:3]
                         pc_info['neg'] = ', '.join(keywords)
                     else:
-                        pc_info['neg'] = 'None'
+                        pc_info['neg'] = ''  # Empty instead of 'None'
                 else:
                     # Old format
                     pc_info['pos'] = self.topic_summaries[pc_idx].get('high', 'None')
                     pc_info['neg'] = self.topic_summaries[pc_idx].get('low', 'None')
+                    
+                # Generate descriptive name based on dominant effect
+                pc_info['name'] = self._generate_pc_name(pc_idx, pc_info['corrs'], pc_info['pos'], pc_info['neg'])
             else:
                 pc_info['pos'] = 'loading...'
                 pc_info['neg'] = 'loading...'
+                pc_info['name'] = ''
                 
             # Add position for visualization (3x3 grid)
             row = i // 3
@@ -222,6 +226,62 @@ class HAAMVisualizer:
             metrics['unmodeled_hu'] = 55.4
             
         return metrics
+    
+    def _generate_pc_name(self, pc_idx: int, corrs: List[float], pos_keywords: str, neg_keywords: str) -> str:
+        """
+        Generate a descriptive name for a PC based on its effects and topics.
+        
+        Parameters
+        ----------
+        pc_idx : int
+            PC index (0-based)
+        corrs : List[float]
+            Correlations [Y, AI, HU]
+        pos_keywords : str
+            Positive keywords
+        neg_keywords : str
+            Negative keywords
+            
+        Returns
+        -------
+        str
+            Descriptive name for the PC
+        """
+        # Determine dominant effect
+        abs_corrs = [abs(c) for c in corrs]
+        max_idx = np.argmax(abs_corrs)
+        outcomes = ['Y', 'AI', 'HU']
+        
+        # Check if effects are aligned (all same sign)
+        non_zero_corrs = [c for c in corrs if abs(c) > 0.005]
+        if len(non_zero_corrs) > 1:
+            aligned = all(c * non_zero_corrs[0] > 0 for c in non_zero_corrs)
+        else:
+            aligned = False
+        
+        # Special cases based on patterns
+        if aligned and len(non_zero_corrs) >= 2:
+            # All effects in same direction
+            if abs_corrs[1] > abs_corrs[2]:  # AI > Human
+                return "AI-Dominant Signal"
+            elif abs_corrs[2] > abs_corrs[1]:  # Human > AI
+                return "Human-Dominant Signal"
+            else:
+                return "Aligned Signal"
+        elif abs(corrs[0]) < 0.01 and abs(corrs[1]) < 0.01 and abs(corrs[2]) < 0.01:
+            return "Weak Signal"
+        elif abs(corrs[1]) > 0.1 and abs(corrs[2]) < 0.05:
+            return "AI-Specific"
+        elif abs(corrs[2]) > 0.1 and abs(corrs[1]) < 0.05:
+            return "Human-Specific"
+        else:
+            # Default: use dominant outcome
+            if max_idx == 0:
+                return "Criterion Factor"
+            elif max_idx == 1:
+                return "AI Factor"
+            else:
+                return "Human Factor"
     
     def create_mini_visualization(self,
                                  n_components: int = 200,
@@ -809,8 +869,21 @@ class HAAMVisualizer:
 
                     content.querySelector('.pc-title').textContent = `PC${data.pc}`;
                     content.querySelector('.pc-name').textContent = data.name;
-                    content.querySelector('.keywords-pos').textContent = `+ ${data.pos}`;
-                    content.querySelector('.keywords-neg').textContent = `- ${data.neg}`;
+                    
+                    // Only show keywords if they exist
+                    if (data.pos) {
+                        content.querySelector('.keywords-pos').textContent = `+ ${data.pos}`;
+                        content.querySelector('.keywords-pos').style.display = 'block';
+                    } else {
+                        content.querySelector('.keywords-pos').style.display = 'none';
+                    }
+                    
+                    if (data.neg) {
+                        content.querySelector('.keywords-neg').textContent = `- ${data.neg}`;
+                        content.querySelector('.keywords-neg').style.display = 'block';
+                    } else {
+                        content.querySelector('.keywords-neg').style.display = 'none';
+                    }
                     
                     const dotsContainer = content.querySelector('.dots');
                     
