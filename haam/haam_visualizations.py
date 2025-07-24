@@ -51,8 +51,18 @@ class HAAMVisualizer:
         self.results = haam_results
         self.topic_summaries = topic_summaries or {}
     
-    def _display_in_colab(self, content, title=""):
-        """Display HTML content in Google Colab if available."""
+    def _display_in_colab(self, content, title="", height=1200):
+        """Display HTML content in Google Colab if available.
+        
+        Parameters
+        ----------
+        content : str
+            HTML content to display
+        title : str
+            Optional title to display above the content
+        height : int
+            Height of the iframe in pixels (default: 1200 for high resolution)
+        """
         try:
             from IPython.display import display, HTML, IFrame
             import google.colab
@@ -72,8 +82,8 @@ class HAAMVisualizer:
                 base64_html = base64.b64encode(html_bytes).decode('utf-8')
                 data_url = f"data:text/html;base64,{base64_html}"
                 
-                # Display in iframe with appropriate height
-                display(IFrame(src=data_url, width='100%', height='800'))
+                # Display in iframe with high resolution for publication quality
+                display(IFrame(src=data_url, width='100%', height=height))
             else:
                 # For HTML snippets
                 display(HTML(content))
@@ -231,8 +241,9 @@ class HAAMVisualizer:
                 f.write(html_content)
             print(f"Main visualization saved to: {output_file}")
             
-            # Display in Colab if available
-            self._display_in_colab(html_content, "Main HAAM Visualization")
+            # Display in Colab if available with high resolution
+            # Use 1500px height for main visualization to ensure publication quality
+            self._display_in_colab(html_content, "Main HAAM Visualization", height=1500)
             
         return html_content
     
@@ -424,7 +435,8 @@ class HAAMVisualizer:
             print(f"Mini visualization saved to: {output_file}")
             
             # Display in Colab if available
-            self._display_in_colab(html_content, "Mini Coefficient Grid")
+            # Mini grid can use smaller height
+            self._display_in_colab(html_content, "Mini Coefficient Grid", height=800)
             
         return html_content
     
