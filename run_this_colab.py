@@ -152,6 +152,11 @@
                   if total != 0:
                       poma = 1 - (direct / total)
                       print(f"  {outcome}: PoMA = {poma:.3f} (Total={total:.3f}, Direct={direct:.3f}, Indirect={indirect:.3f})")
+  
+  # Display full coefficient tables and model summaries
+  print("\n📊 FULL MODEL RESULTS:")
+  if hasattr(haam.analysis, 'display_all_results'):
+      haam.analysis.display_all_results()
 
   # =======================================================================
   =======

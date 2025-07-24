@@ -842,10 +842,26 @@ class HAAMAnalysis:
             return
             
         if in_colab:
-            for df in dataframes:
+            for i, df in enumerate(dataframes):
                 if isinstance(df, pd.DataFrame):
-                    display(HTML("<h4>" + df.name + "</h4>" if hasattr(df, 'name') else "<h4>Results</h4>"))
-                    display(df)
+                    # Determine table title based on content
+                    if 'PC' in df.columns and any(col.endswith('_coef') for col in df.columns):
+                        title = "Post-LASSO Coefficients (Standardized)"
+                        # Show only first 20 rows for coefficients
+                        display(HTML(f"<h3>{title}</h3>"))
+                        display(df.head(20).style.format({
+                            col: '{:.4f}' for col in df.columns if col.endswith(('_coef', '_se'))
+                        }).set_caption("Showing first 20 PCs"))
+                    elif 'Outcome' in df.columns and 'R2_cv' in df.columns:
+                        title = "Model Summary Statistics"
+                        display(HTML(f"<h3>{title}</h3>"))
+                        display(df.style.format({
+                            'R2_insample': '{:.4f}',
+                            'R2_cv': '{:.4f}',
+                            'Alpha': '{:.2e}'
+                        }))
+                    else:
+                        display(df)
                     
     def display_mediation_results(self):
         """Display mediation analysis results with visualization in Colab."""
@@ -971,3 +987,78 @@ class HAAMAnalysis:
             # Not in Colab, just print results
             print("\nMediation Analysis Results:")
             print(med_df.to_string(index=False))
+    
+    def display_all_results(self):
+        """Display all HAAM results including coefficients and statistics in Colab."""
+        try:
+            from IPython.display import display, HTML
+            import google.colab
+            
+            # Display header
+            display(HTML("""
+            <div style="margin: 20px 0;">
+                <h2>HAAM Analysis Results</h2>
+            </div>
+            """))
+            
+            # Create and display coefficient matrix
+            if 'debiased_lasso' in self.results:
+                # Create coefficient dataframe
+                coef_data = []
+                for pc_idx in range(self.n_components):
+                    row = {'PC': pc_idx + 1}
+                    for outcome in ['SC', 'AI', 'HU']:
+                        if outcome in self.results['debiased_lasso']:
+                            row[f'{outcome}_coef'] = self.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
+                            # Check if PC was selected by LASSO
+                            row[f'{outcome}_selected'] = '✓' if self.results['debiased_lasso'][outcome]['selected'][pc_idx] else ''
+                        else:
+                            row[f'{outcome}_coef'] = 0
+                            row[f'{outcome}_selected'] = ''
+                    coef_data.append(row)
+                
+                coef_df = pd.DataFrame(coef_data)
+                
+                # Display coefficient table
+                display(HTML("<h3>Post-LASSO Standardized Coefficients</h3>"))
+                
+                # Show top 20 PCs with highest absolute coefficients
+                # Calculate max absolute coefficient for each PC
+                coef_df['max_abs_coef'] = coef_df[['SC_coef', 'AI_coef', 'HU_coef']].abs().max(axis=1)
+                top_pcs = coef_df.nlargest(20, 'max_abs_coef')
+                
+                # Format for display
+                styled_df = top_pcs[['PC', 'SC_coef', 'SC_selected', 'AI_coef', 'AI_selected', 'HU_coef', 'HU_selected']].style\
+                    .format({
+                        'SC_coef': '{:.4f}',
+                        'AI_coef': '{:.4f}',
+                        'HU_coef': '{:.4f}'
+                    })\
+                    .set_caption("Top 20 PCs by maximum absolute coefficient (✓ = selected by LASSO)")
+                
+                display(styled_df)
+            
+            # Display model summary
+            if 'debiased_lasso' in self.results:
+                summary_data = []
+                for outcome in ['SC', 'AI', 'HU']:
+                    if outcome in self.results['debiased_lasso']:
+                        res = self.results['debiased_lasso'][outcome]
+                        summary_data.append({
+                            'Outcome': 'Y' if outcome == 'SC' else outcome,
+                            'N_selected': res['n_selected'],
+                            'R²(CV)': res['r2_cv'],
+                            'R²(In-sample)': res['r2_insample'],
+                            'LASSO α': res['lasso_alpha']
+                        })
+                
+                summary_df = pd.DataFrame(summary_data)
+                display(HTML("<h3>Model Performance Summary</h3>"))
+                display(summary_df.style.format({
+                    'R²(CV)': '{:.4f}',
+                    'R²(In-sample)': '{:.4f}',
+                    'LASSO α': '{:.2e}'
+                }))
+                
+        except ImportError:
+            print("Display functions require Google Colab environment")

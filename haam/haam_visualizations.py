@@ -192,9 +192,10 @@ class HAAMVisualizer:
             'HU': 'Human judgment coefficients',
             'AI': 'AI judgment coefficients',
             'Y': 'Criterion (Y) coefficients',
+            'SC': 'Criterion (Y) coefficients',  # Handle SC as alias for Y
             'triple': 'Triple selection (top 3 from each outcome)'
         }
-        ranking_desc = ranking_descriptions.get(ranking_method, 'Human judgment coefficients')
+        ranking_desc = ranking_descriptions.get(ranking_method, f'{ranking_method} coefficients')
         
         # Generate HTML
         html_template = self._get_main_visualization_template()
@@ -872,7 +873,7 @@ class HAAMVisualizer:
             </defs>
 
             <!-- Main Title -->
-            <text x="750" y="35" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e293b">Detailed Human-AI Accuracy Model (HAAM) Framework</text>
+            <text x="750" y="35" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e293b">Human-AI Accuracy Model (HAAM) Framework</text>
 
             <!-- Nodes -->
             <g id="criterion-node">
@@ -986,7 +987,7 @@ class HAAMVisualizer:
                 
                 <!-- Policy Similarities -->
                 <g transform="translate(600, 10)">
-                    <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim.</text>
+                    <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim. (G)</text>
                     <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, ÂI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, ĤU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">r(ĤU, ÂI): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
