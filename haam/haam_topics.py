@@ -23,9 +23,8 @@ class TopicAnalyzer:
     def __init__(self, texts: List[str], 
                  embeddings: np.ndarray,
                  pca_features: np.ndarray,
-                 min_cluster_size: int = 3,
+                 min_cluster_size: int = 10,
                  min_samples: int = 2,
-                 cluster_selection_epsilon: float = 0.0,
                  umap_n_components: int = 3):
         """
         Initialize topic analyzer.
@@ -39,11 +38,9 @@ class TopicAnalyzer:
         pca_features : np.ndarray
             PCA-transformed features
         min_cluster_size : int
-            Minimum cluster size for HDBSCAN (default: 3 for fine-grained clusters)
+            Minimum cluster size for HDBSCAN (default: 10, matches BERTopic-style)
         min_samples : int
             Minimum samples for core points (default: 2)
-        cluster_selection_epsilon : float
-            Epsilon for cluster selection (default: 0.0)
         umap_n_components : int
             Number of UMAP components for clustering (default: 3)
         """
@@ -52,7 +49,6 @@ class TopicAnalyzer:
         self.pca_features = pca_features
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
-        self.cluster_selection_epsilon = cluster_selection_epsilon
         self.umap_n_components = umap_n_components
         
         # Perform clustering
@@ -69,10 +65,10 @@ class TopicAnalyzer:
         print("  Reducing dimensions with UMAP for clustering...")
         import umap
         
-        # Use UMAP to get better clustering space
+        # Use UMAP to get better clustering space (matching my_colab.py exactly)
         umap_reducer = umap.UMAP(
             n_components=self.umap_n_components,  # 3D by default
-            n_neighbors=15,
+            n_neighbors=5,  # Changed from 15 to 5 to match my_colab.py
             min_dist=0.0,
             metric='cosine',
             random_state=42
@@ -86,14 +82,15 @@ class TopicAnalyzer:
         import inspect
         hdbscan_params = inspect.signature(HDBSCAN.__init__).parameters
         
-        # Base parameters
+        # Base parameters (matching my_colab.py exactly)
         params = {
             'min_cluster_size': self.min_cluster_size,
             'min_samples': self.min_samples,
+            'cluster_selection_method': 'eom',
             'metric': 'euclidean',
-            'cluster_selection_epsilon': self.cluster_selection_epsilon,
-            'cluster_selection_method': 'eom'  # Use EOM for better small clusters
+            'core_dist_n_jobs': -1  # Added to match my_colab.py
         }
+        # Note: cluster_selection_epsilon removed to match my_colab.py
         
         # Add prediction_data only if supported
         if 'prediction_data' in hdbscan_params:
@@ -107,45 +104,80 @@ class TopicAnalyzer:
         print(f"Found {self.n_clusters} clusters")
         
     def _extract_keywords(self, n_keywords: int = 10):
-        """Extract keywords for each cluster using c-TF-IDF."""
-        print("Extracting cluster keywords...")
+        """
+        Extract keywords for each cluster using c-TF-IDF (BERTopic style).
         
-        # Prepare documents by cluster
-        cluster_docs = {}
-        for idx, label in enumerate(self.cluster_labels):
-            if label != -1:  # Skip noise
-                if label not in cluster_docs:
-                    cluster_docs[label] = []
-                cluster_docs[label].append(self.texts[idx])
+        c-TF-IDF formula: tf_td * log(1 + (A / tf_t))
+        where:
+            tf_td = term frequency in topic d
+            A = average number of words per topic
+            tf_t = total term frequency across all documents
+        """
+        print("Extracting cluster keywords using c-TF-IDF...")
+        from sklearn.feature_extraction.text import CountVectorizer
         
-        # Create merged documents per cluster
-        merged_docs = []
-        cluster_ids = []
-        for cluster_id, docs in sorted(cluster_docs.items()):
-            merged_docs.append(' '.join(docs))
-            cluster_ids.append(cluster_id)
-        
-        # TF-IDF on merged documents
-        vectorizer = TfidfVectorizer(
-            max_features=100,
+        # Initialize CountVectorizer with exact parameters from my_colab.py
+        vectorizer = CountVectorizer(
+            max_features=1000,  # Changed from 100 to match my_colab.py
             stop_words='english',
-            ngram_range=(1, 2),
+            ngram_range=(1, 2),  # Include unigrams and bigrams
             min_df=2
         )
         
-        tfidf_matrix = vectorizer.fit_transform(merged_docs)
-        feature_names = vectorizer.get_feature_names_out()
-        
-        # Extract top keywords per cluster
+        # Get unique topics (excluding noise)
+        unique_topics = np.unique(self.cluster_labels[self.cluster_labels != -1])
         self.topic_keywords = {}
         
-        for idx, cluster_id in enumerate(cluster_ids):
-            # Get top keywords
-            tfidf_scores = tfidf_matrix[idx].toarray()[0]
-            top_indices = np.argsort(tfidf_scores)[::-1][:n_keywords]
+        # First, fit vectorizer on all documents
+        vectorizer.fit(self.texts)
+        vocab = vectorizer.get_feature_names_out()
+        
+        # Create document-term matrix for all docs
+        doc_term_matrix = vectorizer.transform(self.texts)
+        
+        print(f"  Processing {len(unique_topics)} topics with c-TF-IDF...")
+        
+        # Calculate c-TF-IDF for each topic
+        for topic_id in unique_topics:
+            # Get documents in this topic
+            topic_mask = self.cluster_labels == topic_id
             
-            keywords = [feature_names[i] for i in top_indices if tfidf_scores[i] > 0]
-            self.topic_keywords[cluster_id] = ' | '.join(keywords[:5])  # Top 5 for display
+            if np.sum(topic_mask) < 3:  # Skip very small topics
+                self.topic_keywords[topic_id] = f"Topic {topic_id} (n={np.sum(topic_mask)})"
+                continue
+                
+            try:
+                # Get document-term matrix for this topic
+                topic_doc_term = doc_term_matrix[topic_mask]
+                
+                # Calculate term frequency in this topic
+                tf_topic = np.array(topic_doc_term.sum(axis=0)).flatten()
+                
+                # Calculate total term frequency across all documents
+                tf_all = np.array(doc_term_matrix.sum(axis=0)).flatten()
+                
+                # Calculate c-TF-IDF using BERTopic's formula
+                avg_words_per_topic = np.sum(tf_all) / len(unique_topics)
+                
+                # Avoid division by zero
+                tf_all_safe = np.where(tf_all == 0, 1, tf_all)
+                
+                # Calculate c-TF-IDF
+                ctfidf = tf_topic * np.log(1 + (avg_words_per_topic / tf_all_safe))
+                
+                # Normalize
+                ctfidf_norm = ctfidf / np.max(ctfidf) if np.max(ctfidf) > 0 else ctfidf
+                
+                # Get top keywords
+                top_indices = ctfidf_norm.argsort()[-n_keywords:][::-1]
+                top_keywords = [vocab[idx] for idx in top_indices]
+                
+                # Create keyword string (top 5 for display)
+                self.topic_keywords[topic_id] = " | ".join(top_keywords[:5])
+                
+            except Exception as e:
+                print(f"  Warning: Could not extract keywords for topic {topic_id}: {e}")
+                self.topic_keywords[topic_id] = f"Topic {topic_id}"
             
     def get_pc_topic_associations(self, 
                                  pc_indices: Optional[List[int]] = None,

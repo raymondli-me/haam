@@ -32,9 +32,8 @@ class HAAM:
                  texts: Optional[List[str]] = None,
                  n_components: int = 200,
                  auto_run: bool = True,
-                 min_cluster_size: int = 3,
+                 min_cluster_size: int = 10,
                  min_samples: int = 2,
-                 cluster_selection_epsilon: float = 0.0,
                  umap_n_components: int = 3):
         """
         Initialize HAAM analysis.
@@ -55,12 +54,10 @@ class HAAM:
             Number of PCA components
         auto_run : bool, default=True
             Whether to automatically run the full analysis
-        min_cluster_size : int, default=3
-            Minimum cluster size for HDBSCAN (smaller = more fine-grained)
+        min_cluster_size : int, default=10
+            Minimum cluster size for HDBSCAN (matches BERTopic-style clustering)
         min_samples : int, default=2
             Minimum samples for core points in HDBSCAN
-        cluster_selection_epsilon : float, default=0.0
-            Epsilon for HDBSCAN cluster selection
         umap_n_components : int, default=3
             Number of UMAP components for clustering (3D by default)
         """
@@ -78,7 +75,6 @@ class HAAM:
         self.n_components = n_components
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
-        self.cluster_selection_epsilon = cluster_selection_epsilon
         self.umap_n_components = umap_n_components
         
         # Initialize components
@@ -139,7 +135,6 @@ class HAAM:
                 pca_features=self.analysis.results['pca_features'],
                 min_cluster_size=self.min_cluster_size,
                 min_samples=self.min_samples,
-                cluster_selection_epsilon=self.cluster_selection_epsilon,
                 umap_n_components=self.umap_n_components
             )
             
@@ -402,15 +397,16 @@ class HAAM:
         """
         print(f"\nComputing {n_components}D UMAP...")
         
-        # Compute UMAP
+        # Compute UMAP (matching my_colab.py parameters)
         reducer = umap.UMAP(
             n_components=n_components,
-            n_neighbors=15,
-            min_dist=0.1,
-            metric='euclidean',
+            n_neighbors=5,  # Changed from 15 to match my_colab.py
+            min_dist=0.0,  # Changed from 0.1 to match my_colab.py
+            metric='cosine',  # Changed from euclidean to match my_colab.py
             random_state=42
         )
         
+        # Use embeddings directly for UMAP (not PCA features)
         umap_embeddings = reducer.fit_transform(self.analysis.embeddings)
         
         # Create visualization
