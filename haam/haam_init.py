@@ -34,7 +34,8 @@ class HAAM:
                  auto_run: bool = True,
                  min_cluster_size: int = 10,
                  min_samples: int = 2,
-                 umap_n_components: int = 3):
+                 umap_n_components: int = 3,
+                 standardize: bool = False):
         """
         Initialize HAAM analysis with enhanced parameters.
         
@@ -66,6 +67,9 @@ class HAAM:
             Minimum samples for core points in HDBSCAN
         umap_n_components : int, default=3
             Number of UMAP components for clustering (3D by default)
+        standardize : bool, default=False
+            Whether to standardize X and Y variables for both total effects and DML calculations.
+            When True, all coefficients will be in standardized units.
         """
         # Convert inputs to numpy arrays
         self.criterion = self._to_numpy(criterion)
@@ -82,6 +86,7 @@ class HAAM:
         self.min_cluster_size = min_cluster_size
         self.min_samples = min_samples
         self.umap_n_components = umap_n_components
+        self.standardize = standardize
         
         # Initialize components
         self.analysis = None
@@ -125,7 +130,8 @@ class HAAM:
             human_judgment=self.human_judgment,
             embeddings=self.embeddings,
             texts=self.texts,
-            n_components=self.n_components
+            n_components=self.n_components,
+            standardize=self.standardize
         )
         
         # Step 2: Fit debiased lasso
