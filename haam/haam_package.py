@@ -248,6 +248,9 @@ class HAAMAnalysis:
             lasso.fit(X[split_idx[:n_half]], y_std[split_idx[:n_half]])
             selected = np.where(np.abs(lasso.coef_) > 1e-10)[0]
             
+            # Store LASSO coefficients for global metrics
+            lasso_coefs = lasso.coef_.copy()
+            
             # Stage 2: OLS on second half
             if len(selected) > 0:
                 X_selected = X[split_idx[n_half:]][:, selected]
@@ -278,6 +281,9 @@ class HAAMAnalysis:
             lasso.fit(X, y_std)
             selected = np.where(np.abs(lasso.coef_) > 1e-10)[0]
             
+            # Store LASSO coefficients for global metrics
+            lasso_coefs = lasso.coef_.copy()
+            
             if len(selected) > 0:
                 X_selected = X[:, selected]
                 ols_model = sm.OLS(y_std, sm.add_constant(X_selected))
@@ -296,22 +302,38 @@ class HAAMAnalysis:
                 r2_insample = 0.0
                 ols_result = None
         
-        # Calculate CV R²
+        # Calculate CV R² for LASSO (for global metrics)
+        if 'lasso_coefs' in locals():
+            # Calculate R² using LASSO predictions
+            y_pred_lasso = X @ lasso_coefs
+            r2_lasso = 1 - np.sum((y_std - y_pred_lasso)**2) / np.sum((y_std - y_std.mean())**2)
+            r2_cv_lasso = self._calculate_cv_r2(X, y_std, selected, lasso_coefs)
+        else:
+            lasso_coefs = coefs  # Fallback if not using sample splitting
+            r2_lasso = r2_insample
+            r2_cv_lasso = r2_cv
+            
+        # Calculate CV R² for post-LASSO OLS (for display)
         r2_cv = self._calculate_cv_r2(X, y_std, selected, coefs)
         
         # Unstandardize coefficients
         coefs_original = coefs * scaler_y.scale_[0]
         ses_original = ses * scaler_y.scale_[0]
+        lasso_coefs_original = lasso_coefs * scaler_y.scale_[0]
         
         return {
-            'coefs': coefs_original,
-            'coefs_std': coefs,
+            'coefs': coefs_original,  # Post-LASSO OLS coefficients (for display)
+            'coefs_std': coefs,  # Post-LASSO OLS standardized (for display)
+            'lasso_coefs': lasso_coefs_original,  # LASSO coefficients (for global metrics)
+            'lasso_coefs_std': lasso_coefs,  # LASSO standardized (for global metrics)
             'ses': ses_original,
             'ses_std': ses,
             'selected': selected,
             'n_selected': len(selected),
-            'r2_insample': r2_insample,
-            'r2_cv': r2_cv,
+            'r2_insample': r2_insample,  # Post-LASSO OLS R²
+            'r2_cv': r2_cv,  # Post-LASSO OLS CV R²
+            'r2_lasso': r2_lasso,  # LASSO R²
+            'r2_cv_lasso': r2_cv_lasso,  # LASSO CV R²
             'lasso_alpha': lasso.alpha_ if 'lasso' in locals() else None,
             'scaler_y': scaler_y,
             'ols_result': ols_result
@@ -664,12 +686,13 @@ class HAAMAnalysis:
     
     def _calculate_policy_similarities(self):
         """Calculate correlations between model predictions (policy similarities)."""
-        # Get predictions from each model
+        # Get predictions from each model using LASSO coefficients
         predictions = {}
         for outcome in ['SC', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 X = self.results['pca_features']
-                coefs = self.results['debiased_lasso'][outcome]['coefs_std']
+                # Use LASSO coefficients for global metrics
+                coefs = self.results['debiased_lasso'][outcome]['lasso_coefs_std']
                 predictions[outcome] = X @ coefs
         
         # Calculate pairwise correlations between predictions
@@ -853,8 +876,8 @@ class HAAMAnalysis:
                 summary_data.append({
                     'Outcome': outcome,
                     'N_selected': res['n_selected'],
-                    'R2_insample': res['r2_insample'],
-                    'R2_cv': res['r2_cv'],
+                    'R2_insample': res['r2_lasso'],  # Use LASSO R² for global metrics
+                    'R2_cv': res['r2_cv_lasso'],  # Use LASSO CV R² for global metrics
                     'Alpha': res['lasso_alpha']
                 })
         
