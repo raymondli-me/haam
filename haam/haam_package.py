@@ -45,7 +45,8 @@ class HAAMAnalysis:
                  embeddings: Optional[np.ndarray] = None,
                  texts: Optional[List[str]] = None,
                  n_components: int = 200,
-                 random_state: int = 42):
+                 random_state: int = 42,
+                 standardize: bool = False):
         """
         Initialize HAAM Analysis.
         
@@ -65,12 +66,16 @@ class HAAMAnalysis:
             Number of PCA components to extract
         random_state : int, default=42
             Random state for reproducibility
+        standardize : bool, default=False
+            Whether to standardize X and Y variables for both total effects and DML calculations.
+            When True, all coefficients will be in standardized units.
         """
         self.criterion = self._validate_input(criterion, "criterion")
         self.ai_judgment = self._validate_input(ai_judgment, "ai_judgment")
         self.human_judgment = self._validate_input(human_judgment, "human_judgment")
         self.n_components = n_components
         self.random_state = random_state
+        self.standardize = standardize
         
         # Handle embeddings
         if embeddings is None and texts is None:
@@ -379,9 +384,20 @@ class HAAMAnalysis:
         if 'SC' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
             if mask.sum() > 50:
+                # Prepare data for total effect
+                X_data = self.criterion[mask]
+                y_data = self.ai_judgment[mask]
+                
+                # Standardize if requested
+                if self.standardize:
+                    scaler_X = StandardScaler()
+                    scaler_y = StandardScaler()
+                    X_data = scaler_X.fit_transform(X_data.reshape(-1, 1)).ravel()
+                    y_data = scaler_y.fit_transform(y_data.reshape(-1, 1)).ravel()
+                
                 # Simple OLS for total effect
-                X = sm.add_constant(self.criterion[mask])
-                y = self.ai_judgment[mask]
+                X = sm.add_constant(X_data)
+                y = y_data
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML residual-on-residual regression
@@ -403,8 +419,20 @@ class HAAMAnalysis:
         if 'SC' in self.results['debiased_lasso'] and 'HU' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
             if mask.sum() > 50:
-                X = sm.add_constant(self.criterion[mask])
-                y = self.human_judgment[mask]
+                # Prepare data for total effect
+                X_data = self.criterion[mask]
+                y_data = self.human_judgment[mask]
+                
+                # Standardize if requested
+                if self.standardize:
+                    scaler_X = StandardScaler()
+                    scaler_y = StandardScaler()
+                    X_data = scaler_X.fit_transform(X_data.reshape(-1, 1)).ravel()
+                    y_data = scaler_y.fit_transform(y_data.reshape(-1, 1)).ravel()
+                
+                # Simple OLS for total effect
+                X = sm.add_constant(X_data)
+                y = y_data
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML
@@ -426,8 +454,20 @@ class HAAMAnalysis:
         if 'HU' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.human_judgment) | np.isnan(self.ai_judgment))
             if mask.sum() > 50:
-                X = sm.add_constant(self.human_judgment[mask])
-                y = self.ai_judgment[mask]
+                # Prepare data for total effect
+                X_data = self.human_judgment[mask]
+                y_data = self.ai_judgment[mask]
+                
+                # Standardize if requested
+                if self.standardize:
+                    scaler_X = StandardScaler()
+                    scaler_y = StandardScaler()
+                    X_data = scaler_X.fit_transform(X_data.reshape(-1, 1)).ravel()
+                    y_data = scaler_y.fit_transform(y_data.reshape(-1, 1)).ravel()
+                
+                # Simple OLS for total effect
+                X = sm.add_constant(X_data)
+                y = y_data
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML
@@ -488,14 +528,20 @@ class HAAMAnalysis:
             Y_train, Y_test = Y_var[train_idx], Y_var[test_idx]
             pca_train, pca_test = pca_features[train_idx], pca_features[test_idx]
             
-            # Standardize
-            scaler_X = StandardScaler()
-            scaler_Y = StandardScaler()
-            
-            X_train_std = scaler_X.fit_transform(X_train.reshape(-1, 1)).ravel()
-            X_test_std = scaler_X.transform(X_test.reshape(-1, 1)).ravel()
-            Y_train_std = scaler_Y.fit_transform(Y_train.reshape(-1, 1)).ravel()
-            Y_test_std = scaler_Y.transform(Y_test.reshape(-1, 1)).ravel()
+            # Standardize if requested
+            if self.standardize:
+                scaler_X = StandardScaler()
+                scaler_Y = StandardScaler()
+                
+                X_train_std = scaler_X.fit_transform(X_train.reshape(-1, 1)).ravel()
+                X_test_std = scaler_X.transform(X_test.reshape(-1, 1)).ravel()
+                Y_train_std = scaler_Y.fit_transform(Y_train.reshape(-1, 1)).ravel()
+                Y_test_std = scaler_Y.transform(Y_test.reshape(-1, 1)).ravel()
+            else:
+                X_train_std = X_train
+                X_test_std = X_test
+                Y_train_std = Y_train
+                Y_test_std = Y_test
             
             # Get residuals for X (treatment)
             if len(X_selected) > 0:
