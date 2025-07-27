@@ -218,13 +218,16 @@ class HAAMAnalysis:
             # Store results
             self.results['debiased_lasso'][outcome_name] = results
             
-            # Print summary
+            # Print summary (showing LASSO R² for consistency with global metrics)
             print(f"  Variables selected: {results['n_selected']}")
-            print(f"  R² (in-sample): {results['r2_insample']:.4f}")
-            print(f"  R² (CV): {results['r2_cv']:.4f}")
+            print(f"  R² (in-sample): {results['r2_lasso']:.4f}")
+            print(f"  R² (CV): {results['r2_cv_lasso']:.4f}")
             
         # Calculate treatment effects
         self._calculate_treatment_effects()
+        
+        # Display global statistics
+        self.display_global_statistics()
         
         return self.results['debiased_lasso']
     
@@ -307,14 +310,14 @@ class HAAMAnalysis:
             # Calculate R² using LASSO predictions
             y_pred_lasso = X @ lasso_coefs
             r2_lasso = 1 - np.sum((y_std - y_pred_lasso)**2) / np.sum((y_std - y_std.mean())**2)
-            r2_cv_lasso = self._calculate_cv_r2(X, y_std, selected, lasso_coefs)
+            r2_cv_lasso, r2_folds_lasso = self._calculate_cv_r2_lasso(X, y_std, lasso.alpha_ if 'lasso' in locals() else 0.1)
         else:
             lasso_coefs = coefs  # Fallback if not using sample splitting
             r2_lasso = r2_insample
-            r2_cv_lasso = r2_cv
+            r2_cv_lasso, r2_folds_lasso = r2_cv, [r2_cv] * 5
             
         # Calculate CV R² for post-LASSO OLS (for display)
-        r2_cv = self._calculate_cv_r2(X, y_std, selected, coefs)
+        r2_cv, r2_folds = self._calculate_cv_r2(X, y_std, selected, coefs)
         
         # Unstandardize coefficients
         coefs_original = coefs * scaler_y.scale_[0]
@@ -332,18 +335,20 @@ class HAAMAnalysis:
             'n_selected': len(selected),
             'r2_insample': r2_insample,  # Post-LASSO OLS R²
             'r2_cv': r2_cv,  # Post-LASSO OLS CV R²
+            'r2_folds': r2_folds,  # Post-LASSO OLS fold R²s
             'r2_lasso': r2_lasso,  # LASSO R²
             'r2_cv_lasso': r2_cv_lasso,  # LASSO CV R²
+            'r2_folds_lasso': r2_folds_lasso,  # LASSO fold R²s
             'lasso_alpha': lasso.alpha_ if 'lasso' in locals() else None,
             'scaler_y': scaler_y,
             'ols_result': ols_result
         }
     
     def _calculate_cv_r2(self, X: np.ndarray, y: np.ndarray, 
-                        selected: np.ndarray, coefs: np.ndarray) -> float:
-        """Calculate cross-validated R²."""
+                        selected: np.ndarray, coefs: np.ndarray) -> Tuple[float, List[float]]:
+        """Calculate cross-validated R² and return both mean and individual fold scores."""
         if len(selected) == 0:
-            return 0.0
+            return 0.0, [0.0] * 5
             
         kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
         cv_scores = []
@@ -367,7 +372,31 @@ class HAAMAnalysis:
                 r2 = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
                 cv_scores.append(r2)
         
-        return np.mean(cv_scores)
+        return np.mean(cv_scores), cv_scores
+    
+    def _calculate_cv_r2_lasso(self, X: np.ndarray, y: np.ndarray, alpha: float) -> Tuple[float, List[float]]:
+        """Calculate cross-validated R² for LASSO model with individual fold scores."""
+        kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
+        cv_scores = []
+        
+        for train_idx, test_idx in kf.split(X):
+            X_train, X_test = X[train_idx], X[test_idx]
+            y_train, y_test = y[train_idx], y[test_idx]
+            
+            # Fit LASSO on training data
+            lasso = LassoCV(cv=5, random_state=self.random_state, max_iter=2000)
+            lasso.fit(X_train, y_train)
+            
+            # Predict on test data
+            y_pred = lasso.predict(X_test)
+            
+            # Calculate R²
+            ss_res = np.sum((y_test - y_pred) ** 2)
+            ss_tot = np.sum((y_test - y_test.mean()) ** 2)
+            r2 = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+            cv_scores.append(r2)
+        
+        return np.mean(cv_scores), cv_scores
     
     def _calculate_treatment_effects(self):
         """Calculate comprehensive metrics including DML treatment effects, residual correlations, and policy similarities."""
@@ -423,7 +452,7 @@ class HAAMAnalysis:
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML residual-on-residual regression
-                check_beta = self._calculate_dml_check_beta(
+                check_beta_results = self._calculate_dml_check_beta(
                     self.criterion[mask], 
                     self.ai_judgment[mask], 
                     self.results['pca_features'][mask],
@@ -434,7 +463,12 @@ class HAAMAnalysis:
                 self.results['total_effects']['Y_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': check_beta
+                    'check_beta': check_beta_results['coefficient'],
+                    'check_beta_se': check_beta_results['se'],
+                    'check_beta_t': check_beta_results['t_stat'],
+                    'check_beta_pval': check_beta_results['pval'],
+                    'check_beta_ci_lower': check_beta_results['ci_lower'],
+                    'check_beta_ci_upper': check_beta_results['ci_upper']
                 }
         
         # Y -> HU (direct effect of criterion on human)
@@ -458,7 +492,7 @@ class HAAMAnalysis:
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML
-                check_beta = self._calculate_dml_check_beta(
+                check_beta_results = self._calculate_dml_check_beta(
                     self.criterion[mask], 
                     self.human_judgment[mask], 
                     self.results['pca_features'][mask],
@@ -469,7 +503,12 @@ class HAAMAnalysis:
                 self.results['total_effects']['Y_HU'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': check_beta
+                    'check_beta': check_beta_results['coefficient'],
+                    'check_beta_se': check_beta_results['se'],
+                    'check_beta_t': check_beta_results['t_stat'],
+                    'check_beta_pval': check_beta_results['pval'],
+                    'check_beta_ci_lower': check_beta_results['ci_lower'],
+                    'check_beta_ci_upper': check_beta_results['ci_upper']
                 }
         
         # HU -> AI (effect of human on AI)
@@ -493,7 +532,7 @@ class HAAMAnalysis:
                 model = sm.OLS(y, X).fit()
                 
                 # Calculate beta_check using DML
-                check_beta = self._calculate_dml_check_beta(
+                check_beta_results = self._calculate_dml_check_beta(
                     self.human_judgment[mask], 
                     self.ai_judgment[mask], 
                     self.results['pca_features'][mask],
@@ -504,7 +543,12 @@ class HAAMAnalysis:
                 self.results['total_effects']['HU_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
-                    'check_beta': check_beta
+                    'check_beta': check_beta_results['coefficient'],
+                    'check_beta_se': check_beta_results['se'],
+                    'check_beta_t': check_beta_results['t_stat'],
+                    'check_beta_pval': check_beta_results['pval'],
+                    'check_beta_ci_lower': check_beta_results['ci_lower'],
+                    'check_beta_ci_upper': check_beta_results['ci_upper']
                 }
     
     def _calculate_dml_check_beta(self, X_var, Y_var, pca_features, X_selected, Y_selected):
@@ -534,8 +578,14 @@ class HAAMAnalysis:
             
         Returns
         -------
-        float
-            DML check beta coefficient
+        dict
+            Dictionary containing:
+            - 'coefficient': DML check beta coefficient
+            - 'se': Robust standard error
+            - 't_stat': t-statistic
+            - 'pval': p-value
+            - 'ci_lower': Lower 95% CI
+            - 'ci_upper': Upper 95% CI
         """
         from sklearn.model_selection import KFold
         
@@ -543,6 +593,8 @@ class HAAMAnalysis:
         kf = KFold(n_splits=5, shuffle=True, random_state=self.random_state)
         
         check_betas = []
+        all_residuals_X = np.zeros_like(X_var, dtype=float)
+        all_residuals_Y = np.zeros_like(Y_var, dtype=float)
         
         for train_idx, test_idx in kf.split(X_var):
             # Split data
@@ -591,13 +643,52 @@ class HAAMAnalysis:
             else:
                 Y_resid_test = Y_test_std
             
+            # Store residuals for variance calculation
+            all_residuals_X[test_idx] = X_resid_test
+            all_residuals_Y[test_idx] = Y_resid_test
+            
             # Residual-on-residual regression
             if len(X_resid_test) > 10:  # Need enough test samples
                 model_resid = sm.OLS(Y_resid_test, sm.add_constant(X_resid_test)).fit()
                 check_betas.append(model_resid.params[1])
         
-        # Return average check beta across folds
-        return np.mean(check_betas) if check_betas else 0.0
+        # Calculate DML estimator and robust standard errors
+        if check_betas:
+            # Point estimate: average across folds
+            theta = np.mean(check_betas)
+            
+            # Calculate sandwich estimator variance following Chernozhukov et al. (2018)
+            # σ̂²_θ = (1/n) * Σ(e_Xi * e_Yi - θ̂ * e_Xi²)² / (1/n Σ e_Xi²)²
+            n = len(X_var)
+            psi = (all_residuals_X * all_residuals_Y) - (theta * all_residuals_X**2)
+            variance = (1/n) * np.sum(psi**2) / (np.mean(all_residuals_X**2)**2)
+            se = np.sqrt(variance / n)
+            
+            # Calculate test statistics
+            t_stat = theta / se if se > 0 else 0
+            pval = 2 * stats.norm.cdf(-np.abs(t_stat))
+            
+            # 95% confidence interval
+            ci_lower = theta - 1.96 * se
+            ci_upper = theta + 1.96 * se
+            
+            return {
+                'coefficient': theta,
+                'se': se,
+                't_stat': t_stat,
+                'pval': pval,
+                'ci_lower': ci_lower,
+                'ci_upper': ci_upper
+            }
+        else:
+            return {
+                'coefficient': 0.0,
+                'se': 0.0,
+                't_stat': 0.0,
+                'pval': 1.0,
+                'ci_lower': 0.0,
+                'ci_upper': 0.0
+            }
     
     def _calculate_residual_correlations(self):
         """
@@ -1056,6 +1147,289 @@ class HAAMAnalysis:
             # Not in Colab, just print results
             print("\nMediation Analysis Results:")
             print(med_df.to_string(index=False))
+    
+    def display_global_statistics(self):
+        """Display comprehensive global statistics table with all metrics."""
+        print("\n" + "="*120)
+        print(" " * 40 + "COMPREHENSIVE GLOBAL STATISTICS")
+        print("="*120)
+        
+        # Prepare data for the table
+        stats_data = []
+        paths = [('Y → AI', 'Y_AI', 'SC', 'AI'), 
+                 ('Y → HU', 'Y_HU', 'SC', 'HU'), 
+                 ('HU → AI', 'HU_AI', 'HU', 'AI')]
+        
+        for path_name, path_key, X_name, Y_name in paths:
+            row = {'Path': path_name}
+            
+            # Total Effects (β*)
+            if path_key in self.results.get('total_effects', {}):
+                te = self.results['total_effects'][path_key]
+                row['Total Effect (β*)'] = f"{te['coefficient']:.3f}"
+                row['β* SE'] = f"{te['se']:.3f}"
+                row['β* p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
+            else:
+                row['Total Effect (β*)'] = 'N/A'
+                row['β* SE'] = 'N/A'
+                row['β* p-value'] = 'N/A'
+            
+            # DML Check Beta (β̌*)
+            if path_key in self.results.get('total_effects', {}):
+                te = self.results['total_effects'][path_key]
+                if 'check_beta' in te:
+                    row['DML β̌*'] = f"{te['check_beta']:.3f}"
+                    if 'check_beta_se' in te:
+                        row['β̌* SE'] = f"{te['check_beta_se']:.3f}"
+                        row['β̌* t-stat'] = f"{te['check_beta_t']:.2f}"
+                        row['β̌* p-value'] = f"{te['check_beta_pval']:.3e}"
+                        row['β̌* 95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
+                    else:
+                        row['β̌* SE'] = 'N/A'
+                        row['β̌* t-stat'] = 'N/A'
+                        row['β̌* p-value'] = 'N/A'
+                        row['β̌* 95% CI'] = 'N/A'
+                else:
+                    row['DML β̌*'] = 'N/A'
+                    row['β̌* SE'] = 'N/A'
+                    row['β̌* t-stat'] = 'N/A'
+                    row['β̌* p-value'] = 'N/A'
+                    row['β̌* 95% CI'] = 'N/A'
+            
+            # Residual Correlations (C)
+            c_key = f'{X_name}_{Y_name}' if X_name != 'SC' else f'Y_{Y_name}'
+            if 'residual_correlations' in self.results:
+                row['C'] = f"{self.results['residual_correlations'].get(c_key, 0):.3f}"
+            else:
+                row['C'] = 'N/A'
+            
+            # Value-Prediction Correlations
+            if X_name in self.results.get('debiased_lasso', {}):
+                # Get R² from LASSO model
+                r2 = self.results['debiased_lasso'][X_name].get('r2_cv_lasso', 0)
+                row[f'r({X_name},Ĥ{X_name})'] = f"{np.sqrt(r2):.3f}"
+            else:
+                row[f'r({X_name},Ĥ{X_name})'] = 'N/A'
+            
+            # Policy Similarities (G)
+            g_key = path_key.replace('_', '_')  # Already in correct format
+            if 'policy_similarities' in self.results:
+                row['G'] = f"{self.results['policy_similarities'].get(g_key, 0):.3f}"
+            else:
+                row['G'] = 'N/A'
+            
+            # PoMA
+            if 'mediation_analysis' in self.results:
+                med_key = Y_name if Y_name in ['AI', 'HU'] else path_key
+                if med_key in self.results['mediation_analysis']:
+                    med = self.results['mediation_analysis'][med_key]
+                    if med['total_effect'] != 0:
+                        poma = (med['indirect_effect'] / med['total_effect']) * 100
+                        row['PoMA'] = f"{poma:.1f}%"
+                    else:
+                        row['PoMA'] = 'N/A'
+                else:
+                    row['PoMA'] = 'N/A'
+            else:
+                row['PoMA'] = 'N/A'
+            
+            stats_data.append(row)
+        
+        # Create DataFrame
+        stats_df = pd.DataFrame(stats_data)
+        
+        # Display the table
+        print("\nTable 1: Global Model Statistics")
+        print("-" * 120)
+        print(stats_df.to_string(index=False))
+        print("-" * 120)
+        
+        # Add footnotes
+        print("\nNotes:")
+        print("- β*: Total effect from simple OLS regression")
+        print("- β̌*: DML check beta (direct effect after controlling for PC mediators)")
+        print("- SE: Robust standard errors (HC0 for OLS, sandwich estimator for DML)")
+        print("- 95% CI: Calculated as β̌* ± 1.96*SE")
+        print("- C: Residual correlation after controlling for selected PCs")
+        print("- G: Policy similarity (correlation between LASSO predictions)")
+        print("- PoMA: Proportion of Mediated Accuracy = (indirect effect / total effect) × 100%")
+        
+        # Feature Selection Summary
+        print("\n\nTable 2: Feature Selection Summary")
+        print("-" * 60)
+        if 'debiased_lasso' in self.results:
+            for outcome in ['SC', 'AI', 'HU']:
+                if outcome in self.results['debiased_lasso']:
+                    res = self.results['debiased_lasso'][outcome]
+                    print(f"{outcome} model: {res['n_selected']} PCs selected (R² = {res['r2_cv_lasso']:.3f})")
+        
+        # Comprehensive R² Table
+        print("\n\nTable 3: Comprehensive R² Values (LASSO Models)")
+        print("-" * 140)
+        r2_data = []
+        
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome in self.results['debiased_lasso']:
+                res = self.results['debiased_lasso'][outcome]
+                row = {
+                    'Model': outcome,
+                    'R² In-Sample': f"{res['r2_lasso']:.4f}",
+                    'R² CV Mean': f"{res['r2_cv_lasso']:.4f}"
+                }
+                
+                # Add individual fold R² values
+                if 'r2_folds_lasso' in res and len(res['r2_folds_lasso']) == 5:
+                    for i, fold_r2 in enumerate(res['r2_folds_lasso']):
+                        row[f'R² Fold {i+1}'] = f"{fold_r2:.4f}"
+                else:
+                    for i in range(5):
+                        row[f'R² Fold {i+1}'] = 'N/A'
+                
+                r2_data.append(row)
+        
+        r2_df = pd.DataFrame(r2_data)
+        print(r2_df.to_string(index=False))
+        print("-" * 140)
+        print("Note: In-sample R² uses all data; CV R² uses 5-fold cross-validation with LASSO refitted on each training fold")
+        
+        return stats_df
+    
+    def export_global_statistics(self, output_dir: str = None):
+        """Export comprehensive global statistics to CSV files."""
+        if output_dir is None:
+            output_dir = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Export global statistics
+        stats_df = self.display_global_statistics()
+        stats_path = os.path.join(output_dir, 'haam_global_statistics.csv')
+        stats_df.to_csv(stats_path, index=False)
+        print(f"\n✓ Global statistics exported to: {stats_path}")
+        
+        # Export detailed DML statistics
+        dml_data = []
+        for path_name, path_key in [('Y → AI', 'Y_AI'), ('Y → HU', 'Y_HU'), ('HU → AI', 'HU_AI')]:
+            if path_key in self.results.get('total_effects', {}):
+                te = self.results['total_effects'][path_key]
+                dml_data.append({
+                    'Path': path_name,
+                    'Total_Effect': te['coefficient'],
+                    'Total_Effect_SE': te['se'],
+                    'Check_Beta': te.get('check_beta', np.nan),
+                    'Check_Beta_SE': te.get('check_beta_se', np.nan),
+                    'Check_Beta_t': te.get('check_beta_t', np.nan),
+                    'Check_Beta_pval': te.get('check_beta_pval', np.nan),
+                    'Check_Beta_CI_Lower': te.get('check_beta_ci_lower', np.nan),
+                    'Check_Beta_CI_Upper': te.get('check_beta_ci_upper', np.nan)
+                })
+        
+        if dml_data:
+            dml_df = pd.DataFrame(dml_data)
+            dml_path = os.path.join(output_dir, 'haam_dml_statistics.csv')
+            dml_df.to_csv(dml_path, index=False)
+            print(f"✓ DML statistics exported to: {dml_path}")
+        
+        # Export post-LASSO coefficients with inference
+        self.export_coefficients_with_inference(output_dir)
+        
+        # Export R² values
+        r2_data = []
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome in self.results['debiased_lasso']:
+                res = self.results['debiased_lasso'][outcome]
+                row = {
+                    'Model': outcome,
+                    'R2_InSample': res['r2_lasso'],
+                    'R2_CV_Mean': res['r2_cv_lasso']
+                }
+                
+                # Add individual fold R² values
+                if 'r2_folds_lasso' in res and len(res['r2_folds_lasso']) == 5:
+                    for i, fold_r2 in enumerate(res['r2_folds_lasso']):
+                        row[f'R2_Fold_{i+1}'] = fold_r2
+                else:
+                    for i in range(5):
+                        row[f'R2_Fold_{i+1}'] = np.nan
+                
+                r2_data.append(row)
+        
+        if r2_data:
+            r2_df = pd.DataFrame(r2_data)
+            r2_path = os.path.join(output_dir, 'haam_r2_values.csv')
+            r2_df.to_csv(r2_path, index=False)
+            print(f"✓ R² values exported to: {r2_path}")
+        
+        return stats_path
+    
+    def export_coefficients_with_inference(self, output_dir: str = None):
+        """Export both LASSO and post-LASSO coefficients with statistical inference."""
+        if output_dir is None:
+            output_dir = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Export LASSO coefficients (for prediction)
+        lasso_data = []
+        for pc_idx in range(self.n_components):
+            row = {'PC': pc_idx + 1}
+            for outcome in ['SC', 'AI', 'HU']:
+                if outcome in self.results['debiased_lasso']:
+                    row[f'{outcome}_lasso_coef'] = self.results['debiased_lasso'][outcome]['lasso_coefs_std'][pc_idx]
+                else:
+                    row[f'{outcome}_lasso_coef'] = 0
+            lasso_data.append(row)
+        
+        lasso_df = pd.DataFrame(lasso_data)
+        lasso_path = os.path.join(output_dir, 'haam_lasso_coefficients.csv')
+        lasso_df.to_csv(lasso_path, index=False)
+        print(f"✓ LASSO coefficients exported to: {lasso_path}")
+        
+        # Export post-LASSO coefficients with inference
+        postlasso_data = []
+        for pc_idx in range(self.n_components):
+            row = {'PC': pc_idx + 1}
+            
+            for outcome in ['SC', 'AI', 'HU']:
+                if outcome in self.results['debiased_lasso']:
+                    res = self.results['debiased_lasso'][outcome]
+                    coef = res['coefs_std'][pc_idx]
+                    se = res['ses_std'][pc_idx]
+                    
+                    # Calculate inference statistics
+                    if se > 0 and pc_idx in res['selected']:
+                        t_stat = coef / se
+                        pval = 2 * stats.norm.cdf(-abs(t_stat))
+                        ci_lower = coef - 1.96 * se
+                        ci_upper = coef + 1.96 * se
+                    else:
+                        t_stat = 0
+                        pval = 1.0
+                        ci_lower = 0
+                        ci_upper = 0
+                    
+                    row[f'{outcome}_coef'] = coef
+                    row[f'{outcome}_se'] = se
+                    row[f'{outcome}_t'] = t_stat
+                    row[f'{outcome}_pval'] = pval
+                    row[f'{outcome}_ci_lower'] = ci_lower
+                    row[f'{outcome}_ci_upper'] = ci_upper
+                    row[f'{outcome}_selected'] = 1 if pc_idx in res['selected'] else 0
+                else:
+                    row[f'{outcome}_coef'] = 0
+                    row[f'{outcome}_se'] = 0
+                    row[f'{outcome}_t'] = 0
+                    row[f'{outcome}_pval'] = 1.0
+                    row[f'{outcome}_ci_lower'] = 0
+                    row[f'{outcome}_ci_upper'] = 0
+                    row[f'{outcome}_selected'] = 0
+            
+            postlasso_data.append(row)
+        
+        postlasso_df = pd.DataFrame(postlasso_data)
+        postlasso_path = os.path.join(output_dir, 'haam_postlasso_coefficients_inference.csv')
+        postlasso_df.to_csv(postlasso_path, index=False)
+        print(f"✓ Post-LASSO coefficients with inference exported to: {postlasso_path}")
+        
+        return lasso_path, postlasso_path
     
     def display_all_results(self):
         """Display all HAAM results including coefficients and statistics in Colab."""
