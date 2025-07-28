@@ -1215,23 +1215,19 @@ class HAAMAnalysis:
                     row['Coefficient'] = f"{te['check_beta']:.3f}"
                     if 'check_beta_se' in te:
                         row['SE'] = f"{te['check_beta_se']:.3f}"
-                        row['t-stat'] = f"{te['check_beta_t']:.2f}"
+                        row['z-stat'] = f"{te['check_beta_t']:.2f}"
                         row['p-value'] = f"{te['check_beta_pval']:.3e}"
-                        # Add degrees of freedom (n - 1 for DML with cross-fitting)
-                        row['df'] = te.get('check_beta_n', 0) - 1 if 'check_beta_n' in te else 'N/A'
                         row['95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
                     else:
                         row['SE'] = 'N/A'
-                        row['t-stat'] = 'N/A'
+                        row['z-stat'] = 'N/A'
                         row['p-value'] = 'N/A'
-                        row['df'] = 'N/A'
                         row['95% CI'] = 'N/A'
                 else:
                     row['Coefficient'] = 'N/A'
                     row['SE'] = 'N/A'
-                    row['t-stat'] = 'N/A'
+                    row['z-stat'] = 'N/A'
                     row['p-value'] = 'N/A'
-                    row['df'] = 'N/A'
                     row['95% CI'] = 'N/A'
             
             dml_data.append(row)
