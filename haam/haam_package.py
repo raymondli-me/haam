@@ -232,6 +232,9 @@ class HAAMAnalysis:
         # Display coefficient tables
         self.display_coefficient_tables()
         
+        # Automatically export results
+        self.export_results()
+        
         return self.results['debiased_lasso']
     
     def _fit_single_debiased_lasso(self, X: np.ndarray, y: np.ndarray, 
@@ -1058,10 +1061,14 @@ class HAAMAnalysis:
             'summary': summary_path
         }
         
-        print(f"\nResults exported to:")
-        print(f"  - LASSO model outputs: {lasso_path}")
-        print(f"  - Post-LASSO model outputs: {post_lasso_path}")
-        print(f"  - Model summary: {summary_path}")
+        print(f"\n{'='*80}")
+        print("MODEL RESULTS EXPORTED:")
+        print(f"{'='*80}")
+        print(f"✓ LASSO coefficients & model info → {os.path.basename(lasso_path)}")
+        print(f"✓ Post-LASSO coefficients with inference → {os.path.basename(post_lasso_path)}")
+        print(f"✓ Model summary statistics → {os.path.basename(summary_path)}")
+        print(f"\nDirectory: {output_dir}")
+        print(f"{'='*80}")
         
         # Display in Colab if available
         self._display_in_colab(lasso_df, post_lasso_df, summary_df)
@@ -1473,11 +1480,10 @@ class HAAMAnalysis:
             # Selected features
             selected_pcs = [i+1 for i in res['selected']]  # Convert to 1-based
             if res['n_selected'] > 0:
-                print(f"\nSELECTED FEATURES:")
-                if res['n_selected'] <= 20:
-                    print(f"  PCs: {selected_pcs}")
-                else:
-                    print(f"  PCs: {selected_pcs[:20]} ... and {res['n_selected']-20} more")
+                print(f"\nSELECTED FEATURES ({res['n_selected']} total):")
+                # Print all selected PCs in rows of 20 for readability
+                for i in range(0, len(selected_pcs), 20):
+                    print(f"  PCs: {selected_pcs[i:i+20]}")
             
             # Non-zero coefficients only (for display)
             print(f"\nNON-ZERO COEFFICIENTS (Post-LASSO OLS with robust SEs):")
@@ -1493,8 +1499,8 @@ class HAAMAnalysis:
                                   key=lambda i: abs(res['coefs_std'][i]), 
                                   reverse=True)
                 
-                # Show top 20 non-zero coefficients
-                for i, idx in enumerate(sorted_idx[:20]):
+                # Show all non-zero coefficients
+                for i, idx in enumerate(sorted_idx):
                     pc_num = idx + 1
                     lasso_coef = res['lasso_coefs_std'][idx]
                     ols_coef = res['coefs_std'][idx]
@@ -1511,19 +1517,12 @@ class HAAMAnalysis:
                     else:
                         print(f"{pc_num:>4} {lasso_coef:>12.4f} {ols_coef:>12.4f} {se:>12.4f} "
                               f"{'N/A':>10} {'N/A':>12} {'N/A':>24}")
-                
-                if len(sorted_idx) > 20:
-                    print(f"... ({len(sorted_idx) - 20} more non-zero coefficients not shown)")
             else:
                 print("  No features selected")
                 
-        # Export instructions
+        # Note about automatic export
         print(f"\n\n{'='*80}")
-        print("To export these results, use: analysis.export_results()")
-        print("This will create:")
-        print("  - lasso_model_outputs.csv (complete LASSO results)")
-        print("  - post_lasso_model_outputs.csv (complete post-LASSO results with inference)")
-        print("  - model_summary.csv (summary statistics)")
+        print("Note: Results will be automatically exported to CSV files.")
         print(f"{'='*80}")
     
     def export_global_statistics(self, output_dir: str = None):
