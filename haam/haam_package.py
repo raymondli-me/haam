@@ -464,6 +464,10 @@ class HAAMAnalysis:
                     'coefficient': model.params[1],
                     'se': model.bse[1],
                     'n_obs': mask.sum(),  # Store sample size for degrees of freedom
+                    'f_statistic': model.fvalue,  # F-statistic
+                    'f_pvalue': model.f_pvalue,  # F-statistic p-value
+                    'rsquared': model.rsquared,  # R-squared
+                    'rsquared_adj': model.rsquared_adj,  # Adjusted R-squared
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
@@ -506,6 +510,10 @@ class HAAMAnalysis:
                     'coefficient': model.params[1],
                     'se': model.bse[1],
                     'n_obs': mask.sum(),  # Store sample size for degrees of freedom
+                    'f_statistic': model.fvalue,  # F-statistic
+                    'f_pvalue': model.f_pvalue,  # F-statistic p-value
+                    'rsquared': model.rsquared,  # R-squared
+                    'rsquared_adj': model.rsquared_adj,  # Adjusted R-squared
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
@@ -548,6 +556,10 @@ class HAAMAnalysis:
                     'coefficient': model.params[1],
                     'se': model.bse[1],
                     'n_obs': mask.sum(),  # Store sample size for degrees of freedom
+                    'f_statistic': model.fvalue,  # F-statistic
+                    'f_pvalue': model.f_pvalue,  # F-statistic p-value
+                    'rsquared': model.rsquared,  # R-squared
+                    'rsquared_adj': model.rsquared_adj,  # Adjusted R-squared
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
@@ -1234,6 +1246,43 @@ class HAAMAnalysis:
         
         dml_df = pd.DataFrame(dml_data)
         print(dml_df.to_string(index=False))
+        
+        # Section 1C: OLS Model Statistics
+        print("\n\n1C. OLS MODEL STATISTICS")
+        print("-" * 100)
+        
+        ols_stats_data = []
+        for path_name, path_key, X_name, Y_name in paths:
+            row = {'Path': path_name}
+            
+            if path_key in self.results.get('total_effects', {}):
+                te = self.results['total_effects'][path_key]
+                if 'f_statistic' in te:
+                    row['F-statistic'] = f"{te['f_statistic']:.2f}"
+                    # df1 = 1 (one predictor), df2 = n - 2
+                    df1 = 1
+                    df2 = te['n_obs'] - 2
+                    row['df'] = f"({df1}, {df2})"
+                    row['F p-value'] = f"{te['f_pvalue']:.3e}"
+                    row['R²'] = f"{te['rsquared']:.4f}"
+                    row['Adj. R²'] = f"{te['rsquared_adj']:.4f}"
+                else:
+                    row['F-statistic'] = 'N/A'
+                    row['df'] = 'N/A'
+                    row['F p-value'] = 'N/A'
+                    row['R²'] = 'N/A'
+                    row['Adj. R²'] = 'N/A'
+            else:
+                row['F-statistic'] = 'N/A'
+                row['df'] = 'N/A'
+                row['F p-value'] = 'N/A'
+                row['R²'] = 'N/A'
+                row['Adj. R²'] = 'N/A'
+            
+            ols_stats_data.append(row)
+        
+        ols_stats_df = pd.DataFrame(ols_stats_data)
+        print(ols_stats_df.to_string(index=False))
         
         # Section 2: Residual Correlations (C)
         print("\n\n2. RESIDUAL CORRELATIONS (C)")
