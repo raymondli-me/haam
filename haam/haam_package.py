@@ -1154,11 +1154,11 @@ class HAAMAnalysis:
         print(" " * 40 + "COMPREHENSIVE GLOBAL STATISTICS")
         print("="*120)
         
-        # Section 1: Coefficients Table (Total Effects and DML Check Betas)
-        print("\n1. COEFFICIENT ESTIMATES")
-        print("-" * 120)
+        # Section 1A: Total Effects (β)
+        print("\n1A. TOTAL EFFECTS (β)")
+        print("-" * 80)
         
-        coef_data = []
+        beta_data = []
         paths = [('Y → AI', 'Y_AI', 'SC', 'AI'), 
                  ('Y → HU', 'Y_HU', 'SC', 'HU'), 
                  ('HU → AI', 'HU_AI', 'HU', 'AI')]
@@ -1166,43 +1166,59 @@ class HAAMAnalysis:
         for path_name, path_key, X_name, Y_name in paths:
             row = {'Path': path_name}
             
-            # Total Effects (β)
             if path_key in self.results.get('total_effects', {}):
                 te = self.results['total_effects'][path_key]
-                row['β'] = f"{te['coefficient']:.3f}"
-                row['β SE'] = f"{te['se']:.3f}"
-                row['β p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
+                row['Coefficient'] = f"{te['coefficient']:.3f}"
+                row['SE'] = f"{te['se']:.3f}"
+                row['p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
+                # Calculate 95% CI for β
+                ci_lower = te['coefficient'] - 1.96 * te['se']
+                ci_upper = te['coefficient'] + 1.96 * te['se']
+                row['95% CI'] = f"[{ci_lower:.3f}, {ci_upper:.3f}]"
             else:
-                row['β'] = 'N/A'
-                row['β SE'] = 'N/A'
-                row['β p-value'] = 'N/A'
+                row['Coefficient'] = 'N/A'
+                row['SE'] = 'N/A'
+                row['p-value'] = 'N/A'
+                row['95% CI'] = 'N/A'
             
-            # DML Check Beta (β̌)
+            beta_data.append(row)
+        
+        beta_df = pd.DataFrame(beta_data)
+        print(beta_df.to_string(index=False))
+        
+        # Section 1B: DML Check Betas (β̌)
+        print("\n\n1B. DML CHECK BETAS (β̌)")
+        print("-" * 80)
+        
+        dml_data = []
+        for path_name, path_key, X_name, Y_name in paths:
+            row = {'Path': path_name}
+            
             if path_key in self.results.get('total_effects', {}):
                 te = self.results['total_effects'][path_key]
                 if 'check_beta' in te:
-                    row['β̌'] = f"{te['check_beta']:.3f}"
+                    row['Coefficient'] = f"{te['check_beta']:.3f}"
                     if 'check_beta_se' in te:
-                        row['β̌ SE'] = f"{te['check_beta_se']:.3f}"
-                        row['β̌ t-stat'] = f"{te['check_beta_t']:.2f}"
-                        row['β̌ p-value'] = f"{te['check_beta_pval']:.3e}"
-                        row['β̌ 95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
+                        row['SE'] = f"{te['check_beta_se']:.3f}"
+                        row['t-stat'] = f"{te['check_beta_t']:.2f}"
+                        row['p-value'] = f"{te['check_beta_pval']:.3e}"
+                        row['95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
                     else:
-                        row['β̌ SE'] = 'N/A'
-                        row['β̌ t-stat'] = 'N/A'
-                        row['β̌ p-value'] = 'N/A'
-                        row['β̌ 95% CI'] = 'N/A'
+                        row['SE'] = 'N/A'
+                        row['t-stat'] = 'N/A'
+                        row['p-value'] = 'N/A'
+                        row['95% CI'] = 'N/A'
                 else:
-                    row['β̌'] = 'N/A'
-                    row['β̌ SE'] = 'N/A'
-                    row['β̌ t-stat'] = 'N/A'
-                    row['β̌ p-value'] = 'N/A'
-                    row['β̌ 95% CI'] = 'N/A'
+                    row['Coefficient'] = 'N/A'
+                    row['SE'] = 'N/A'
+                    row['t-stat'] = 'N/A'
+                    row['p-value'] = 'N/A'
+                    row['95% CI'] = 'N/A'
             
-            coef_data.append(row)
+            dml_data.append(row)
         
-        coef_df = pd.DataFrame(coef_data)
-        print(coef_df.to_string(index=False))
+        dml_df = pd.DataFrame(dml_data)
+        print(dml_df.to_string(index=False))
         
         # Section 2: Residual Correlations (C)
         print("\n\n2. RESIDUAL CORRELATIONS (C)")
@@ -1299,13 +1315,13 @@ class HAAMAnalysis:
         print("- β: Total effect from simple OLS regression")
         print("- β̌: DML check beta (direct effect after controlling for PC mediators)")
         print("- SE: Robust standard errors (HC0 for OLS, sandwich estimator for DML)")
-        print("- 95% CI: Calculated as β̌ ± 1.96*SE")
+        print("- 95% CI: Calculated as coefficient ± 1.96*SE")
         print("- C: Residual correlation after controlling for selected PCs")
         print("- G: Policy similarity (correlation between LASSO predictions)")
         print("- PoMA: Proportion of Mediated Accuracy = (indirect effect / total effect) × 100%")
         print("- R² values: In-sample uses all data; CV uses 5-fold cross-validation with LASSO refitted on each fold")
         
-        return coef_df
+        return beta_df
     
     def export_global_statistics(self, output_dir: str = None):
         """Export comprehensive global statistics to CSV files."""
