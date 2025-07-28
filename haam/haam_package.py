@@ -229,6 +229,9 @@ class HAAMAnalysis:
         # Display global statistics
         self.display_global_statistics()
         
+        # Display coefficient tables
+        self.display_coefficient_tables()
+        
         return self.results['debiased_lasso']
     
     def _fit_single_debiased_lasso(self, X: np.ndarray, y: np.ndarray, 
@@ -958,26 +961,78 @@ class HAAMAnalysis:
             output_dir = os.getcwd()
         os.makedirs(output_dir, exist_ok=True)
         
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        
-        # Export coefficient matrix
-        coef_data = []
+        # Export comprehensive LASSO model outputs
+        lasso_data = []
         for pc_idx in range(self.n_components):
-            row = {'PC': pc_idx + 1}  # 1-based indexing for export
-            
             for outcome in ['SC', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
-                    row[f'{outcome}_coef'] = self.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
-                    row[f'{outcome}_se'] = self.results['debiased_lasso'][outcome]['ses_std'][pc_idx]
-                else:
-                    row[f'{outcome}_coef'] = 0
-                    row[f'{outcome}_se'] = 0
+                    res = self.results['debiased_lasso'][outcome]
+                    lasso_coef = res['lasso_coefs_std'][pc_idx]
                     
-            coef_data.append(row)
+                    # Include all PCs, marking selected ones
+                    is_selected = pc_idx in res['selected']
+                    
+                    lasso_data.append({
+                        'Outcome': outcome,
+                        'PC': pc_idx + 1,
+                        'Selected': int(is_selected),
+                        'LASSO_Coefficient': lasso_coef,
+                        'LASSO_Alpha': res['lasso_alpha'],
+                        'Model_R2_insample': res['r2_lasso'],
+                        'Model_R2_CV': res['r2_cv_lasso'],
+                        'N_selected': res['n_selected']
+                    })
         
-        coef_df = pd.DataFrame(coef_data)
-        coef_path = os.path.join(output_dir, f'{prefix}_coefficients_{timestamp}.csv')
-        coef_df.to_csv(coef_path, index=False)
+        lasso_df = pd.DataFrame(lasso_data)
+        lasso_path = os.path.join(output_dir, 'lasso_model_outputs.csv')
+        lasso_df.to_csv(lasso_path, index=False)
+        
+        # Export comprehensive post-LASSO OLS outputs with full inference
+        post_lasso_data = []
+        for pc_idx in range(self.n_components):
+            for outcome in ['SC', 'AI', 'HU']:
+                if outcome in self.results['debiased_lasso']:
+                    res = self.results['debiased_lasso'][outcome]
+                    
+                    # Get coefficients and SEs
+                    lasso_coef = res['lasso_coefs_std'][pc_idx]
+                    ols_coef = res['coefs_std'][pc_idx]
+                    se = res['ses_std'][pc_idx]
+                    
+                    # Calculate inference statistics
+                    if se > 0 and ols_coef != 0:
+                        t_stat = ols_coef / se
+                        p_val = 2 * stats.norm.cdf(-abs(t_stat))
+                        ci_lower = ols_coef - 1.96 * se
+                        ci_upper = ols_coef + 1.96 * se
+                    else:
+                        t_stat = np.nan
+                        p_val = np.nan
+                        ci_lower = np.nan
+                        ci_upper = np.nan
+                    
+                    # Include all information
+                    is_selected = pc_idx in res['selected']
+                    
+                    post_lasso_data.append({
+                        'Outcome': outcome,
+                        'PC': pc_idx + 1,
+                        'Selected': int(is_selected),
+                        'LASSO_Coefficient': lasso_coef,
+                        'PostLASSO_Coefficient': ols_coef,
+                        'Std_Error': se,
+                        't_statistic': t_stat,
+                        'p_value': p_val,
+                        'CI_95_lower': ci_lower,
+                        'CI_95_upper': ci_upper,
+                        'Model_R2_insample': res['r2_insample'],
+                        'Model_R2_CV': res['r2_cv'],
+                        'N_selected': res['n_selected']
+                    })
+        
+        post_lasso_df = pd.DataFrame(post_lasso_data)
+        post_lasso_path = os.path.join(output_dir, 'post_lasso_model_outputs.csv')
+        post_lasso_df.to_csv(post_lasso_path, index=False)
         
         # Export model summary
         summary_data = []
@@ -993,21 +1048,23 @@ class HAAMAnalysis:
                 })
         
         summary_df = pd.DataFrame(summary_data)
-        summary_path = os.path.join(output_dir, f'{prefix}_summary_{timestamp}.csv')
+        summary_path = os.path.join(output_dir, 'model_summary.csv')
         summary_df.to_csv(summary_path, index=False)
         
         # Store paths
         self.results['exports'] = {
-            'coefficients': coef_path,
+            'lasso_model_outputs': lasso_path,
+            'post_lasso_model_outputs': post_lasso_path,
             'summary': summary_path
         }
         
         print(f"\nResults exported to:")
-        print(f"  - {coef_path}")
-        print(f"  - {summary_path}")
+        print(f"  - LASSO model outputs: {lasso_path}")
+        print(f"  - Post-LASSO model outputs: {post_lasso_path}")
+        print(f"  - Model summary: {summary_path}")
         
         # Display in Colab if available
-        self._display_in_colab(coef_df, summary_df)
+        self._display_in_colab(lasso_df, post_lasso_df, summary_df)
         
         return self.results['exports']
     
@@ -1386,6 +1443,88 @@ class HAAMAnalysis:
         print("- R² values: In-sample uses all data; CV uses 5-fold cross-validation with LASSO refitted on each fold")
         
         return beta_df
+    
+    def display_coefficient_tables(self):
+        """Display comprehensive LASSO and post-LASSO model outputs."""
+        print("\n" + "="*120)
+        print(" " * 40 + "DEBIASED LASSO MODEL OUTPUTS")
+        print("="*120)
+        
+        # For each outcome, show complete model information
+        for outcome in ['SC', 'AI', 'HU']:
+            if outcome not in self.results['debiased_lasso']:
+                continue
+                
+            res = self.results['debiased_lasso'][outcome]
+            
+            print(f"\n\n{'='*80}")
+            print(f"MODEL: {outcome}")
+            print(f"{'='*80}")
+            
+            # Model Summary
+            print(f"\nMODEL SUMMARY:")
+            print(f"  LASSO Alpha (λ): {res['lasso_alpha']:.6f}")
+            print(f"  Features selected: {res['n_selected']} / {self.n_components}")
+            print(f"  LASSO R² (in-sample): {res['r2_lasso']:.4f}")
+            print(f"  LASSO R² (CV): {res['r2_cv_lasso']:.4f}")
+            print(f"  Post-LASSO R² (in-sample): {res['r2_insample']:.4f}")
+            print(f"  Post-LASSO R² (CV): {res['r2_cv']:.4f}")
+            
+            # Selected features
+            selected_pcs = [i+1 for i in res['selected']]  # Convert to 1-based
+            if res['n_selected'] > 0:
+                print(f"\nSELECTED FEATURES:")
+                if res['n_selected'] <= 20:
+                    print(f"  PCs: {selected_pcs}")
+                else:
+                    print(f"  PCs: {selected_pcs[:20]} ... and {res['n_selected']-20} more")
+            
+            # Non-zero coefficients only (for display)
+            print(f"\nNON-ZERO COEFFICIENTS (Post-LASSO OLS with robust SEs):")
+            print("-" * 80)
+            print(f"{'PC':>4} {'LASSO Coef':>12} {'OLS Coef':>12} {'Std Err':>12} {'t-stat':>10} {'p-value':>12} {'95% CI':>24}")
+            print("-" * 80)
+            
+            # Get non-zero indices
+            non_zero_idx = res['selected']
+            if len(non_zero_idx) > 0:
+                # Sort by absolute value of post-LASSO coefficient
+                sorted_idx = sorted(non_zero_idx, 
+                                  key=lambda i: abs(res['coefs_std'][i]), 
+                                  reverse=True)
+                
+                # Show top 20 non-zero coefficients
+                for i, idx in enumerate(sorted_idx[:20]):
+                    pc_num = idx + 1
+                    lasso_coef = res['lasso_coefs_std'][idx]
+                    ols_coef = res['coefs_std'][idx]
+                    se = res['ses_std'][idx]
+                    
+                    if se > 0:
+                        t_stat = ols_coef / se
+                        p_val = 2 * stats.norm.cdf(-abs(t_stat))
+                        ci_lower = ols_coef - 1.96 * se
+                        ci_upper = ols_coef + 1.96 * se
+                        
+                        print(f"{pc_num:>4} {lasso_coef:>12.4f} {ols_coef:>12.4f} {se:>12.4f} "
+                              f"{t_stat:>10.2f} {p_val:>12.3e} [{ci_lower:>8.4f}, {ci_upper:>8.4f}]")
+                    else:
+                        print(f"{pc_num:>4} {lasso_coef:>12.4f} {ols_coef:>12.4f} {se:>12.4f} "
+                              f"{'N/A':>10} {'N/A':>12} {'N/A':>24}")
+                
+                if len(sorted_idx) > 20:
+                    print(f"... ({len(sorted_idx) - 20} more non-zero coefficients not shown)")
+            else:
+                print("  No features selected")
+                
+        # Export instructions
+        print(f"\n\n{'='*80}")
+        print("To export these results, use: analysis.export_results()")
+        print("This will create:")
+        print("  - lasso_model_outputs.csv (complete LASSO results)")
+        print("  - post_lasso_model_outputs.csv (complete post-LASSO results with inference)")
+        print("  - model_summary.csv (summary statistics)")
+        print(f"{'='*80}")
     
     def export_global_statistics(self, output_dir: str = None):
         """Export comprehensive global statistics to CSV files."""
