@@ -1149,13 +1149,16 @@ class HAAMAnalysis:
             print(med_df.to_string(index=False))
     
     def display_global_statistics(self):
-        """Display comprehensive global statistics table with all metrics."""
+        """Display comprehensive global statistics in organized sections."""
         print("\n" + "="*120)
         print(" " * 40 + "COMPREHENSIVE GLOBAL STATISTICS")
         print("="*120)
         
-        # Prepare data for the table
-        stats_data = []
+        # Section 1: Coefficients Table (Total Effects and DML Check Betas)
+        print("\n1. COEFFICIENT ESTIMATES")
+        print("-" * 120)
+        
+        coef_data = []
         paths = [('Y → AI', 'Y_AI', 'SC', 'AI'), 
                  ('Y → HU', 'Y_HU', 'SC', 'HU'), 
                  ('HU → AI', 'HU_AI', 'HU', 'AI')]
@@ -1163,108 +1166,108 @@ class HAAMAnalysis:
         for path_name, path_key, X_name, Y_name in paths:
             row = {'Path': path_name}
             
-            # Total Effects (β*)
+            # Total Effects (β)
             if path_key in self.results.get('total_effects', {}):
                 te = self.results['total_effects'][path_key]
-                row['Total Effect (β*)'] = f"{te['coefficient']:.3f}"
-                row['β* SE'] = f"{te['se']:.3f}"
-                row['β* p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
+                row['β'] = f"{te['coefficient']:.3f}"
+                row['β SE'] = f"{te['se']:.3f}"
+                row['β p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
             else:
-                row['Total Effect (β*)'] = 'N/A'
-                row['β* SE'] = 'N/A'
-                row['β* p-value'] = 'N/A'
+                row['β'] = 'N/A'
+                row['β SE'] = 'N/A'
+                row['β p-value'] = 'N/A'
             
-            # DML Check Beta (β̌*)
+            # DML Check Beta (β̌)
             if path_key in self.results.get('total_effects', {}):
                 te = self.results['total_effects'][path_key]
                 if 'check_beta' in te:
-                    row['DML β̌*'] = f"{te['check_beta']:.3f}"
+                    row['β̌'] = f"{te['check_beta']:.3f}"
                     if 'check_beta_se' in te:
-                        row['β̌* SE'] = f"{te['check_beta_se']:.3f}"
-                        row['β̌* t-stat'] = f"{te['check_beta_t']:.2f}"
-                        row['β̌* p-value'] = f"{te['check_beta_pval']:.3e}"
-                        row['β̌* 95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
+                        row['β̌ SE'] = f"{te['check_beta_se']:.3f}"
+                        row['β̌ t-stat'] = f"{te['check_beta_t']:.2f}"
+                        row['β̌ p-value'] = f"{te['check_beta_pval']:.3e}"
+                        row['β̌ 95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
                     else:
-                        row['β̌* SE'] = 'N/A'
-                        row['β̌* t-stat'] = 'N/A'
-                        row['β̌* p-value'] = 'N/A'
-                        row['β̌* 95% CI'] = 'N/A'
+                        row['β̌ SE'] = 'N/A'
+                        row['β̌ t-stat'] = 'N/A'
+                        row['β̌ p-value'] = 'N/A'
+                        row['β̌ 95% CI'] = 'N/A'
                 else:
-                    row['DML β̌*'] = 'N/A'
-                    row['β̌* SE'] = 'N/A'
-                    row['β̌* t-stat'] = 'N/A'
-                    row['β̌* p-value'] = 'N/A'
-                    row['β̌* 95% CI'] = 'N/A'
+                    row['β̌'] = 'N/A'
+                    row['β̌ SE'] = 'N/A'
+                    row['β̌ t-stat'] = 'N/A'
+                    row['β̌ p-value'] = 'N/A'
+                    row['β̌ 95% CI'] = 'N/A'
             
-            # Residual Correlations (C)
-            c_key = f'{X_name}_{Y_name}' if X_name != 'SC' else f'Y_{Y_name}'
-            if 'residual_correlations' in self.results:
-                row['C'] = f"{self.results['residual_correlations'].get(c_key, 0):.3f}"
-            else:
-                row['C'] = 'N/A'
+            coef_data.append(row)
+        
+        coef_df = pd.DataFrame(coef_data)
+        print(coef_df.to_string(index=False))
+        
+        # Section 2: Residual Correlations (C)
+        print("\n\n2. RESIDUAL CORRELATIONS (C)")
+        print("-" * 60)
+        if 'residual_correlations' in self.results:
+            print(f"C(Y, AI) = {self.results['residual_correlations'].get('Y_AI', 0):.3f}")
+            print(f"C(Y, HU) = {self.results['residual_correlations'].get('Y_HU', 0):.3f}")
+            print(f"C(HU, AI) = {self.results['residual_correlations'].get('HU_AI', 0):.3f}")
+        
+        # Section 3: Policy Similarities (G)
+        print("\n\n3. POLICY SIMILARITIES (G)")
+        print("-" * 60)
+        if 'policy_similarities' in self.results:
+            print(f"G(Y → AI) = {self.results['policy_similarities'].get('Y_AI', 0):.3f}")
+            print(f"G(Y → HU) = {self.results['policy_similarities'].get('Y_HU', 0):.3f}")
+            print(f"G(HU → AI) = {self.results['policy_similarities'].get('HU_AI', 0):.3f}")
+        
+        # Section 4: Value-Prediction Correlations
+        print("\n\n4. VALUE-PREDICTION CORRELATIONS")
+        print("-" * 60)
+        if 'debiased_lasso' in self.results:
+            # For Y (SC) model
+            if 'SC' in self.results['debiased_lasso']:
+                r2_sc = self.results['debiased_lasso']['SC'].get('r2_cv_lasso', 0)
+                print(f"r(Y, Ŷ) = {np.sqrt(r2_sc):.3f}")
             
-            # Value-Prediction Correlations
-            if X_name in self.results.get('debiased_lasso', {}):
-                # Get R² from LASSO model
-                r2 = self.results['debiased_lasso'][X_name].get('r2_cv_lasso', 0)
-                row[f'r({X_name},Ĥ{X_name})'] = f"{np.sqrt(r2):.3f}"
-            else:
-                row[f'r({X_name},Ĥ{X_name})'] = 'N/A'
+            # For AI model  
+            if 'AI' in self.results['debiased_lasso']:
+                r2_ai = self.results['debiased_lasso']['AI'].get('r2_cv_lasso', 0)
+                print(f"r(AI, ÂI) = {np.sqrt(r2_ai):.3f}")
             
-            # Policy Similarities (G)
-            g_key = path_key.replace('_', '_')  # Already in correct format
-            if 'policy_similarities' in self.results:
-                row['G'] = f"{self.results['policy_similarities'].get(g_key, 0):.3f}"
-            else:
-                row['G'] = 'N/A'
-            
-            # PoMA
-            if 'mediation_analysis' in self.results:
-                med_key = Y_name if Y_name in ['AI', 'HU'] else path_key
-                if med_key in self.results['mediation_analysis']:
-                    med = self.results['mediation_analysis'][med_key]
+            # For HU model
+            if 'HU' in self.results['debiased_lasso']:
+                r2_hu = self.results['debiased_lasso']['HU'].get('r2_cv_lasso', 0)
+                print(f"r(HU, ĤU) = {np.sqrt(r2_hu):.3f}")
+        
+        # Section 5: PoMA (Proportion of Mediated Accuracy)
+        print("\n\n5. PROPORTION OF MEDIATED ACCURACY (PoMA)")
+        print("-" * 60)
+        if 'mediation_analysis' in self.results:
+            for outcome in ['AI', 'HU']:
+                if outcome in self.results['mediation_analysis']:
+                    med = self.results['mediation_analysis'][outcome]
                     if med['total_effect'] != 0:
                         poma = (med['indirect_effect'] / med['total_effect']) * 100
-                        row['PoMA'] = f"{poma:.1f}%"
-                    else:
-                        row['PoMA'] = 'N/A'
-                else:
-                    row['PoMA'] = 'N/A'
-            else:
-                row['PoMA'] = 'N/A'
+                        print(f"PoMA(Y → {outcome}) = {poma:.1f}%")
             
-            stats_data.append(row)
+            # For HU → AI, we need to check differently
+            if 'HU_AI' in self.results.get('total_effects', {}):
+                te = self.results['total_effects']['HU_AI']
+                if 'check_beta' in te and te['coefficient'] != 0:
+                    poma_hu_ai = (1 - te['check_beta']/te['coefficient']) * 100
+                    print(f"PoMA(HU → AI) = {poma_hu_ai:.1f}%")
         
-        # Create DataFrame
-        stats_df = pd.DataFrame(stats_data)
-        
-        # Display the table
-        print("\nTable 1: Global Model Statistics")
-        print("-" * 120)
-        print(stats_df.to_string(index=False))
-        print("-" * 120)
-        
-        # Add footnotes
-        print("\nNotes:")
-        print("- β*: Total effect from simple OLS regression")
-        print("- β̌*: DML check beta (direct effect after controlling for PC mediators)")
-        print("- SE: Robust standard errors (HC0 for OLS, sandwich estimator for DML)")
-        print("- 95% CI: Calculated as β̌* ± 1.96*SE")
-        print("- C: Residual correlation after controlling for selected PCs")
-        print("- G: Policy similarity (correlation between LASSO predictions)")
-        print("- PoMA: Proportion of Mediated Accuracy = (indirect effect / total effect) × 100%")
-        
-        # Feature Selection Summary
-        print("\n\nTable 2: Feature Selection Summary")
+        # Section 6: Feature Selection Summary
+        print("\n\n6. FEATURE SELECTION SUMMARY")
         print("-" * 60)
         if 'debiased_lasso' in self.results:
             for outcome in ['SC', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     res = self.results['debiased_lasso'][outcome]
-                    print(f"{outcome} model: {res['n_selected']} PCs selected (R² = {res['r2_cv_lasso']:.3f})")
+                    print(f"{outcome} model: {res['n_selected']} PCs selected (CV R² = {res['r2_cv_lasso']:.3f})")
         
-        # Comprehensive R² Table
-        print("\n\nTable 3: Comprehensive R² Values (LASSO Models)")
+        # Section 7: Comprehensive R² Values
+        print("\n\n7. COMPREHENSIVE R² VALUES (LASSO MODELS)")
         print("-" * 140)
         r2_data = []
         
@@ -1290,9 +1293,19 @@ class HAAMAnalysis:
         r2_df = pd.DataFrame(r2_data)
         print(r2_df.to_string(index=False))
         print("-" * 140)
-        print("Note: In-sample R² uses all data; CV R² uses 5-fold cross-validation with LASSO refitted on each training fold")
         
-        return stats_df
+        # Notes
+        print("\n\nNOTES:")
+        print("- β: Total effect from simple OLS regression")
+        print("- β̌: DML check beta (direct effect after controlling for PC mediators)")
+        print("- SE: Robust standard errors (HC0 for OLS, sandwich estimator for DML)")
+        print("- 95% CI: Calculated as β̌ ± 1.96*SE")
+        print("- C: Residual correlation after controlling for selected PCs")
+        print("- G: Policy similarity (correlation between LASSO predictions)")
+        print("- PoMA: Proportion of Mediated Accuracy = (indirect effect / total effect) × 100%")
+        print("- R² values: In-sample uses all data; CV uses 5-fold cross-validation with LASSO refitted on each fold")
+        
+        return coef_df
     
     def export_global_statistics(self, output_dir: str = None):
         """Export comprehensive global statistics to CSV files."""
