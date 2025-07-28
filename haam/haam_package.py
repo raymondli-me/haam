@@ -463,12 +463,14 @@ class HAAMAnalysis:
                 self.results['total_effects']['Y_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
+                    'n_obs': mask.sum(),  # Store sample size for degrees of freedom
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
                     'check_beta_pval': check_beta_results['pval'],
                     'check_beta_ci_lower': check_beta_results['ci_lower'],
-                    'check_beta_ci_upper': check_beta_results['ci_upper']
+                    'check_beta_ci_upper': check_beta_results['ci_upper'],
+                    'check_beta_n': check_beta_results['n']  # Store DML sample size
                 }
         
         # Y -> HU (direct effect of criterion on human)
@@ -503,12 +505,14 @@ class HAAMAnalysis:
                 self.results['total_effects']['Y_HU'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
+                    'n_obs': mask.sum(),  # Store sample size for degrees of freedom
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
                     'check_beta_pval': check_beta_results['pval'],
                     'check_beta_ci_lower': check_beta_results['ci_lower'],
-                    'check_beta_ci_upper': check_beta_results['ci_upper']
+                    'check_beta_ci_upper': check_beta_results['ci_upper'],
+                    'check_beta_n': check_beta_results['n']  # Store DML sample size
                 }
         
         # HU -> AI (effect of human on AI)
@@ -543,12 +547,14 @@ class HAAMAnalysis:
                 self.results['total_effects']['HU_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
+                    'n_obs': mask.sum(),  # Store sample size for degrees of freedom
                     'check_beta': check_beta_results['coefficient'],
                     'check_beta_se': check_beta_results['se'],
                     'check_beta_t': check_beta_results['t_stat'],
                     'check_beta_pval': check_beta_results['pval'],
                     'check_beta_ci_lower': check_beta_results['ci_lower'],
-                    'check_beta_ci_upper': check_beta_results['ci_upper']
+                    'check_beta_ci_upper': check_beta_results['ci_upper'],
+                    'check_beta_n': check_beta_results['n']  # Store DML sample size
                 }
     
     def _calculate_dml_check_beta(self, X_var, Y_var, pca_features, X_selected, Y_selected):
@@ -678,7 +684,8 @@ class HAAMAnalysis:
                 't_stat': t_stat,
                 'pval': pval,
                 'ci_lower': ci_lower,
-                'ci_upper': ci_upper
+                'ci_upper': ci_upper,
+                'n': n  # Return sample size for degrees of freedom calculation
             }
         else:
             return {
@@ -687,7 +694,8 @@ class HAAMAnalysis:
                 't_stat': 0.0,
                 'pval': 1.0,
                 'ci_lower': 0.0,
-                'ci_upper': 0.0
+                'ci_upper': 0.0,
+                'n': len(X_var)  # Still return n even if no valid check betas
             }
     
     def _calculate_residual_correlations(self):
@@ -1170,7 +1178,12 @@ class HAAMAnalysis:
                 te = self.results['total_effects'][path_key]
                 row['Coefficient'] = f"{te['coefficient']:.3f}"
                 row['SE'] = f"{te['se']:.3f}"
+                # Add t-stat
+                t_stat = te['coefficient'] / te['se']
+                row['t-stat'] = f"{t_stat:.2f}"
                 row['p-value'] = f"{2 * stats.norm.cdf(-abs(te['coefficient']/te['se'])):.3e}"
+                # Add degrees of freedom (n - 2 for simple OLS)
+                row['df'] = te.get('n_obs', 0) - 2 if 'n_obs' in te else 'N/A'
                 # Calculate 95% CI for β
                 ci_lower = te['coefficient'] - 1.96 * te['se']
                 ci_upper = te['coefficient'] + 1.96 * te['se']
@@ -1178,7 +1191,9 @@ class HAAMAnalysis:
             else:
                 row['Coefficient'] = 'N/A'
                 row['SE'] = 'N/A'
+                row['t-stat'] = 'N/A'
                 row['p-value'] = 'N/A'
+                row['df'] = 'N/A'
                 row['95% CI'] = 'N/A'
             
             beta_data.append(row)
@@ -1202,17 +1217,21 @@ class HAAMAnalysis:
                         row['SE'] = f"{te['check_beta_se']:.3f}"
                         row['t-stat'] = f"{te['check_beta_t']:.2f}"
                         row['p-value'] = f"{te['check_beta_pval']:.3e}"
+                        # Add degrees of freedom (n - 1 for DML with cross-fitting)
+                        row['df'] = te.get('check_beta_n', 0) - 1 if 'check_beta_n' in te else 'N/A'
                         row['95% CI'] = f"[{te['check_beta_ci_lower']:.3f}, {te['check_beta_ci_upper']:.3f}]"
                     else:
                         row['SE'] = 'N/A'
                         row['t-stat'] = 'N/A'
                         row['p-value'] = 'N/A'
+                        row['df'] = 'N/A'
                         row['95% CI'] = 'N/A'
                 else:
                     row['Coefficient'] = 'N/A'
                     row['SE'] = 'N/A'
                     row['t-stat'] = 'N/A'
                     row['p-value'] = 'N/A'
+                    row['df'] = 'N/A'
                     row['95% CI'] = 'N/A'
             
             dml_data.append(row)
@@ -1226,7 +1245,7 @@ class HAAMAnalysis:
         if 'residual_correlations' in self.results:
             print(f"C(Y, AI) = {self.results['residual_correlations'].get('Y_AI', 0):.3f}")
             print(f"C(Y, HU) = {self.results['residual_correlations'].get('Y_HU', 0):.3f}")
-            print(f"C(HU, AI) = {self.results['residual_correlations'].get('HU_AI', 0):.3f}")
+            print(f"C(HU, AI) = {self.results['residual_correlations'].get('AI_HU', 0):.3f}")
         
         # Section 3: Policy Similarities (G)
         print("\n\n3. POLICY SIMILARITIES (G)")
@@ -1234,7 +1253,7 @@ class HAAMAnalysis:
         if 'policy_similarities' in self.results:
             print(f"G(Y → AI) = {self.results['policy_similarities'].get('Y_AI', 0):.3f}")
             print(f"G(Y → HU) = {self.results['policy_similarities'].get('Y_HU', 0):.3f}")
-            print(f"G(HU → AI) = {self.results['policy_similarities'].get('HU_AI', 0):.3f}")
+            print(f"G(HU → AI) = {self.results['policy_similarities'].get('AI_HU', 0):.3f}")
         
         # Section 4: Value-Prediction Correlations
         print("\n\n4. VALUE-PREDICTION CORRELATIONS")
