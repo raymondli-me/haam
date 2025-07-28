@@ -268,7 +268,7 @@ class HAAMVisualizer:
             
             # Display in Colab if available with high resolution
             # Use 1500px height for main visualization to ensure publication quality
-            self._display_in_colab(html_content, "Main HAAM Visualization", height=1500)
+            self._display_in_colab(html_content, "Main HAAM Visualization", height=1350)
             
         return html_content
     
@@ -846,7 +846,7 @@ class HAAMVisualizer:
 </head>
 <body class="flex items-center justify-center min-h-screen bg-slate-50 p-4">
     <div class="w-full max-w-screen-2xl bg-white p-8 rounded-xl shadow-lg border border-slate-200">
-        <svg id="haam-diagram" viewBox="0 0 1500 1000" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
+        <svg id="haam-diagram" viewBox="0 0 1500 950" xmlns="http://www.w3.org/2000/svg" class="w-full h-auto">
             <!-- Defs: Contains markers and gradients for styling -->
             <defs>
                 <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="8" refY="3.5" orient="auto" markerUnits="strokeWidth">
@@ -872,8 +872,7 @@ class HAAMVisualizer:
                 </linearGradient>
             </defs>
 
-            <!-- Main Title -->
-            <text x="750" y="35" text-anchor="middle" font-size="28" font-weight="bold" fill="#1e293b">Human-AI Accuracy Model (HAAM) Framework</text>
+            <!-- Title removed - users can add their own -->
 
             <!-- Nodes -->
             <g id="criterion-node">
@@ -950,8 +949,8 @@ class HAAMVisualizer:
             </g>
 
             <!-- Comprehensive Metrics Panel -->
-            <g id="metrics-panel" transform="translate(50, 720)">
-                <rect x="-20" y="-10" width="1420" height="200" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
+            <g id="metrics-panel" transform="translate(50, 780)">
+                <rect x="-20" y="-10" width="1420" height="140" rx="10" fill="#f8fafc" stroke="#e2e8f0"/>
                 
                 <!-- Total Effects Column -->
                 <g transform="translate(0, 10)">
@@ -1029,10 +1028,7 @@ class HAAMVisualizer:
                     <text x="0" y="85" font-size="10" fill="#64748b" font-style="italic">(out of 200 total)</text>
                 </g>
                 
-                <!-- Notes -->
-                <text x="0" y="170" font-size="10" fill="#64748b" font-style="italic">
-                    *Top %%N_SHOWN_PCS%% PCs shown (from %%N_TOTAL_PCS%% total) are ranked by %%RANKING_METHOD%%. Total Effects are DML estimates. Policy Similarities are correlations between model predictions.
-                </text>
+                <!-- Footnote removed - users can add their own -->
             </g>
 
             <!-- JavaScript for Interactivity -->
