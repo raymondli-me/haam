@@ -35,7 +35,8 @@ class HAAM:
                  min_cluster_size: int = 10,
                  min_samples: int = 2,
                  umap_n_components: int = 3,
-                 standardize: bool = False):
+                 standardize: bool = False,
+                 sample_split_post_lasso: bool = True):
         """
         Initialize HAAM analysis with enhanced parameters.
         
@@ -70,6 +71,10 @@ class HAAM:
         standardize : bool, default=False
             Whether to standardize X and Y variables for both total effects and DML calculations.
             When True, all coefficients will be in standardized units.
+        sample_split_post_lasso : bool, default=True
+            Whether to use sample splitting for post-LASSO inference.
+            True: Conservative inference with valid p-values (original behavior)
+            False: Maximum statistical power using full sample
         """
         # Convert inputs to numpy arrays
         self.criterion = self._to_numpy(criterion)
@@ -87,6 +92,7 @@ class HAAM:
         self.min_samples = min_samples
         self.umap_n_components = umap_n_components
         self.standardize = standardize
+        self.sample_split_post_lasso = sample_split_post_lasso
         
         # Initialize components
         self.analysis = None
@@ -136,7 +142,7 @@ class HAAM:
         
         # Step 2: Fit debiased lasso
         print("\n2. Fitting debiased lasso models...")
-        self.analysis.fit_debiased_lasso(use_sample_splitting=True)
+        self.analysis.fit_debiased_lasso(use_sample_splitting=self.sample_split_post_lasso)
         
         # Step 3: Topic analysis (if texts provided)
         if self.texts is not None:
