@@ -78,8 +78,8 @@ class PCWordCloudGenerator:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(figsize[0]*2, figsize[1]))
         
         # Process high pole topics
-        high_text = self._aggregate_topic_keywords(pc_topics['high'])
-        if high_text:
+        high_word_freq = self._aggregate_topic_keywords(pc_topics['high'])
+        if high_word_freq:
             # Create red colormap for high pole
             colors_red = ["#ffcccc", "#ff9999", "#ff6666", "#ff3333", "#cc0000", "#990000"]
             cmap_red = LinearSegmentedColormap.from_list("red_gradient", colors_red)
@@ -92,7 +92,7 @@ class PCWordCloudGenerator:
                 max_words=max_words,
                 relative_scaling=0.5,
                 min_font_size=10
-            ).generate(high_text)
+            ).generate_from_frequencies(high_word_freq)  # Use frequency dict directly
             
             ax1.imshow(wc_high, interpolation='bilinear')
             ax1.set_title(f'PC{pc_idx + 1} - High Pole Topics', fontsize=16, fontweight='bold', color='darkred')
@@ -105,8 +105,8 @@ class PCWordCloudGenerator:
             ax1.axis('off')
         
         # Process low pole topics
-        low_text = self._aggregate_topic_keywords(pc_topics['low'])
-        if low_text:
+        low_word_freq = self._aggregate_topic_keywords(pc_topics['low'])
+        if low_word_freq:
             # Create blue colormap for low pole
             colors_blue = ["#ccccff", "#9999ff", "#6666ff", "#3333ff", "#0000cc", "#000099"]
             cmap_blue = LinearSegmentedColormap.from_list("blue_gradient", colors_blue)
@@ -119,7 +119,7 @@ class PCWordCloudGenerator:
                 max_words=max_words,
                 relative_scaling=0.5,
                 min_font_size=10
-            ).generate(low_text)
+            ).generate_from_frequencies(low_word_freq)  # Use frequency dict directly
             
             ax2.imshow(wc_low, interpolation='bilinear')
             ax2.set_title(f'PC{pc_idx + 1} - Low Pole Topics', fontsize=16, fontweight='bold', color='darkblue')
@@ -144,7 +144,7 @@ class PCWordCloudGenerator:
             fig.savefig(combined_path, dpi=300, bbox_inches='tight', facecolor='white')
             
             # Also save individual word clouds
-            if high_text:
+            if high_word_freq:
                 fig_high, ax_high = plt.subplots(1, 1, figsize=figsize)
                 ax_high.imshow(wc_high, interpolation='bilinear')
                 ax_high.set_title(f'PC{pc_idx + 1} - High Pole Topics', fontsize=16, fontweight='bold', color='darkred')
@@ -153,7 +153,7 @@ class PCWordCloudGenerator:
                 fig_high.savefig(high_path, dpi=300, bbox_inches='tight', facecolor='white')
                 plt.close(fig_high)
                 
-            if low_text:
+            if low_word_freq:
                 fig_low, ax_low = plt.subplots(1, 1, figsize=figsize)
                 ax_low.imshow(wc_low, interpolation='bilinear')
                 ax_low.set_title(f'PC{pc_idx + 1} - Low Pole Topics', fontsize=16, fontweight='bold', color='darkblue')
@@ -181,7 +181,7 @@ class PCWordCloudGenerator:
         Returns
         -------
         str
-            Aggregated text with repeated keywords based on topic importance
+            Aggregated text with frequency dictionary for word cloud
         """
         if not topics:
             return ""
@@ -199,12 +199,8 @@ class PCWordCloudGenerator:
                 if keyword and len(keyword) > 1:  # Skip single characters
                     word_freq[keyword] += weight
         
-        # Convert to text with repetitions
-        text_parts = []
-        for word, freq in word_freq.items():
-            text_parts.extend([word] * freq)
-            
-        return ' '.join(text_parts)
+        # Return the word frequency dictionary directly
+        return word_freq
     
     def create_all_pc_wordclouds(self,
                                pc_indices: Optional[List[int]] = None,
@@ -325,9 +321,9 @@ class PCWordCloudGenerator:
             
             # High pole subplot
             ax_high = plt.subplot(n_rows, n_cols * 2, i * 2 + 1)
-            high_text = self._aggregate_topic_keywords(pc_topics['high'])
+            high_word_freq = self._aggregate_topic_keywords(pc_topics['high'])
             
-            if high_text:
+            if high_word_freq:
                 wc_high = WordCloud(
                     width=400,
                     height=200,
@@ -336,7 +332,7 @@ class PCWordCloudGenerator:
                     max_words=max_words,
                     relative_scaling=0.5,
                     min_font_size=8
-                ).generate(high_text)
+                ).generate_from_frequencies(high_word_freq)
                 ax_high.imshow(wc_high, interpolation='bilinear')
             else:
                 ax_high.text(0.5, 0.5, 'No topics', ha='center', va='center', transform=ax_high.transAxes)
@@ -346,9 +342,9 @@ class PCWordCloudGenerator:
             
             # Low pole subplot
             ax_low = plt.subplot(n_rows, n_cols * 2, i * 2 + 2)
-            low_text = self._aggregate_topic_keywords(pc_topics['low'])
+            low_word_freq = self._aggregate_topic_keywords(pc_topics['low'])
             
-            if low_text:
+            if low_word_freq:
                 wc_low = WordCloud(
                     width=400,
                     height=200,
@@ -357,7 +353,7 @@ class PCWordCloudGenerator:
                     max_words=max_words,
                     relative_scaling=0.5,
                     min_font_size=8
-                ).generate(low_text)
+                ).generate_from_frequencies(low_word_freq)
                 ax_low.imshow(wc_low, interpolation='bilinear')
             else:
                 ax_low.text(0.5, 0.5, 'No topics', ha='center', va='center', transform=ax_low.transAxes)
