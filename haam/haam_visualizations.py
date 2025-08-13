@@ -644,6 +644,247 @@ class HAAMVisualizer:
             
         return fig
     
+    def create_pc_umap_with_topics(self,
+                                   pc_idx: int,
+                                   pc_scores: np.ndarray,
+                                   umap_embeddings: np.ndarray,
+                                   cluster_labels: np.ndarray,
+                                   topic_keywords: Dict[int, str],
+                                   pc_associations: Dict[int, List[Dict]],
+                                   output_file: Optional[str] = None,
+                                   show_top_n: int = 5,
+                                   show_bottom_n: int = 5,
+                                   display: bool = True) -> go.Figure:
+        """
+        Create UMAP visualization colored by PC scores with topic labels.
+        
+        Parameters
+        ----------
+        pc_idx : int
+            PC index (0-based)
+        pc_scores : np.ndarray
+            PC scores for all samples
+        umap_embeddings : np.ndarray
+            3D UMAP embeddings
+        cluster_labels : np.ndarray
+            Cluster assignments for each point
+        topic_keywords : Dict[int, str]
+            Topic ID to keyword mapping
+        pc_associations : Dict[int, List[Dict]]
+            PC-topic associations from TopicAnalyzer
+        output_file : str, optional
+            Path to save HTML file
+        show_top_n : int
+            Number of high-scoring topics to label
+        show_bottom_n : int
+            Number of low-scoring topics to label
+        display : bool
+            Whether to display in notebook/colab
+            
+        Returns
+        -------
+        go.Figure
+            Plotly figure object
+        """
+        # Create base 3D scatter plot colored by PC scores
+        fig = go.Figure()
+        
+        # Add main scatter plot
+        fig.add_trace(go.Scatter3d(
+            x=umap_embeddings[:, 0],
+            y=umap_embeddings[:, 1],
+            z=umap_embeddings[:, 2],
+            mode='markers',
+            marker=dict(
+                size=3,
+                color=pc_scores,
+                colorscale='RdBu',
+                showscale=True,
+                colorbar=dict(
+                    title=f'PC{pc_idx + 1} Scores',
+                    x=1.02
+                ),
+                opacity=0.7
+            ),
+            text=[f'Sample {i}<br>PC{pc_idx + 1}: {pc_scores[i]:.3f}' 
+                  for i in range(len(pc_scores))],
+            hoverinfo='text',
+            name='Samples'
+        ))
+        
+        # Get topic associations for this PC
+        if pc_idx in pc_associations:
+            associations = pc_associations[pc_idx]
+            
+            # Sort by percentile to get top and bottom topics
+            sorted_topics = sorted(associations, key=lambda x: x['avg_percentile'], reverse=True)
+            
+            # Select topics to label
+            top_topics = sorted_topics[:show_top_n]
+            bottom_topics = sorted_topics[-show_bottom_n:] if show_bottom_n > 0 else []
+            topics_to_label = top_topics + bottom_topics
+            
+            # Add topic labels at cluster centroids
+            for topic_info in topics_to_label:
+                topic_id = topic_info['topic_id']
+                topic_mask = cluster_labels == topic_id
+                
+                if topic_mask.sum() > 0:
+                    # Calculate centroid
+                    centroid = umap_embeddings[topic_mask].mean(axis=0)
+                    
+                    # Determine color based on percentile
+                    if topic_info['avg_percentile'] > 50:
+                        color = 'darkred'
+                        prefix = 'HIGH'
+                    else:
+                        color = 'darkblue'
+                        prefix = 'LOW'
+                    
+                    # Create label text
+                    keywords = topic_info['keywords']
+                    if len(keywords) > 30:  # Truncate long keywords
+                        keywords = keywords[:30] + '...'
+                    
+                    label_text = f"{prefix}: {keywords}"
+                    
+                    # Add topic label
+                    fig.add_trace(go.Scatter3d(
+                        x=[centroid[0]],
+                        y=[centroid[1]],
+                        z=[centroid[2]],
+                        mode='markers+text',
+                        marker=dict(
+                            size=8,
+                            color=color,
+                            symbol='diamond'
+                        ),
+                        text=[label_text],
+                        textposition='top center',
+                        textfont=dict(
+                            size=10,
+                            color=color
+                        ),
+                        hovertext=f"Topic {topic_id}<br>"
+                                 f"Size: {topic_info['size']}<br>"
+                                 f"Percentile: {topic_info['avg_percentile']:.1f}<br>"
+                                 f"Effect Size: {topic_info['effect_size']:.3f}<br>"
+                                 f"Keywords: {topic_info['keywords']}",
+                        hoverinfo='text',
+                        showlegend=False
+                    ))
+        
+        # Update layout
+        fig.update_layout(
+            title=f'3D UMAP colored by PC{pc_idx + 1} with Topic Labels',
+            scene=dict(
+                xaxis_title='UMAP 1',
+                yaxis_title='UMAP 2',
+                zaxis_title='UMAP 3',
+                camera=dict(
+                    eye=dict(x=1.5, y=1.5, z=1.5)
+                )
+            ),
+            width=900,
+            height=700,
+            hovermode='closest'
+        )
+        
+        # Save if requested
+        if output_file:
+            fig.write_html(output_file)
+            print(f"PC{pc_idx + 1} UMAP visualization saved to: {output_file}")
+        
+        # Display if requested
+        if display:
+            try:
+                from IPython.display import display
+                import google.colab
+                display(fig)
+            except ImportError:
+                # Not in Colab, check for Jupyter
+                try:
+                    from IPython.display import display
+                    display(fig)
+                except ImportError:
+                    # Not in notebook environment
+                    pass
+        
+        return fig
+    
+    def create_all_pc_umap_visualizations(self,
+                                         pc_indices: List[int],
+                                         pc_scores_all: np.ndarray,
+                                         umap_embeddings: np.ndarray,
+                                         cluster_labels: np.ndarray,
+                                         topic_keywords: Dict[int, str],
+                                         pc_associations: Dict[int, List[Dict]],
+                                         output_dir: str,
+                                         show_top_n: int = 5,
+                                         show_bottom_n: int = 5,
+                                         display: bool = False) -> Dict[int, str]:
+        """
+        Create UMAP visualizations for multiple PCs.
+        
+        Parameters
+        ----------
+        pc_indices : List[int]
+            List of PC indices to visualize
+        pc_scores_all : np.ndarray
+            All PC scores (n_samples x n_components)
+        umap_embeddings : np.ndarray
+            3D UMAP embeddings
+        cluster_labels : np.ndarray
+            Cluster assignments
+        topic_keywords : Dict[int, str]
+            Topic keywords
+        pc_associations : Dict[int, List[Dict]]
+            PC-topic associations
+        output_dir : str
+            Directory to save visualizations
+        show_top_n : int
+            Number of high topics to show
+        show_bottom_n : int
+            Number of low topics to show
+        display : bool
+            Whether to display each plot
+            
+        Returns
+        -------
+        Dict[int, str]
+            Mapping of PC index to output file path
+        """
+        os.makedirs(output_dir, exist_ok=True)
+        output_files = {}
+        
+        print(f"\nCreating UMAP visualizations for {len(pc_indices)} PCs...")
+        
+        for i, pc_idx in enumerate(pc_indices):
+            print(f"  Processing PC{pc_idx + 1} ({i + 1}/{len(pc_indices)})...")
+            
+            output_file = os.path.join(output_dir, f'pc{pc_idx + 1}_umap_with_topics.html')
+            
+            try:
+                self.create_pc_umap_with_topics(
+                    pc_idx=pc_idx,
+                    pc_scores=pc_scores_all[:, pc_idx],
+                    umap_embeddings=umap_embeddings,
+                    cluster_labels=cluster_labels,
+                    topic_keywords=topic_keywords,
+                    pc_associations=pc_associations,
+                    output_file=output_file,
+                    show_top_n=show_top_n,
+                    show_bottom_n=show_bottom_n,
+                    display=display
+                )
+                output_files[pc_idx] = output_file
+                
+            except Exception as e:
+                print(f"    Warning: Failed to create visualization for PC{pc_idx + 1}: {e}")
+        
+        print(f"\nCreated {len(output_files)} PC UMAP visualizations in: {output_dir}")
+        return output_files
+    
     def create_pc_effects_plot(self, 
                               pc_indices: List[int],
                               output_file: Optional[str] = None) -> go.Figure:

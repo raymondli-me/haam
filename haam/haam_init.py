@@ -487,6 +487,118 @@ class HAAM:
         
         return output_file
     
+    def visualize_pc_umap_with_topics(self,
+                                     pc_idx: int,
+                                     output_dir: Optional[str] = None,
+                                     show_top_n: int = 5,
+                                     show_bottom_n: int = 5,
+                                     display: bool = True) -> str:
+        """
+        Create UMAP visualization for a specific PC with topic labels.
+        
+        Parameters
+        ----------
+        pc_idx : int
+            PC index (0-based). E.g., 0 for PC1, 4 for PC5
+        output_dir : str, optional
+            Directory to save output. If None, saves to current directory
+        show_top_n : int
+            Number of high-scoring topics to label
+        show_bottom_n : int
+            Number of low-scoring topics to label
+        display : bool
+            Whether to display in notebook/colab
+            
+        Returns
+        -------
+        str
+            Path to saved HTML file
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+        
+        # Get PC associations for this specific PC
+        pc_associations = self.topic_analyzer.get_pc_topic_associations([pc_idx])
+        
+        # Set up output path
+        if output_dir is None:
+            output_dir = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
+        output_file = os.path.join(output_dir, f'pc{pc_idx + 1}_umap_with_topics.html')
+        
+        # Create visualization
+        fig = self.visualizer.create_pc_umap_with_topics(
+            pc_idx=pc_idx,
+            pc_scores=self.analysis.results['pca_features'][:, pc_idx],
+            umap_embeddings=self.topic_analyzer.umap_embeddings,
+            cluster_labels=self.topic_analyzer.cluster_labels,
+            topic_keywords=self.topic_analyzer.topic_keywords,
+            pc_associations=pc_associations,
+            output_file=output_file,
+            show_top_n=show_top_n,
+            show_bottom_n=show_bottom_n,
+            display=display
+        )
+        
+        return output_file
+    
+    def create_all_pc_umap_visualizations(self,
+                                         pc_indices: Optional[List[int]] = None,
+                                         output_dir: Optional[str] = None,
+                                         show_top_n: int = 5,
+                                         show_bottom_n: int = 5,
+                                         display: bool = False) -> Dict[int, str]:
+        """
+        Create UMAP visualizations for multiple PCs with topic labels.
+        
+        Parameters
+        ----------
+        pc_indices : List[int], optional
+            List of PC indices to visualize. If None, uses top 10 PCs
+        output_dir : str, optional
+            Directory to save visualizations
+        show_top_n : int
+            Number of high topics to show per PC
+        show_bottom_n : int
+            Number of low topics to show per PC
+        display : bool
+            Whether to display each plot (set False for batch processing)
+            
+        Returns
+        -------
+        Dict[int, str]
+            Mapping of PC index to output file path
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+        
+        # Default to top 10 PCs if not specified
+        if pc_indices is None:
+            pc_indices = self.analysis.get_top_pcs(n=10, ranking_method='triple')
+        
+        # Get associations for all requested PCs
+        pc_associations = self.topic_analyzer.get_pc_topic_associations(pc_indices)
+        
+        # Set up output directory
+        if output_dir is None:
+            output_dir = os.path.join(os.getcwd(), 'pc_umap_visualizations')
+        
+        # Create all visualizations
+        output_files = self.visualizer.create_all_pc_umap_visualizations(
+            pc_indices=pc_indices,
+            pc_scores_all=self.analysis.results['pca_features'],
+            umap_embeddings=self.topic_analyzer.umap_embeddings,
+            cluster_labels=self.topic_analyzer.cluster_labels,
+            topic_keywords=self.topic_analyzer.topic_keywords,
+            pc_associations=pc_associations,
+            output_dir=output_dir,
+            show_top_n=show_top_n,
+            show_bottom_n=show_bottom_n,
+            display=display
+        )
+        
+        return output_files
+    
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
         """
         Export all results and create all visualizations.
