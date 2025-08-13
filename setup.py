@@ -46,6 +46,7 @@ setup(
         "sentence-transformers>=2.0.0",
         "umap-learn>=0.5.0",
         "hdbscan>=0.8.27",
+        "wordcloud>=1.8.0",
     ],
     extras_require={
         "dev": [
