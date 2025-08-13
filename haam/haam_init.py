@@ -762,7 +762,13 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
+            self.wordcloud_generator = PCWordCloudGenerator(
+                self.topic_analyzer, 
+                self.analysis.results,
+                criterion=self.criterion,
+                human_judgment=self.human_judgment,
+                ai_judgment=self.ai_judgment
+            )
             
         return self.wordcloud_generator.create_pc_wordclouds(
             pc_idx=pc_idx,
@@ -811,7 +817,13 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
+            self.wordcloud_generator = PCWordCloudGenerator(
+                self.topic_analyzer, 
+                self.analysis.results,
+                criterion=self.criterion,
+                human_judgment=self.human_judgment,
+                ai_judgment=self.ai_judgment
+            )
             
         # If no indices specified, use top 9 PCs
         if pc_indices is None:
@@ -868,7 +880,13 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
+            self.wordcloud_generator = PCWordCloudGenerator(
+                self.topic_analyzer, 
+                self.analysis.results,
+                criterion=self.criterion,
+                human_judgment=self.human_judgment,
+                ai_judgment=self.ai_judgment
+            )
             
         # If no indices specified, use top PCs
         if pc_indices is None:

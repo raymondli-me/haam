@@ -20,8 +20,7 @@ class PCWordCloudGenerator:
     Generate word clouds for principal component poles.
     """
     
-    def __init__(self, topic_analyzer, analysis_results=None, 
-                 criterion=None, human_judgment=None, ai_judgment=None):
+    def __init__(self, topic_analyzer, analysis_results=None):
         """
         Initialize word cloud generator.
         
@@ -31,18 +30,9 @@ class PCWordCloudGenerator:
             TopicAnalyzer instance with computed topics and PC associations
         analysis_results : dict, optional
             HAAM analysis results containing model coefficients for validity coloring
-        criterion : array-like, optional
-            Ground truth values (Y) for direct validity measurement
-        human_judgment : array-like, optional
-            Human judgment values (HU) for direct validity measurement
-        ai_judgment : array-like, optional
-            AI judgment values (AI) for direct validity measurement
         """
         self.topic_analyzer = topic_analyzer
         self.analysis_results = analysis_results
-        self.criterion = criterion
-        self.human_judgment = human_judgment
-        self.ai_judgment = ai_judgment
         
     def create_pc_wordclouds(self, 
                            pc_idx: int,
@@ -283,9 +273,9 @@ class PCWordCloudGenerator:
         """
         Calculate color for each word based on topic's validity across Y/HU/AI.
         
-        This method uses direct measurement of topic Y/HU/AI values to determine colors.
-        It calculates the actual mean values for each topic and compares them to
-        global quartiles to identify:
+        This method determines colors based on whether topics are associated with
+        valid vs perceived social class markers. It looks at topic averages across
+        different outcomes to identify:
         - Valid markers: High/low in all three (Y, HU, AI)
         - Perceived markers: High/low in HU & AI but not Y
         - Mixed signals: Inconsistent patterns
@@ -295,7 +285,7 @@ class PCWordCloudGenerator:
         topics : List[Dict]
             List of topic dictionaries from get_pc_high_low_topics
         pc_idx : int
-            PC index to analyze (kept for compatibility)
+            PC index to analyze
             
         Returns
         -------
@@ -305,93 +295,6 @@ class PCWordCloudGenerator:
         if not hasattr(self.topic_analyzer, 'cluster_labels'):
             return {}
             
-        # Color definitions
-        colors = {
-            'dark_red': '#8B0000',     # All top quartile
-            'light_red': '#FF6B6B',    # At least one in top quartile
-            'dark_blue': '#00008B',    # All bottom quartile
-            'light_blue': '#6B9AFF',   # At least one in bottom quartile
-            'dark_grey': '#4A4A4A',    # Mixed (some high, some low)
-            'light_grey': '#B0B0B0'    # All middle quartiles
-        }
-        
-        # Check if we have Y/HU/AI data for direct measurement
-        if self.criterion is None or self.human_judgment is None or self.ai_judgment is None:
-            # Fall back to old method if data not available
-            return self._calculate_topic_validity_colors_legacy(topics, pc_idx)
-        
-        # Calculate global quartiles for each measure
-        y_q25 = np.nanpercentile(self.criterion, 25)
-        y_q75 = np.nanpercentile(self.criterion, 75)
-        hu_q25 = np.nanpercentile(self.human_judgment, 25)
-        hu_q75 = np.nanpercentile(self.human_judgment, 75)
-        ai_q25 = np.nanpercentile(self.ai_judgment, 25)
-        ai_q75 = np.nanpercentile(self.ai_judgment, 75)
-        
-        word_colors = {}
-        cluster_labels = self.topic_analyzer.cluster_labels
-        
-        for topic in topics:
-            topic_id = topic['topic_id']
-            
-            # Get documents in this topic
-            topic_mask = cluster_labels == topic_id
-            
-            if not np.any(topic_mask):
-                # No documents in topic, use default color
-                color = colors['light_grey']
-            else:
-                # Calculate mean Y/HU/AI values for this topic
-                y_mean = np.mean(self.criterion[topic_mask])
-                hu_mean = np.mean(self.human_judgment[topic_mask])
-                ai_mean = np.mean(self.ai_judgment[topic_mask])
-                
-                # Determine quartile positions
-                y_high = y_mean >= y_q75
-                y_low = y_mean <= y_q25
-                hu_high = hu_mean >= hu_q75
-                hu_low = hu_mean <= hu_q25
-                ai_high = ai_mean >= ai_q75
-                ai_low = ai_mean <= ai_q25
-                
-                # Count high and low signals
-                n_high = sum([y_high, hu_high, ai_high])
-                n_low = sum([y_low, hu_low, ai_low])
-                
-                # Assign color based on pattern
-                if n_high > 0 and n_low > 0:
-                    # Mixed signals (some high, some low)
-                    color = colors['dark_grey']
-                elif n_high == 3:
-                    # All in top quartile
-                    color = colors['dark_red']
-                elif n_high > 0:
-                    # At least one in top quartile
-                    color = colors['light_red']
-                elif n_low == 3:
-                    # All in bottom quartile
-                    color = colors['dark_blue']
-                elif n_low > 0:
-                    # At least one in bottom quartile
-                    color = colors['light_blue']
-                else:
-                    # All in middle quartiles
-                    color = colors['light_grey']
-            
-            # Apply color to all words in this topic
-            keywords = topic['keywords'].split(' | ')
-            for keyword in keywords:
-                keyword = keyword.strip()
-                if keyword and len(keyword) > 1:
-                    word_colors[keyword] = color
-                    
-        return word_colors
-    
-    def _calculate_topic_validity_colors_legacy(self, topics: List[Dict], pc_idx: int) -> Dict[str, str]:
-        """
-        Legacy method for backward compatibility when Y/HU/AI data not available.
-        Uses PC-based inference as in the original implementation.
-        """
         # Color definitions
         colors = {
             'dark_red': '#8B0000',     # All top quartile
@@ -423,17 +326,24 @@ class PCWordCloudGenerator:
             return word_colors
             
         # Calculate quartiles based on avg_percentile
+        # Topics with high avg_percentile are associated with high PC values
+        # Topics with low avg_percentile are associated with low PC values
         percentiles = [t['avg_percentile'] for t in all_topics]
         q75 = np.percentile(percentiles, 75)
         q25 = np.percentile(percentiles, 25)
         
-        # For validity checking, check PC's relationship with outcomes
+        # For validity checking, we need to know if this PC is associated with
+        # high or low values in each outcome (Y/SC, HU, AI)
+        # This requires checking the PC's relationship with each outcome
         pc_associations = {}
         
         if self.analysis_results and 'debiased_lasso' in self.analysis_results:
+            # Check if this PC is positively or negatively associated with each outcome
             for outcome in ['SC', 'AI', 'HU']:
                 if outcome in self.analysis_results['debiased_lasso']:
                     coef = self.analysis_results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
+                    # Positive coefficient means PC is associated with high outcome values
+                    # Negative coefficient means PC is associated with low outcome values
                     pc_associations[outcome] = 'positive' if coef > 0 else 'negative'
         
         if not pc_associations:
@@ -470,27 +380,34 @@ class PCWordCloudGenerator:
                              for outcome in ['SC', 'AI', 'HU'])
             
             if has_positive and has_negative:
-                # Opposing signals
+                # Opposing signals - some say high, some say low
                 color = colors['dark_grey']
+                
             elif is_high_topic:
                 # This topic is associated with high PC values
+                # Check if all outcomes view high PC as high class
                 all_positive = all(pc_associations.get(outcome) == 'positive' 
                                  for outcome in ['SC', 'AI', 'HU'])
+                
                 if all_positive:
-                    color = colors['dark_red']
+                    color = colors['dark_red']  # All agree: valid high marker
                 else:
-                    color = colors['light_red']
+                    color = colors['light_red']  # Any signal high
+                    
             elif is_low_topic:
                 # This topic is associated with low PC values
+                # Check if all outcomes view low PC as low class
                 all_negative = all(pc_associations.get(outcome) == 'negative' 
                                  for outcome in ['SC', 'AI', 'HU'])
+                
                 if all_negative:
-                    color = colors['dark_blue']
+                    color = colors['dark_blue']  # All agree: valid low marker
                 else:
-                    color = colors['light_blue']
+                    color = colors['light_blue']  # Any signal low
+                    
             else:
                 # Topic is in middle quartiles
-                color = colors['light_grey']
+                color = colors['light_grey']  # All middle: weak signal
             
             # Apply color to all words in this topic
             keywords = topic['keywords'].split(' | ')
