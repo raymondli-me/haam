@@ -314,8 +314,16 @@ class PCWordCloudGenerator:
         )
         all_topics = all_topics_result.get('all', [])
         
-        if not all_topics:
-            return {}
+        if not all_topics or not topics:
+            # Return default grey for all words if no topics
+            word_colors = {}
+            for topic in topics:
+                keywords = topic['keywords'].split(' | ')
+                for keyword in keywords:
+                    keyword = keyword.strip()
+                    if keyword and len(keyword) > 1:
+                        word_colors[keyword] = colors['light_grey']
+            return word_colors
             
         # Calculate quartiles based on avg_percentile
         # Topics with high avg_percentile are associated with high PC values
