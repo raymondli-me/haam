@@ -1053,10 +1053,11 @@ class HAAMVisualizer:
                                       topic_keywords: Dict[int, str],
                                       pc_scores_all: np.ndarray,
                                       pc_indices: Optional[Union[int, List[int]]] = None,
-                                      top_k: int = 5,
+                                      top_k: int = 1,
                                       percentile_threshold: float = 90.0,
                                       arrow_mode: str = 'all',
                                       color_by_usage: bool = True,
+                                      show_topic_labels: Union[bool, int] = 10,
                                       output_file: Optional[str] = None,
                                       display: bool = True) -> go.Figure:
         """
@@ -1080,14 +1081,18 @@ class HAAMVisualizer:
             PC scores for all samples (n_samples x n_components)
         pc_indices : int or List[int], optional
             PC indices to show arrows for. If None and arrow_mode='all', shows first 3
-        top_k : int, default=5
-            Number of top/bottom topics to average for arrow endpoints
+        top_k : int, default=1
+            Number of top/bottom topics to average for arrow endpoints (default=1 for cleaner arrows)
         percentile_threshold : float, default=90.0
             Percentile threshold for determining top/bottom topics
         arrow_mode : str, default='all'
             Arrow display mode: 'single', 'list', or 'all'
         color_by_usage : bool, default=True
             Whether to color topics by HU/AI usage patterns
+        show_topic_labels : bool or int, default=10
+            - If True: Show all topic labels
+            - If False: Hide all topic labels (hover still works)
+            - If int: Show only the N topics closest to camera (dynamic)
         output_file : str, optional
             Path to save HTML file
         display : bool, default=True
@@ -1202,31 +1207,110 @@ class HAAMVisualizer:
                 td['color_desc'] = f'Size: {td["size"]}'
         
         # Add topic points
-        for td in topic_data:
-            fig.add_trace(go.Scatter3d(
-                x=[td['centroid'][0]],
-                y=[td['centroid'][1]],
-                z=[td['centroid'][2]],
-                mode='markers+text',
-                marker=dict(
-                    size=10 + np.log(td['size']) * 2,
-                    color=td['color'],
-                    line=dict(color='black', width=1)
-                ),
-                text=td['keywords'][:30] + '...' if len(td['keywords']) > 30 else td['keywords'],
-                textposition='top center',
-                textfont=dict(size=10),
-                hovertext=f"Topic {td['topic_id']}<br>"
-                         f"Keywords: {td['keywords']}<br>"
-                         f"Size: {td['size']}<br>"
-                         f"Color: {td['color_desc']}<br>"
-                         f"UMAP1: {td['centroid'][0]:.3f}<br>"
-                         f"UMAP2: {td['centroid'][1]:.3f}<br>"
-                         f"UMAP3: {td['centroid'][2]:.3f}",
-                hoverinfo='text',
-                showlegend=False,
-                name=f"Topic {td['topic_id']}"
-            ))
+        # Determine text display mode
+        if show_topic_labels is True:
+            # Show all labels
+            for td in topic_data:
+                fig.add_trace(go.Scatter3d(
+                    x=[td['centroid'][0]],
+                    y=[td['centroid'][1]],
+                    z=[td['centroid'][2]],
+                    mode='markers+text',
+                    marker=dict(
+                        size=10 + np.log(td['size']) * 2,
+                        color=td['color'],
+                        line=dict(color='black', width=1)
+                    ),
+                    text=td['keywords'][:30] + '...' if len(td['keywords']) > 30 else td['keywords'],
+                    textposition='top center',
+                    textfont=dict(size=10),
+                    hovertext=f"Topic {td['topic_id']}<br>"
+                             f"Keywords: {td['keywords']}<br>"
+                             f"Size: {td['size']}<br>"
+                             f"Color: {td['color_desc']}<br>"
+                             f"UMAP1: {td['centroid'][0]:.3f}<br>"
+                             f"UMAP2: {td['centroid'][1]:.3f}<br>"
+                             f"UMAP3: {td['centroid'][2]:.3f}",
+                    hoverinfo='text',
+                    showlegend=False,
+                    name=f"Topic {td['topic_id']}"
+                ))
+        elif show_topic_labels is False:
+            # Hide all labels
+            for td in topic_data:
+                fig.add_trace(go.Scatter3d(
+                    x=[td['centroid'][0]],
+                    y=[td['centroid'][1]],
+                    z=[td['centroid'][2]],
+                    mode='markers',  # No text
+                    marker=dict(
+                        size=10 + np.log(td['size']) * 2,
+                        color=td['color'],
+                        line=dict(color='black', width=1)
+                    ),
+                    hovertext=f"Topic {td['topic_id']}<br>"
+                             f"Keywords: {td['keywords']}<br>"
+                             f"Size: {td['size']}<br>"
+                             f"Color: {td['color_desc']}<br>"
+                             f"UMAP1: {td['centroid'][0]:.3f}<br>"
+                             f"UMAP2: {td['centroid'][1]:.3f}<br>"
+                             f"UMAP3: {td['centroid'][2]:.3f}",
+                    hoverinfo='text',
+                    showlegend=False,
+                    name=f"Topic {td['topic_id']}"
+                ))
+        else:
+            # Show N closest topics to camera (dynamic approach)
+            # First add all markers
+            for i, td in enumerate(topic_data):
+                # Add marker
+                fig.add_trace(go.Scatter3d(
+                    x=[td['centroid'][0]],
+                    y=[td['centroid'][1]],
+                    z=[td['centroid'][2]],
+                    mode='markers',
+                    marker=dict(
+                        size=10 + np.log(td['size']) * 2,
+                        color=td['color'],
+                        line=dict(color='black', width=1)
+                    ),
+                    hovertext=f"Topic {td['topic_id']}<br>"
+                             f"Keywords: {td['keywords']}<br>"
+                             f"Size: {td['size']}<br>"
+                             f"Color: {td['color_desc']}<br>"
+                             f"UMAP1: {td['centroid'][0]:.3f}<br>"
+                             f"UMAP2: {td['centroid'][1]:.3f}<br>"
+                             f"UMAP3: {td['centroid'][2]:.3f}",
+                    hoverinfo='text',
+                    showlegend=False,
+                    name=f"Topic {td['topic_id']}"
+                ))
+                
+                # Add text as separate trace for visibility control
+                fig.add_trace(go.Scatter3d(
+                    x=[td['centroid'][0]],
+                    y=[td['centroid'][1]],
+                    z=[td['centroid'][2]],
+                    mode='text',
+                    text=td['keywords'][:30] + '...' if len(td['keywords']) > 30 else td['keywords'],
+                    textposition='top center',
+                    textfont=dict(size=10),
+                    showlegend=False,
+                    hoverinfo='skip',
+                    visible=True  # Will be controlled dynamically
+                ))
+            
+            # Add note about dynamic labels
+            n_labels = int(show_topic_labels)
+            fig.add_annotation(
+                text=f"Showing {n_labels} closest topic labels (rotate to update)",
+                xref="paper", yref="paper",
+                x=0.02, y=0.98,
+                showarrow=False,
+                font=dict(size=12, color="gray"),
+                bgcolor="rgba(255,255,255,0.8)",
+                borderpad=4
+            )
         
         # Add PC arrows
         for pc_idx in pc_indices:

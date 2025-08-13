@@ -601,10 +601,11 @@ class HAAM:
     
     def create_3d_umap_with_pc_arrows(self,
                                      pc_indices: Optional[Union[int, List[int]]] = None,
-                                     top_k: int = 5,
+                                     top_k: int = 1,
                                      percentile_threshold: float = 90.0,
                                      arrow_mode: str = 'all',
                                      color_by_usage: bool = True,
+                                     show_topic_labels: Union[bool, int] = 10,
                                      output_dir: Optional[str] = None,
                                      display: bool = True) -> str:
         """
@@ -625,8 +626,9 @@ class HAAM:
             - If None and arrow_mode='all': shows arrows for PC1, PC2, PC3
             - If int: shows arrow for that single PC
             - If list: shows arrows for all PCs in the list
-        top_k : int, default=5
+        top_k : int, default=1
             Number of top/bottom scoring topics to average for arrow endpoints.
+            Default=1 for cleaner single-topic arrows.
             If fewer topics meet the threshold, uses all available.
         percentile_threshold : float, default=90.0
             Percentile threshold for selecting top/bottom topics.
@@ -643,6 +645,11 @@ class HAAM:
             - Dark blue: All three in bottom quartile
             - Blue: HU & AI both in bottom quartile
             - Gray: Mixed patterns
+        show_topic_labels : bool or int, default=10
+            Controls topic label display:
+            - True: Show all topic labels
+            - False: Hide all labels (hover still works)
+            - int: Show only N closest topics to camera
         output_dir : str, optional
             Directory to save output. If None, uses current directory
         display : bool, default=True
@@ -704,6 +711,7 @@ class HAAM:
             percentile_threshold=percentile_threshold,
             arrow_mode=arrow_mode,
             color_by_usage=color_by_usage,
+            show_topic_labels=show_topic_labels,
             output_file=output_file,
             display=display
         )

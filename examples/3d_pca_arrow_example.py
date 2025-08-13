@@ -40,8 +40,9 @@ def example_full_features():
     output_file = haam.create_3d_umap_with_pc_arrows(
         arrow_mode='all',  # Show arrows for PC1, PC2, PC3
         color_by_usage=True,  # Color by HU/AI usage patterns
-        top_k=5,  # Average top/bottom 5 topics for arrow endpoints
+        top_k=1,  # Single top/bottom topic for cleaner arrows (default)
         percentile_threshold=90.0,  # Use 90th percentile
+        show_topic_labels=10,  # Show only 10 closest topics to camera (default)
         output_dir='./visualizations',
         display=True
     )
@@ -140,7 +141,44 @@ def example_explore_then_visualize():
     print(f"\nCreated visualization for interesting PCs: {output_file}")
 
 
-# Example 6: Batch creation for different configurations
+# Example 6: Different label display options
+def example_label_display_options():
+    """Demonstrate different topic label display modes."""
+    print("\nExample 6: Topic label display options")
+    print("-" * 50)
+    
+    # Version 1: Hide all labels for cleaner view
+    print("\nCreating with no topic labels (hover still works)...")
+    output_file = haam.create_3d_umap_with_pc_arrows(
+        pc_indices=[0, 1, 2],
+        arrow_mode='list',
+        show_topic_labels=False,  # No labels, clean view
+        output_dir='./visualizations'
+    )
+    print(f"Saved clean view: {output_file}")
+    
+    # Version 2: Show all labels
+    print("\nCreating with all topic labels...")
+    output_file = haam.create_3d_umap_with_pc_arrows(
+        pc_indices=[0, 1, 2],
+        arrow_mode='list',
+        show_topic_labels=True,  # All labels visible
+        output_dir='./visualizations'
+    )
+    print(f"Saved full labels view: {output_file}")
+    
+    # Version 3: Show only 5 closest topics
+    print("\nCreating with only 5 closest topic labels...")
+    output_file = haam.create_3d_umap_with_pc_arrows(
+        pc_indices=[0, 1, 2],
+        arrow_mode='list',
+        show_topic_labels=5,  # Only 5 closest to camera
+        output_dir='./visualizations'
+    )
+    print(f"Saved sparse labels view: {output_file}")
+    
+
+# Example 7: Batch creation for different configurations
 def example_batch_creation():
     """Create multiple visualizations with different settings."""
     print("\nExample 6: Batch creation of visualizations")
@@ -159,8 +197,9 @@ def example_batch_creation():
             pc_indices=pc_indices,
             arrow_mode=arrow_mode,
             color_by_usage=color_by_usage,
-            top_k=5,
+            top_k=1,  # Clean single-topic arrows
             percentile_threshold=90.0,
+            show_topic_labels=10,  # Default label display
             output_dir=f'./visualizations/{desc}',
             display=False  # Don't display in batch mode
         )
