@@ -725,7 +725,8 @@ class HAAM:
                            max_words: int = 100,
                            figsize: Tuple[int, int] = (10, 5),
                            output_dir: Optional[str] = None,
-                           display: bool = True) -> Tuple[Any, str, str]:
+                           display: bool = True,
+                           color_mode: str = 'pole') -> Tuple[Any, str, str]:
         """
         Create word clouds for high and low poles of a specific PC.
         
@@ -743,6 +744,14 @@ class HAAM:
             Directory to save output files
         display : bool
             Whether to display the plots
+        color_mode : str, optional
+            'pole' (default): Red for high pole, blue for low pole
+            'validity': Color based on Y/HU/AI agreement:
+                - Dark red: top quartile for all (Y, HU, AI)
+                - Light red: top quartile for HU & AI only
+                - Dark blue: bottom quartile for all
+                - Light blue: bottom quartile for HU & AI only
+                - Grey: mixed signals
             
         Returns
         -------
@@ -753,7 +762,7 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
             
         return self.wordcloud_generator.create_pc_wordclouds(
             pc_idx=pc_idx,
@@ -761,7 +770,8 @@ class HAAM:
             max_words=max_words,
             figsize=figsize,
             output_dir=output_dir,
-            display=display
+            display=display,
+            color_mode=color_mode
         )
     
     def create_all_pc_wordclouds(self,
@@ -770,7 +780,8 @@ class HAAM:
                                max_words: int = 100,
                                figsize: Tuple[int, int] = (10, 5),
                                output_dir: str = './wordclouds',
-                               display: bool = False) -> Dict[int, Tuple[str, str]]:
+                               display: bool = False,
+                               color_mode: str = 'pole') -> Dict[int, Tuple[str, str]]:
         """
         Create word clouds for all specified PCs.
         
@@ -788,6 +799,8 @@ class HAAM:
             Directory to save output files
         display : bool
             Whether to display each plot
+        color_mode : str
+            'pole' or 'validity' coloring mode
             
         Returns
         -------
@@ -798,7 +811,7 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
             
         # If no indices specified, use top 9 PCs
         if pc_indices is None:
@@ -810,7 +823,8 @@ class HAAM:
             max_words=max_words,
             figsize=figsize,
             output_dir=output_dir,
-            display=display
+            display=display,
+            color_mode=color_mode
         )
     
     def create_top_pcs_wordcloud_grid(self,
@@ -820,7 +834,8 @@ class HAAM:
                                     k: int = 10,
                                     max_words: int = 50,
                                     output_file: Optional[str] = None,
-                                    display: bool = True) -> Any:
+                                    display: bool = True,
+                                    color_mode: str = 'pole') -> Any:
         """
         Create a grid visualization of word clouds for top PCs.
         
@@ -840,6 +855,9 @@ class HAAM:
             Path to save the grid visualization
         display : bool
             Whether to display the plot
+        color_mode : str
+            'pole' (default): Red for high pole, blue for low pole
+            'validity': Color based on Y/HU/AI agreement
             
         Returns
         -------
@@ -850,7 +868,7 @@ class HAAM:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
             
         if not hasattr(self, 'wordcloud_generator'):
-            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer, self.analysis.results)
             
         # If no indices specified, use top PCs
         if pc_indices is None:
@@ -861,7 +879,8 @@ class HAAM:
             k=k,
             max_words=max_words,
             output_file=output_file,
-            display=display
+            display=display,
+            color_mode=color_mode
         )
     
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
