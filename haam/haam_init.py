@@ -599,6 +599,117 @@ class HAAM:
         
         return output_files
     
+    def create_3d_umap_with_pc_arrows(self,
+                                     pc_indices: Optional[Union[int, List[int]]] = None,
+                                     top_k: int = 5,
+                                     percentile_threshold: float = 90.0,
+                                     arrow_mode: str = 'all',
+                                     color_by_usage: bool = True,
+                                     output_dir: Optional[str] = None,
+                                     display: bool = True) -> str:
+        """
+        Create 3D UMAP visualization with PC directional arrows.
+        
+        This creates an interactive 3D scatter plot where:
+        - Topics are positioned in 3D UMAP space based on their semantic similarity
+        - Arrows show PC directions from average of bottom-k to top-k topics
+        - Topics are colored based on HU/AI usage patterns (quartiles)
+        
+        The key insight: In UMAP space, PC gradients often form linear patterns,
+        allowing us to visualize how principal components map to topic space.
+        
+        Parameters
+        ----------
+        pc_indices : int or List[int], optional
+            PC indices to show arrows for (0-based).
+            - If None and arrow_mode='all': shows arrows for PC1, PC2, PC3
+            - If int: shows arrow for that single PC
+            - If list: shows arrows for all PCs in the list
+        top_k : int, default=5
+            Number of top/bottom scoring topics to average for arrow endpoints.
+            If fewer topics meet the threshold, uses all available.
+        percentile_threshold : float, default=90.0
+            Percentile threshold for selecting top/bottom topics.
+            90.0 means top 10% and bottom 10% of topics.
+        arrow_mode : str, default='all'
+            Controls which arrows to display:
+            - 'single': Show arrow for single PC
+            - 'list': Show arrows for specified list of PCs
+            - 'all': Show arrows for first 3 PCs
+        color_by_usage : bool, default=True
+            Whether to color topics by HU/AI usage patterns:
+            - Dark red: All three (HU, AI, Y) in top quartile
+            - Red: HU & AI both in top quartile
+            - Dark blue: All three in bottom quartile
+            - Blue: HU & AI both in bottom quartile
+            - Gray: Mixed patterns
+        output_dir : str, optional
+            Directory to save output. If None, uses current directory
+        display : bool, default=True
+            Whether to display in notebook/colab
+            
+        Returns
+        -------
+        str
+            Path to saved HTML file
+            
+        Examples
+        --------
+        # Show arrows for first 3 PCs with default settings
+        haam.create_3d_umap_with_pc_arrows()
+        
+        # Show arrow only for PC5, using top/bottom 3 topics
+        haam.create_3d_umap_with_pc_arrows(pc_indices=4, top_k=3, arrow_mode='single')
+        
+        # Show arrows for specific PCs with stricter threshold
+        haam.create_3d_umap_with_pc_arrows(
+            pc_indices=[0, 3, 7], 
+            percentile_threshold=95.0,  # Top/bottom 5%
+            arrow_mode='list'
+        )
+        
+        # Use more topics for more stable arrow directions
+        haam.create_3d_umap_with_pc_arrows(top_k=10, percentile_threshold=80.0)
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+        
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        
+        # Set up output path
+        if output_dir is None:
+            output_dir = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Create filename based on options
+        if isinstance(pc_indices, int):
+            filename = f'3d_umap_pc{pc_indices+1}_arrow.html'
+        elif isinstance(pc_indices, list):
+            pc_str = '_'.join([str(idx+1) for idx in pc_indices[:3]])  # Limit filename length
+            filename = f'3d_umap_pc{pc_str}_arrows.html'
+        else:
+            filename = '3d_umap_with_pc_arrows.html'
+        
+        output_file = os.path.join(output_dir, filename)
+        
+        # Create the visualization
+        fig = self.visualizer.create_3d_umap_with_pc_arrows(
+            umap_embeddings=self.topic_analyzer.umap_embeddings,
+            cluster_labels=self.topic_analyzer.cluster_labels,
+            topic_keywords=self.topic_analyzer.topic_keywords,
+            pc_scores_all=self.analysis.results['pca_features'],
+            pc_indices=pc_indices,
+            top_k=top_k,
+            percentile_threshold=percentile_threshold,
+            arrow_mode=arrow_mode,
+            color_by_usage=color_by_usage,
+            output_file=output_file,
+            display=display
+        )
+        
+        return output_file
+    
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
         """
         Export all results and create all visualizations.

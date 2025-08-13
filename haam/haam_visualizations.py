@@ -1047,6 +1047,637 @@ class HAAMVisualizer:
             
         return summary
     
+    def create_3d_umap_with_pc_arrows(self,
+                                      umap_embeddings: np.ndarray,
+                                      cluster_labels: np.ndarray,
+                                      topic_keywords: Dict[int, str],
+                                      pc_scores_all: np.ndarray,
+                                      pc_indices: Optional[Union[int, List[int]]] = None,
+                                      top_k: int = 5,
+                                      percentile_threshold: float = 90.0,
+                                      arrow_mode: str = 'all',
+                                      color_by_usage: bool = True,
+                                      output_file: Optional[str] = None,
+                                      display: bool = True) -> go.Figure:
+        """
+        Create 3D UMAP visualization with PC directional arrows.
+        
+        This method creates a 3D UMAP space where:
+        - Topics are positioned based on their UMAP embeddings
+        - Arrows show PC directions from low to high scoring topics
+        - Arrow endpoints are averages of top-k and bottom-k topic positions
+        - Topics are colored by HU/AI usage patterns
+        
+        Parameters
+        ----------
+        umap_embeddings : np.ndarray
+            3D UMAP embeddings (n_samples x 3)
+        cluster_labels : np.ndarray
+            Cluster assignments for each point
+        topic_keywords : Dict[int, str]
+            Topic ID to keyword mapping
+        pc_scores_all : np.ndarray
+            PC scores for all samples (n_samples x n_components)
+        pc_indices : int or List[int], optional
+            PC indices to show arrows for. If None and arrow_mode='all', shows first 3
+        top_k : int, default=5
+            Number of top/bottom topics to average for arrow endpoints
+        percentile_threshold : float, default=90.0
+            Percentile threshold for determining top/bottom topics
+        arrow_mode : str, default='all'
+            Arrow display mode: 'single', 'list', or 'all'
+        color_by_usage : bool, default=True
+            Whether to color topics by HU/AI usage patterns
+        output_file : str, optional
+            Path to save HTML file
+        display : bool, default=True
+            Whether to display in notebook/colab
+            
+        Returns
+        -------
+        go.Figure
+            Plotly 3D figure object
+        """
+        # Validate inputs
+        if umap_embeddings.shape[1] != 3:
+            raise ValueError("UMAP embeddings must be 3D")
+            
+        # Determine which PCs to show arrows for
+        if pc_indices is None:
+            if arrow_mode == 'all':
+                pc_indices = [0, 1, 2]  # First 3 PCs
+            else:
+                pc_indices = []
+        elif isinstance(pc_indices, int):
+            pc_indices = [pc_indices]
+            
+        # Create figure
+        fig = go.Figure()
+        
+        # Calculate topic centroids and properties
+        unique_topics = np.unique(cluster_labels[cluster_labels != -1])
+        topic_data = []
+        
+        for topic_id in unique_topics:
+            topic_mask = cluster_labels == topic_id
+            if topic_mask.sum() < 3:
+                continue
+                
+            # Calculate centroid in UMAP space
+            centroid = umap_embeddings[topic_mask].mean(axis=0)
+            
+            # Calculate topic's average PC scores
+            topic_pc_scores = pc_scores_all[topic_mask].mean(axis=0)
+            
+            topic_data.append({
+                'topic_id': topic_id,
+                'centroid': centroid,
+                'size': topic_mask.sum(),
+                'keywords': topic_keywords.get(topic_id, f'Topic {topic_id}'),
+                'pc_scores': topic_pc_scores
+            })
+        
+        # Determine colors based on usage patterns
+        if color_by_usage and hasattr(self, 'results'):
+            # Calculate quartiles for HU and AI
+            hu_scores = []
+            ai_scores = []
+            y_scores = []
+            
+            for td in topic_data:
+                # Use average PC coefficients weighted by topic's PC scores
+                hu_coefs = self.results['debiased_lasso']['HU']['coefs_std']
+                ai_coefs = self.results['debiased_lasso']['AI']['coefs_std']
+                y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
+                
+                hu_score = np.dot(td['pc_scores'], hu_coefs)
+                ai_score = np.dot(td['pc_scores'], ai_coefs)
+                y_score = np.dot(td['pc_scores'], y_coefs)
+                
+                hu_scores.append(hu_score)
+                ai_scores.append(ai_score)
+                y_scores.append(y_score)
+                
+                td['hu_score'] = hu_score
+                td['ai_score'] = ai_score
+                td['y_score'] = y_score
+            
+            # Calculate quartiles
+            hu_q75 = np.percentile(hu_scores, 75)
+            hu_q25 = np.percentile(hu_scores, 25)
+            ai_q75 = np.percentile(ai_scores, 75)
+            ai_q25 = np.percentile(ai_scores, 25)
+            y_q75 = np.percentile(y_scores, 75)
+            y_q25 = np.percentile(y_scores, 25)
+            
+            # Assign colors
+            for td in topic_data:
+                hu_high = td['hu_score'] >= hu_q75
+                hu_low = td['hu_score'] <= hu_q25
+                ai_high = td['ai_score'] >= ai_q75
+                ai_low = td['ai_score'] <= ai_q25
+                y_high = td['y_score'] >= y_q75
+                y_low = td['y_score'] <= y_q25
+                
+                # Color scheme as before
+                if hu_high and ai_high and y_high:
+                    td['color'] = '#8B0000'  # Dark red
+                    td['color_desc'] = 'All High (HU, AI, Y)'
+                elif hu_low and ai_low and y_low:
+                    td['color'] = '#00008B'  # Dark blue
+                    td['color_desc'] = 'All Low (HU, AI, Y)'
+                elif hu_high and ai_high:
+                    td['color'] = '#FF4444'  # Red
+                    td['color_desc'] = 'HU & AI High'
+                elif hu_low and ai_low:
+                    td['color'] = '#4444FF'  # Blue
+                    td['color_desc'] = 'HU & AI Low'
+                else:
+                    td['color'] = '#888888'  # Gray
+                    td['color_desc'] = 'Mixed'
+        else:
+            # Default coloring
+            for td in topic_data:
+                td['color'] = '#888888'
+                td['color_desc'] = f'Size: {td["size"]}'
+        
+        # Add topic points
+        for td in topic_data:
+            fig.add_trace(go.Scatter3d(
+                x=[td['centroid'][0]],
+                y=[td['centroid'][1]],
+                z=[td['centroid'][2]],
+                mode='markers+text',
+                marker=dict(
+                    size=10 + np.log(td['size']) * 2,
+                    color=td['color'],
+                    line=dict(color='black', width=1)
+                ),
+                text=td['keywords'][:30] + '...' if len(td['keywords']) > 30 else td['keywords'],
+                textposition='top center',
+                textfont=dict(size=10),
+                hovertext=f"Topic {td['topic_id']}<br>"
+                         f"Keywords: {td['keywords']}<br>"
+                         f"Size: {td['size']}<br>"
+                         f"Color: {td['color_desc']}<br>"
+                         f"UMAP1: {td['centroid'][0]:.3f}<br>"
+                         f"UMAP2: {td['centroid'][1]:.3f}<br>"
+                         f"UMAP3: {td['centroid'][2]:.3f}",
+                hoverinfo='text',
+                showlegend=False,
+                name=f"Topic {td['topic_id']}"
+            ))
+        
+        # Add PC arrows
+        for pc_idx in pc_indices:
+            if pc_idx >= pc_scores_all.shape[1]:
+                continue
+                
+            # Get PC scores for each topic
+            topic_pc_scores = [(td['topic_id'], td['pc_scores'][pc_idx], td['centroid']) 
+                               for td in topic_data]
+            
+            # Calculate percentile thresholds
+            scores_only = [s[1] for s in topic_pc_scores]
+            high_threshold = np.percentile(scores_only, percentile_threshold)
+            low_threshold = np.percentile(scores_only, 100 - percentile_threshold)
+            
+            # Get high and low scoring topics
+            high_topics = [t for t in topic_pc_scores if t[1] >= high_threshold]
+            low_topics = [t for t in topic_pc_scores if t[1] <= low_threshold]
+            
+            # Sort and take top-k
+            high_topics.sort(key=lambda x: x[1], reverse=True)
+            low_topics.sort(key=lambda x: x[1])
+            
+            high_topics = high_topics[:top_k]
+            low_topics = low_topics[:top_k]
+            
+            if len(high_topics) == 0 or len(low_topics) == 0:
+                continue
+                
+            # Calculate average positions
+            high_positions = np.array([t[2] for t in high_topics])
+            low_positions = np.array([t[2] for t in low_topics])
+            
+            high_center = high_positions.mean(axis=0)
+            low_center = low_positions.mean(axis=0)
+            
+            # Add arrow shaft
+            fig.add_trace(go.Scatter3d(
+                x=[low_center[0], high_center[0]],
+                y=[low_center[1], high_center[1]],
+                z=[low_center[2], high_center[2]],
+                mode='lines',
+                line=dict(
+                    color='black',
+                    width=4
+                ),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+            
+            # Add arrowhead using cone
+            direction = high_center - low_center
+            if np.linalg.norm(direction) > 0:
+                direction_norm = direction / np.linalg.norm(direction)
+                
+                # Position cone at 90% of the way along the arrow
+                cone_pos = low_center + 0.9 * direction
+                
+                fig.add_trace(go.Cone(
+                    x=[cone_pos[0]],
+                    y=[cone_pos[1]],
+                    z=[cone_pos[2]],
+                    u=[direction_norm[0]],
+                    v=[direction_norm[1]],
+                    w=[direction_norm[2]],
+                    sizemode='absolute',
+                    sizeref=0.3,
+                    showscale=False,
+                    colorscale='Blues',
+                    hoverinfo='skip'
+                ))
+            
+            # Add label at midpoint
+            midpoint = (low_center + high_center) / 2
+            fig.add_trace(go.Scatter3d(
+                x=[midpoint[0]],
+                y=[midpoint[1]],
+                z=[midpoint[2]],
+                mode='text',
+                text=[f'PC{pc_idx + 1}'],
+                textfont=dict(
+                    size=14,
+                    color='black',
+                    family='Arial Black'
+                ),
+                showlegend=False,
+                hovertext=f'PC{pc_idx + 1}<br>'
+                         f'High topics ({len(high_topics)}): {", ".join([str(t[0]) for t in high_topics])}<br>'
+                         f'Low topics ({len(low_topics)}): {", ".join([str(t[0]) for t in low_topics])}<br>'
+                         f'Avg high score: {np.mean([t[1] for t in high_topics]):.3f}<br>'
+                         f'Avg low score: {np.mean([t[1] for t in low_topics]):.3f}',
+                hoverinfo='text'
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title='3D UMAP Space with Principal Component Directions',
+            scene=dict(
+                xaxis_title='UMAP 1',
+                yaxis_title='UMAP 2',
+                zaxis_title='UMAP 3',
+                camera=dict(
+                    eye=dict(x=1.5, y=1.5, z=1.5)
+                ),
+                aspectmode='cube'
+            ),
+            width=1000,
+            height=800,
+            hovermode='closest'
+        )
+        
+        # Add legend for colors if using usage-based coloring
+        if color_by_usage:
+            # Add invisible traces for legend
+            legend_items = [
+                ('All High (HU, AI, Y)', '#8B0000'),
+                ('HU & AI High', '#FF4444'),
+                ('Mixed', '#888888'),
+                ('HU & AI Low', '#4444FF'),
+                ('All Low (HU, AI, Y)', '#00008B')
+            ]
+            
+            for label, color in legend_items:
+                fig.add_trace(go.Scatter3d(
+                    x=[None], y=[None], z=[None],
+                    mode='markers',
+                    marker=dict(size=10, color=color),
+                    showlegend=True,
+                    name=label
+                ))
+        
+        # Save if requested
+        if output_file:
+            fig.write_html(output_file)
+            print(f"3D UMAP visualization saved to: {output_file}")
+        
+        # Display if requested
+        if display:
+            self._display_in_colab(fig.to_html(), "3D UMAP with PC Arrows", height=900)
+        
+        return fig
+    
+    def create_3d_pca_with_arrows(self,
+                                  pca_features: np.ndarray,
+                                  cluster_labels: np.ndarray,
+                                  topic_keywords: Dict[int, str],
+                                  pc_indices: Optional[Union[int, List[int]]] = None,
+                                  arrow_mode: str = 'all',
+                                  color_by_usage: bool = True,
+                                  output_file: Optional[str] = None,
+                                  display: bool = True) -> go.Figure:
+        """
+        Create 3D PCA visualization with directional arrows showing PC gradients.
+        
+        This method creates a 3D scatter plot of the first 3 PCs with:
+        - Topic clusters floating in 3D space
+        - Directional arrows showing high->low gradients for specified PCs
+        - Color coding based on HU/AI usage patterns
+        - Interactive tooltips with topic information
+        
+        Parameters
+        ----------
+        pca_features : np.ndarray
+            PCA-transformed features (n_samples x n_components)
+        cluster_labels : np.ndarray
+            Cluster assignments for each point
+        topic_keywords : Dict[int, str]
+            Topic ID to keyword mapping
+        pc_indices : int or List[int], optional
+            PC indices to show arrows for. If None and arrow_mode='all', shows first 3
+        arrow_mode : str, default='all'
+            Arrow display mode: 'single', 'list', or 'all'
+        color_by_usage : bool, default=True
+            Whether to color topics by HU/AI usage patterns
+        output_file : str, optional
+            Path to save HTML file
+        display : bool, default=True
+            Whether to display in notebook/colab
+            
+        Returns
+        -------
+        go.Figure
+            Plotly 3D figure object
+        """
+        # Validate inputs
+        if pca_features.shape[1] < 3:
+            raise ValueError("Need at least 3 PCs for 3D visualization")
+            
+        # Get first 3 PCs for visualization
+        pc_coords = pca_features[:, :3]
+        
+        # Determine which PCs to show arrows for
+        if pc_indices is None:
+            if arrow_mode == 'all':
+                pc_indices = [0, 1, 2]  # First 3 PCs
+            else:
+                pc_indices = []
+        elif isinstance(pc_indices, int):
+            pc_indices = [pc_indices]
+            
+        # Create figure
+        fig = go.Figure()
+        
+        # Calculate topic centroids and properties
+        unique_topics = np.unique(cluster_labels[cluster_labels != -1])
+        topic_data = []
+        
+        for topic_id in unique_topics:
+            topic_mask = cluster_labels == topic_id
+            if topic_mask.sum() < 3:
+                continue
+                
+            # Calculate centroid
+            centroid = pc_coords[topic_mask].mean(axis=0)
+            
+            # Calculate topic's position on each PC
+            topic_pc_scores = pca_features[topic_mask].mean(axis=0)
+            
+            # Get usage data if available (would need to be passed in or calculated)
+            # For now, we'll use PC scores as proxy
+            topic_data.append({
+                'topic_id': topic_id,
+                'centroid': centroid,
+                'size': topic_mask.sum(),
+                'keywords': topic_keywords.get(topic_id, f'Topic {topic_id}'),
+                'pc_scores': topic_pc_scores
+            })
+        
+        # Determine colors based on usage patterns
+        if color_by_usage and hasattr(self, 'results'):
+            # Calculate quartiles for HU and AI
+            hu_scores = []
+            ai_scores = []
+            y_scores = []
+            
+            for td in topic_data:
+                # Use average PC coefficients weighted by topic's PC scores
+                hu_coefs = self.results['debiased_lasso']['HU']['coefs_std']
+                ai_coefs = self.results['debiased_lasso']['AI']['coefs_std']
+                y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
+                
+                hu_score = np.dot(td['pc_scores'], hu_coefs)
+                ai_score = np.dot(td['pc_scores'], ai_coefs)
+                y_score = np.dot(td['pc_scores'], y_coefs)
+                
+                hu_scores.append(hu_score)
+                ai_scores.append(ai_score)
+                y_scores.append(y_score)
+                
+                td['hu_score'] = hu_score
+                td['ai_score'] = ai_score
+                td['y_score'] = y_score
+            
+            # Calculate quartiles
+            hu_q75 = np.percentile(hu_scores, 75)
+            hu_q25 = np.percentile(hu_scores, 25)
+            ai_q75 = np.percentile(ai_scores, 75)
+            ai_q25 = np.percentile(ai_scores, 25)
+            y_q75 = np.percentile(y_scores, 75)
+            y_q25 = np.percentile(y_scores, 25)
+            
+            # Assign colors
+            for td in topic_data:
+                hu_high = td['hu_score'] >= hu_q75
+                hu_low = td['hu_score'] <= hu_q25
+                ai_high = td['ai_score'] >= ai_q75
+                ai_low = td['ai_score'] <= ai_q25
+                y_high = td['y_score'] >= y_q75
+                y_low = td['y_score'] <= y_q25
+                
+                # Color scheme:
+                # All three high: dark red
+                # All three low: dark blue
+                # HU & AI high: red
+                # HU & AI low: blue
+                # Mixed: gray
+                if hu_high and ai_high and y_high:
+                    td['color'] = '#8B0000'  # Dark red
+                    td['color_desc'] = 'All High (HU, AI, Y)'
+                elif hu_low and ai_low and y_low:
+                    td['color'] = '#00008B'  # Dark blue
+                    td['color_desc'] = 'All Low (HU, AI, Y)'
+                elif hu_high and ai_high:
+                    td['color'] = '#FF4444'  # Red
+                    td['color_desc'] = 'HU & AI High'
+                elif hu_low and ai_low:
+                    td['color'] = '#4444FF'  # Blue
+                    td['color_desc'] = 'HU & AI Low'
+                else:
+                    td['color'] = '#888888'  # Gray
+                    td['color_desc'] = 'Mixed'
+        else:
+            # Default coloring by topic size
+            sizes = [td['size'] for td in topic_data]
+            size_norm = (np.array(sizes) - np.min(sizes)) / (np.max(sizes) - np.min(sizes))
+            for i, td in enumerate(topic_data):
+                td['color'] = plt.cm.viridis(size_norm[i])
+                td['color_desc'] = f'Size: {td["size"]}'
+        
+        # Add topic points
+        for td in topic_data:
+            fig.add_trace(go.Scatter3d(
+                x=[td['centroid'][0]],
+                y=[td['centroid'][1]],
+                z=[td['centroid'][2]],
+                mode='markers+text',
+                marker=dict(
+                    size=10 + np.log(td['size']) * 2,
+                    color=td['color'],
+                    line=dict(color='black', width=1)
+                ),
+                text=td['keywords'][:30] + '...' if len(td['keywords']) > 30 else td['keywords'],
+                textposition='top center',
+                textfont=dict(size=10),
+                hovertext=f"Topic {td['topic_id']}<br>"
+                         f"Keywords: {td['keywords']}<br>"
+                         f"Size: {td['size']}<br>"
+                         f"Color: {td['color_desc']}<br>"
+                         f"PC1: {td['centroid'][0]:.3f}<br>"
+                         f"PC2: {td['centroid'][1]:.3f}<br>"
+                         f"PC3: {td['centroid'][2]:.3f}",
+                hoverinfo='text',
+                showlegend=False,
+                name=f"Topic {td['topic_id']}"
+            ))
+        
+        # Add PC arrows
+        for pc_idx in pc_indices:
+            if pc_idx >= pca_features.shape[1]:
+                continue
+                
+            # Find topics with highest and lowest scores for this PC
+            pc_scores_by_topic = [(td['topic_id'], td['pc_scores'][pc_idx], td['centroid']) 
+                                  for td in topic_data]
+            pc_scores_by_topic.sort(key=lambda x: x[1])
+            
+            if len(pc_scores_by_topic) < 2:
+                continue
+                
+            # Get lowest and highest scoring topics
+            low_topic = pc_scores_by_topic[0]
+            high_topic = pc_scores_by_topic[-1]
+            
+            # Calculate arrow start and end points
+            # Start from low topic centroid, end at high topic centroid
+            start_point = low_topic[2]
+            end_point = high_topic[2]
+            
+            # Add arrow shaft
+            fig.add_trace(go.Scatter3d(
+                x=[start_point[0], end_point[0]],
+                y=[start_point[1], end_point[1]],
+                z=[start_point[2], end_point[2]],
+                mode='lines',
+                line=dict(
+                    color='black',
+                    width=4
+                ),
+                showlegend=False,
+                hoverinfo='skip'
+            ))
+            
+            # Add arrowhead using cone
+            direction = end_point - start_point
+            direction_norm = direction / np.linalg.norm(direction)
+            
+            # Position cone at 90% of the way along the arrow
+            cone_pos = start_point + 0.9 * direction
+            
+            fig.add_trace(go.Cone(
+                x=[cone_pos[0]],
+                y=[cone_pos[1]],
+                z=[cone_pos[2]],
+                u=[direction_norm[0]],
+                v=[direction_norm[1]],
+                w=[direction_norm[2]],
+                sizemode='absolute',
+                sizeref=0.3,
+                showscale=False,
+                colorscale='Blues',
+                hoverinfo='skip'
+            ))
+            
+            # Add label at midpoint
+            midpoint = (start_point + end_point) / 2
+            fig.add_trace(go.Scatter3d(
+                x=[midpoint[0]],
+                y=[midpoint[1]],
+                z=[midpoint[2]],
+                mode='text',
+                text=[f'PC{pc_idx + 1}'],
+                textfont=dict(
+                    size=14,
+                    color='black',
+                    family='Arial Black'
+                ),
+                showlegend=False,
+                hovertext=f'PC{pc_idx + 1}<br>'
+                         f'Low end: Topic {low_topic[0]} (score: {low_topic[1]:.3f})<br>'
+                         f'High end: Topic {high_topic[0]} (score: {high_topic[1]:.3f})',
+                hoverinfo='text'
+            ))
+        
+        # Update layout
+        fig.update_layout(
+            title='3D PCA Topic Space with Principal Component Directions',
+            scene=dict(
+                xaxis_title='PC1',
+                yaxis_title='PC2',
+                zaxis_title='PC3',
+                camera=dict(
+                    eye=dict(x=1.5, y=1.5, z=1.5)
+                ),
+                aspectmode='cube'
+            ),
+            width=1000,
+            height=800,
+            hovermode='closest'
+        )
+        
+        # Add legend for colors if using usage-based coloring
+        if color_by_usage:
+            # Add invisible traces for legend
+            legend_items = [
+                ('All High (HU, AI, Y)', '#8B0000'),
+                ('HU & AI High', '#FF4444'),
+                ('Mixed', '#888888'),
+                ('HU & AI Low', '#4444FF'),
+                ('All Low (HU, AI, Y)', '#00008B')
+            ]
+            
+            for label, color in legend_items:
+                fig.add_trace(go.Scatter3d(
+                    x=[None], y=[None], z=[None],
+                    mode='markers',
+                    marker=dict(size=10, color=color),
+                    showlegend=True,
+                    name=label
+                ))
+        
+        # Save if requested
+        if output_file:
+            fig.write_html(output_file)
+            print(f"3D PCA visualization saved to: {output_file}")
+        
+        # Display if requested
+        if display:
+            self._display_in_colab(fig.to_html(), "3D PCA with PC Arrows", height=900)
+        
+        return fig
+    
     def _get_main_visualization_template(self) -> str:
         """Get HTML template for main visualization."""
         return '''<!DOCTYPE html>
