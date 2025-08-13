@@ -8,6 +8,7 @@ Main module providing a simplified interface for HAAM analysis.
 from .haam_package import HAAMAnalysis
 from .haam_topics import TopicAnalyzer
 from .haam_visualizations import HAAMVisualizer
+from .haam_wordcloud import PCWordCloudGenerator
 import numpy as np
 import pandas as pd
 import umap
@@ -717,6 +718,151 @@ class HAAM:
         )
         
         return output_file
+    
+    def create_pc_wordclouds(self,
+                           pc_idx: int,
+                           k: int = 10,
+                           max_words: int = 100,
+                           figsize: Tuple[int, int] = (10, 5),
+                           output_dir: Optional[str] = None,
+                           display: bool = True) -> Tuple[Any, str, str]:
+        """
+        Create word clouds for high and low poles of a specific PC.
+        
+        Parameters
+        ----------
+        pc_idx : int
+            PC index (0-based)
+        k : int
+            Number of topics to include from each pole
+        max_words : int
+            Maximum words to display in word cloud
+        figsize : Tuple[int, int]
+            Figure size (width, height) for each subplot
+        output_dir : str, optional
+            Directory to save output files
+        display : bool
+            Whether to display the plots
+            
+        Returns
+        -------
+        Tuple[Figure, str, str]
+            Figure object, high pole output path, low pole output path
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+            
+        if not hasattr(self, 'wordcloud_generator'):
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            
+        return self.wordcloud_generator.create_pc_wordclouds(
+            pc_idx=pc_idx,
+            k=k,
+            max_words=max_words,
+            figsize=figsize,
+            output_dir=output_dir,
+            display=display
+        )
+    
+    def create_all_pc_wordclouds(self,
+                               pc_indices: Optional[List[int]] = None,
+                               k: int = 10,
+                               max_words: int = 100,
+                               figsize: Tuple[int, int] = (10, 5),
+                               output_dir: str = './wordclouds',
+                               display: bool = False) -> Dict[int, Tuple[str, str]]:
+        """
+        Create word clouds for all specified PCs.
+        
+        Parameters
+        ----------
+        pc_indices : List[int], optional
+            List of PC indices. If None, uses top 9 PCs by 'triple' ranking
+        k : int
+            Number of topics to include from each pole
+        max_words : int
+            Maximum words to display in word cloud
+        figsize : Tuple[int, int]
+            Figure size for each subplot
+        output_dir : str
+            Directory to save output files
+        display : bool
+            Whether to display each plot
+            
+        Returns
+        -------
+        Dict[int, Tuple[str, str]]
+            Dictionary mapping PC index to (high_path, low_path)
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+            
+        if not hasattr(self, 'wordcloud_generator'):
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            
+        # If no indices specified, use top 9 PCs
+        if pc_indices is None:
+            pc_indices = self.analysis.get_top_pcs(n=9, ranking_method='triple')
+            
+        return self.wordcloud_generator.create_all_pc_wordclouds(
+            pc_indices=pc_indices,
+            k=k,
+            max_words=max_words,
+            figsize=figsize,
+            output_dir=output_dir,
+            display=display
+        )
+    
+    def create_top_pcs_wordcloud_grid(self,
+                                    pc_indices: Optional[List[int]] = None,
+                                    ranking_method: str = 'triple',
+                                    n_pcs: int = 9,
+                                    k: int = 10,
+                                    max_words: int = 50,
+                                    output_file: Optional[str] = None,
+                                    display: bool = True) -> Any:
+        """
+        Create a grid visualization of word clouds for top PCs.
+        
+        Parameters
+        ----------
+        pc_indices : List[int], optional
+            List of PC indices. If None, uses top PCs by ranking_method
+        ranking_method : str
+            Method to rank PCs if pc_indices not provided: 'triple', 'HU', 'AI', 'SC'
+        n_pcs : int
+            Number of top PCs to include if pc_indices not provided
+        k : int
+            Number of topics to include from each pole
+        max_words : int
+            Maximum words per word cloud
+        output_file : str, optional
+            Path to save the grid visualization
+        display : bool
+            Whether to display the plot
+            
+        Returns
+        -------
+        Figure
+            Figure object
+        """
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+            
+        if not hasattr(self, 'wordcloud_generator'):
+            self.wordcloud_generator = PCWordCloudGenerator(self.topic_analyzer)
+            
+        # If no indices specified, use top PCs
+        if pc_indices is None:
+            pc_indices = self.analysis.get_top_pcs(n=n_pcs, ranking_method=ranking_method)
+            
+        return self.wordcloud_generator.create_top_pcs_wordcloud_grid(
+            pc_indices=pc_indices,
+            k=k,
+            max_words=max_words,
+            output_file=output_file,
+            display=display
+        )
     
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
         """

@@ -19,6 +19,7 @@ HAAM implements the Human-AI Accuracy Model framework for understanding how huma
 - 📊 **Sample-split post-lasso regression** for unbiased statistical inference
 - 🔍 **Automatic topic modeling** to interpret principal components using c-TF-IDF
 - 📈 **Interactive visualizations** including framework diagrams, coefficient grids, and 3D UMAP plots
+- ☁️ **Word cloud visualizations** for PC poles with customizable color schemes (red for high, blue for low)
 - 💾 **Comprehensive metrics export** including top/bottom topics for all 200 PCs
 - 🔄 **R compatibility** via reticulate
 
