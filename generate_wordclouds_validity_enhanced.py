@@ -100,9 +100,17 @@ def create_enhanced_pc_wordclouds(haam_instance, pc_idx, k=10, max_words=150,
     from matplotlib.colors import LinearSegmentedColormap
     import matplotlib.patches as mpatches
     
+    # Initialize word cloud generator if not exists
+    if not hasattr(haam_instance, 'wordcloud_generator'):
+        from haam.haam_wordcloud import PCWordCloudGenerator
+        haam_instance.wordcloud_generator = PCWordCloudGenerator(
+            haam_instance.topic_analyzer, 
+            haam_instance.analysis.results if hasattr(haam_instance, 'analysis') else None
+        )
+    
     # Get PC associations from analysis results
     pc_associations = {}
-    if haam_instance.analysis.results and 'debiased_lasso' in haam_instance.analysis.results:
+    if hasattr(haam_instance, 'analysis') and haam_instance.analysis.results and 'debiased_lasso' in haam_instance.analysis.results:
         for outcome in ['SC', 'AI', 'HU']:
             if outcome in haam_instance.analysis.results['debiased_lasso']:
                 coef = haam_instance.analysis.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
@@ -281,6 +289,14 @@ def create_pc_table_visualization(haam_instance, pc_indices, k=3, max_words=100,
     Create a table-like visualization showing all PCs with their word clouds.
     """
     from wordcloud import WordCloud
+    
+    # Initialize word cloud generator if not exists
+    if not hasattr(haam_instance, 'wordcloud_generator'):
+        from haam.haam_wordcloud import PCWordCloudGenerator
+        haam_instance.wordcloud_generator = PCWordCloudGenerator(
+            haam_instance.topic_analyzer, 
+            haam_instance.analysis.results if hasattr(haam_instance, 'analysis') else None
+        )
     
     n_pcs = len(pc_indices)
     fig, axes = plt.subplots(n_pcs, 3, figsize=(18, 4*n_pcs))
