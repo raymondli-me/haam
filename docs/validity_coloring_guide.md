@@ -6,25 +6,26 @@ The validity coloring mode is an advanced feature for HAAM word clouds that help
 
 ## What is Validity Coloring?
 
-Validity coloring uses different colors to show whether topics are:
+Validity coloring uses different colors to show the level of agreement across measures:
 
-1. **Valid markers**: Associated with high/low values across all three measures (Y/ground truth, Human ratings, AI ratings)
-2. **Perceived markers**: Associated with high/low values in human and AI ratings but NOT in ground truth
-3. **Mixed signals**: Inconsistent patterns across the three measures
+1. **Consensus markers (dark colors)**: All three measures agree (Y, HU, AI all high or all low)
+2. **Any signal markers (light colors)**: At least one measure indicates high/low
+3. **Opposing signals (dark grey)**: Disagreement - some measures say high, others say low
+4. **Neutral markers (light grey)**: All measures in the middle range
 
 ## Color Scheme
 
 ### High-Associated Topics
-- **Dark Red (#8B0000)**: Valid high markers - Topics in top quartile for ALL (Y+HU+AI)
-- **Light Red (#FF6B6B)**: Perceived high markers - Topics in top quartile for HU+AI only
+- **Dark Red (#8B0000)**: Consensus high - ALL three measures (Y+HU+AI) in top quartile
+- **Light Red (#FF6B6B)**: Any high signal - At least one measure in top quartile
 
 ### Low-Associated Topics
-- **Dark Blue (#00008B)**: Valid low markers - Topics in bottom quartile for ALL (Y+HU+AI)
-- **Light Blue (#6B9AFF)**: Perceived low markers - Topics in bottom quartile for HU+AI only
+- **Dark Blue (#00008B)**: Consensus low - ALL three measures (Y+HU+AI) in bottom quartile
+- **Light Blue (#6B9AFF)**: Any low signal - At least one measure in bottom quartile
 
-### Mixed Signals
-- **Dark Grey (#4A4A4A)**: Mixed strong signals - Conflicting strong associations
-- **Light Grey (#B0B0B0)**: Mixed weak signals - No clear pattern
+### Mixed/Neutral Signals
+- **Dark Grey (#4A4A4A)**: Opposing signals - Some measures high AND some low (disagreement)
+- **Light Grey (#B0B0B0)**: All middle - All three measures in middle quartiles (25th-75th)
 
 ## How It Works
 
@@ -72,25 +73,30 @@ grid_fig = haam.create_top_pcs_wordcloud_grid(
 
 ## Interpreting Results
 
-### Valid Markers (Dark Colors)
-These topics are genuine indicators of social class:
-- Consistent across objective measures and subjective ratings
-- Reliable for understanding true social class differences
-- Dark red = genuinely associated with high social class
-- Dark blue = genuinely associated with low social class
+### Consensus Markers (Dark Colors)
+**Dark Red/Blue**: All three measures agree - these are the most reliable indicators
+- Dark red = consensus that this indicates high social class
+- Dark blue = consensus that this indicates low social class
+- High confidence markers for research
 
-### Perceived Markers (Light Colors)
-These topics represent biases or stereotypes:
-- Humans and AI associate them with social class
-- But they don't actually correlate with true social class
-- Light red = stereotypically "high class" but not actually
-- Light blue = stereotypically "low class" but not actually
+### Any Signal Markers (Light Colors)
+**Light Red/Blue**: At least one measure indicates high/low
+- Light red = some evidence of high social class association
+- Light blue = some evidence of low social class association
+- May include both valid markers and stereotypes
+- Useful for exploring potential associations
 
-### Mixed Signals (Grey Colors)
-These topics have inconsistent associations:
-- May indicate complex relationships
-- Could represent ambiguous markers
-- Require further investigation
+### Opposing Signals (Dark Grey)
+**Dark Grey**: Measures disagree - some say high, others say low
+- Indicates complex or contested markers
+- May reveal cultural disagreements about class markers
+- Warrants deeper investigation
+
+### Neutral Markers (Light Grey)
+**Light Grey**: All measures in the middle range
+- Not strongly associated with high or low social class
+- Common/universal experiences
+- Less informative for class distinction
 
 ## Example Interpretation
 

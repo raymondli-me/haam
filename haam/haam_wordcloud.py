@@ -62,11 +62,12 @@ class PCWordCloudGenerator:
         color_mode : str, optional
             'pole' (default): Red for high pole, blue for low pole
             'validity': Color based on Y/HU/AI agreement:
-                - Dark red: top quartile for all (Y, HU, AI)
-                - Light red: top quartile for HU & AI only
-                - Dark blue: bottom quartile for all
-                - Light blue: bottom quartile for HU & AI only
-                - Grey: mixed signals
+                - Dark red: consensus high (all in top quartile)
+                - Light red: any high signal (at least one in top quartile)
+                - Dark blue: consensus low (all in bottom quartile)
+                - Light blue: any low signal (at least one in bottom quartile)
+                - Dark grey: opposing signals (mix of high and low)
+                - Light grey: all in middle quartiles
             
         Returns
         -------
@@ -188,12 +189,12 @@ class PCWordCloudGenerator:
             # Create a legend
             from matplotlib.patches import Patch
             legend_elements = [
-                Patch(facecolor='#8B0000', label='Valid high SC (Y+HU+AI top quartile)'),
-                Patch(facecolor='#FF6B6B', label='Perceived high SC (HU+AI only)'),
-                Patch(facecolor='#00008B', label='Valid low SC (Y+HU+AI bottom quartile)'),
-                Patch(facecolor='#6B9AFF', label='Perceived low SC (HU+AI only)'),
-                Patch(facecolor='#4A4A4A', label='Mixed strong signal'),
-                Patch(facecolor='#B0B0B0', label='Mixed weak signal')
+                Patch(facecolor='#8B0000', label='Consensus high (all top quartile)'),
+                Patch(facecolor='#FF6B6B', label='Any high signal'),
+                Patch(facecolor='#00008B', label='Consensus low (all bottom quartile)'),
+                Patch(facecolor='#6B9AFF', label='Any low signal'),
+                Patch(facecolor='#4A4A4A', label='Opposing signals (high & low)'),
+                Patch(facecolor='#B0B0B0', label='All middle quartiles')
             ]
             fig.legend(handles=legend_elements, loc='center', bbox_to_anchor=(0.5, -0.05), 
                       ncol=3, frameon=False, fontsize=10)
@@ -364,39 +365,41 @@ class PCWordCloudGenerator:
             is_high_topic = percentile > q75
             is_low_topic = percentile < q25
             
-            if is_high_topic:
+            # Check for opposing signals across outcomes
+            has_positive = any(pc_associations.get(outcome) == 'positive' 
+                             for outcome in ['SC', 'AI', 'HU'])
+            has_negative = any(pc_associations.get(outcome) == 'negative' 
+                             for outcome in ['SC', 'AI', 'HU'])
+            
+            if has_positive and has_negative:
+                # Opposing signals - some say high, some say low
+                color = colors['dark_grey']
+                
+            elif is_high_topic:
                 # This topic is associated with high PC values
                 # Check if all outcomes view high PC as high class
                 all_positive = all(pc_associations.get(outcome) == 'positive' 
                                  for outcome in ['SC', 'AI', 'HU'])
-                hu_ai_positive = (pc_associations.get('HU') == 'positive' and 
-                                pc_associations.get('AI') == 'positive')
                 
                 if all_positive:
-                    color = colors['dark_red']  # Valid high marker
-                elif hu_ai_positive and pc_associations.get('SC') != 'positive':
-                    color = colors['light_red']  # Perceived high marker
+                    color = colors['dark_red']  # All agree: valid high marker
                 else:
-                    color = colors['dark_grey']  # Mixed signal
+                    color = colors['light_red']  # Any signal high
                     
             elif is_low_topic:
                 # This topic is associated with low PC values
                 # Check if all outcomes view low PC as low class
                 all_negative = all(pc_associations.get(outcome) == 'negative' 
                                  for outcome in ['SC', 'AI', 'HU'])
-                hu_ai_negative = (pc_associations.get('HU') == 'negative' and 
-                                pc_associations.get('AI') == 'negative')
                 
                 if all_negative:
-                    color = colors['dark_blue']  # Valid low marker
-                elif hu_ai_negative and pc_associations.get('SC') != 'negative':
-                    color = colors['light_blue']  # Perceived low marker
+                    color = colors['dark_blue']  # All agree: valid low marker
                 else:
-                    color = colors['dark_grey']  # Mixed signal
+                    color = colors['light_blue']  # Any signal low
                     
             else:
                 # Topic is in middle quartiles
-                color = colors['light_grey']  # Weak signal
+                color = colors['light_grey']  # All middle: weak signal
             
             # Apply color to all words in this topic
             keywords = topic['keywords'].split(' | ')
@@ -624,12 +627,12 @@ class PCWordCloudGenerator:
         if color_mode == 'validity':
             from matplotlib.patches import Patch
             legend_elements = [
-                Patch(facecolor='#8B0000', label='Valid high (Y+HU+AI)'),
-                Patch(facecolor='#FF6B6B', label='Perceived high (HU+AI only)'),
-                Patch(facecolor='#00008B', label='Valid low (Y+HU+AI)'),
-                Patch(facecolor='#6B9AFF', label='Perceived low (HU+AI only)'),
-                Patch(facecolor='#4A4A4A', label='Mixed strong'),
-                Patch(facecolor='#B0B0B0', label='Mixed weak')
+                Patch(facecolor='#8B0000', label='Consensus high'),
+                Patch(facecolor='#FF6B6B', label='Any high'),
+                Patch(facecolor='#00008B', label='Consensus low'),
+                Patch(facecolor='#6B9AFF', label='Any low'),
+                Patch(facecolor='#4A4A4A', label='Opposing'),
+                Patch(facecolor='#B0B0B0', label='All middle')
             ]
             fig.legend(handles=legend_elements, loc='center', bbox_to_anchor=(0.5, -0.02), 
                       ncol=3, frameon=False, fontsize=9)
