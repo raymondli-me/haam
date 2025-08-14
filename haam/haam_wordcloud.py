@@ -318,15 +318,43 @@ class PCWordCloudGenerator:
         # Check if we have Y/HU/AI data for direct measurement
         if self.criterion is None or self.human_judgment is None or self.ai_judgment is None:
             # Fall back to old method if data not available
+            print(f"[DEBUG] Falling back to legacy color method. criterion={self.criterion is not None}, "
+                  f"human_judgment={self.human_judgment is not None}, ai_judgment={self.ai_judgment is not None}")
             return self._calculate_topic_validity_colors_legacy(topics, pc_idx)
         
-        # Calculate global quartiles for each measure
-        y_q25 = np.nanpercentile(self.criterion, 25)
-        y_q75 = np.nanpercentile(self.criterion, 75)
-        hu_q25 = np.nanpercentile(self.human_judgment, 25)
-        hu_q75 = np.nanpercentile(self.human_judgment, 75)
-        ai_q25 = np.nanpercentile(self.ai_judgment, 25)
-        ai_q75 = np.nanpercentile(self.ai_judgment, 75)
+        # First, calculate means for ALL topics to establish topic-level quartiles
+        # This ensures topics can actually reach the extreme quartiles
+        all_cluster_ids = np.unique(self.topic_analyzer.cluster_labels[self.topic_analyzer.cluster_labels != -1])
+        all_topic_means = {'Y': [], 'HU': [], 'AI': []}
+        
+        for cluster_id in all_cluster_ids:
+            topic_mask = self.topic_analyzer.cluster_labels == cluster_id
+            if np.any(topic_mask):
+                # Y (criterion)
+                y_values = self.criterion[topic_mask]
+                y_valid = y_values[~np.isnan(y_values)]
+                if len(y_valid) > 0:
+                    all_topic_means['Y'].append(np.mean(y_valid))
+                
+                # HU (human judgment) - handle sparse data
+                hu_values = self.human_judgment[topic_mask]
+                hu_valid = hu_values[~np.isnan(hu_values)]
+                if len(hu_valid) > 0:
+                    all_topic_means['HU'].append(np.mean(hu_valid))
+                
+                # AI (ai judgment)
+                ai_values = self.ai_judgment[topic_mask]
+                ai_valid = ai_values[~np.isnan(ai_values)]
+                if len(ai_valid) > 0:
+                    all_topic_means['AI'].append(np.mean(ai_valid))
+        
+        # Calculate quartiles based on TOPIC MEANS, not document values
+        y_q25 = np.percentile(all_topic_means['Y'], 25) if all_topic_means['Y'] else np.nan
+        y_q75 = np.percentile(all_topic_means['Y'], 75) if all_topic_means['Y'] else np.nan
+        hu_q25 = np.percentile(all_topic_means['HU'], 25) if all_topic_means['HU'] else np.nan
+        hu_q75 = np.percentile(all_topic_means['HU'], 75) if all_topic_means['HU'] else np.nan
+        ai_q25 = np.percentile(all_topic_means['AI'], 25) if all_topic_means['AI'] else np.nan
+        ai_q75 = np.percentile(all_topic_means['AI'], 75) if all_topic_means['AI'] else np.nan
         
         word_colors = {}
         cluster_labels = self.topic_analyzer.cluster_labels
@@ -341,42 +369,82 @@ class PCWordCloudGenerator:
                 # No documents in topic, use default color
                 color = colors['light_grey']
             else:
-                # Calculate mean Y/HU/AI values for this topic
-                y_mean = np.mean(self.criterion[topic_mask])
-                hu_mean = np.mean(self.human_judgment[topic_mask])
-                ai_mean = np.mean(self.ai_judgment[topic_mask])
+                # Calculate mean Y/HU/AI values for this topic (handling NaN)
+                y_values = self.criterion[topic_mask]
+                y_valid = y_values[~np.isnan(y_values)]
+                y_mean = np.mean(y_valid) if len(y_valid) > 0 else np.nan
                 
-                # Determine quartile positions
-                y_high = y_mean >= y_q75
-                y_low = y_mean <= y_q25
-                hu_high = hu_mean >= hu_q75
-                hu_low = hu_mean <= hu_q25
-                ai_high = ai_mean >= ai_q75
-                ai_low = ai_mean <= ai_q25
+                hu_values = self.human_judgment[topic_mask]
+                hu_valid = hu_values[~np.isnan(hu_values)]
+                hu_mean = np.mean(hu_valid) if len(hu_valid) > 0 else np.nan
                 
-                # Count high and low signals
-                n_high = sum([y_high, hu_high, ai_high])
-                n_low = sum([y_low, hu_low, ai_low])
+                ai_values = self.ai_judgment[topic_mask]
+                ai_valid = ai_values[~np.isnan(ai_values)]
+                ai_mean = np.mean(ai_valid) if len(ai_valid) > 0 else np.nan
+                
+                # Count valid measures
+                valid_count = sum([not np.isnan(x) for x in [y_mean, hu_mean, ai_mean]])
+                
+                # Determine quartile positions (only for non-NaN values)
+                n_high = 0
+                n_low = 0
+                
+                if not np.isnan(y_mean) and not np.isnan(y_q25) and not np.isnan(y_q75):
+                    if y_mean >= y_q75:
+                        n_high += 1
+                    elif y_mean <= y_q25:
+                        n_low += 1
+                
+                if not np.isnan(hu_mean) and not np.isnan(hu_q25) and not np.isnan(hu_q75):
+                    if hu_mean >= hu_q75:
+                        n_high += 1
+                    elif hu_mean <= hu_q25:
+                        n_low += 1
+                
+                if not np.isnan(ai_mean) and not np.isnan(ai_q25) and not np.isnan(ai_q75):
+                    if ai_mean >= ai_q75:
+                        n_high += 1
+                    elif ai_mean <= ai_q25:
+                        n_low += 1
+                
+                # Debug output for extreme cases
+                if n_high == 3 or n_low == 3:
+                    print(f"[DEBUG] Topic {topic_id}: n_high={n_high}, n_low={n_low}, "
+                          f"Y={y_mean:.2f} (q25={y_q25:.2f}, q75={y_q75:.2f}), "
+                          f"HU={hu_mean:.2f} (q25={hu_q25:.2f}, q75={hu_q75:.2f}), "
+                          f"AI={ai_mean:.2f} (q25={ai_q25:.2f}, q75={ai_q75:.2f})")
                 
                 # Assign color based on pattern
-                if n_high > 0 and n_low > 0:
+                if valid_count == 0:
+                    # No valid data
+                    color = colors['light_grey']
+                elif n_high > 0 and n_low > 0:
                     # Mixed signals (some high, some low)
                     color = colors['dark_grey']
-                elif n_high == 3:
-                    # All in top quartile
-                    color = colors['dark_red']
-                elif n_high > 0:
-                    # At least one in top quartile
-                    color = colors['light_red']
-                elif n_low == 3:
-                    # All in bottom quartile
-                    color = colors['dark_blue']
-                elif n_low > 0:
-                    # At least one in bottom quartile
-                    color = colors['light_blue']
+                elif valid_count < 3:
+                    # With sparse data, if all available measures agree, use dark color
+                    if n_high == valid_count and n_high > 0:
+                        color = colors['dark_red']  # All available are high
+                    elif n_low == valid_count and n_low > 0:
+                        color = colors['dark_blue']  # All available are low
+                    elif n_high > 0:
+                        color = colors['light_red']  # Some high
+                    elif n_low > 0:
+                        color = colors['light_blue']  # Some low
+                    else:
+                        color = colors['light_grey']  # All middle
                 else:
-                    # All in middle quartiles
-                    color = colors['light_grey']
+                    # All three measures available
+                    if n_high == 3:
+                        color = colors['dark_red']  # Consensus high
+                    elif n_high > 0:
+                        color = colors['light_red']  # Some high
+                    elif n_low == 3:
+                        color = colors['dark_blue']  # Consensus low
+                    elif n_low > 0:
+                        color = colors['light_blue']  # Some low
+                    else:
+                        color = colors['light_grey']  # All middle
             
             # Apply color to all words in this topic
             keywords = topic['keywords'].split(' | ')
@@ -384,6 +452,16 @@ class PCWordCloudGenerator:
                 keyword = keyword.strip()
                 if keyword and len(keyword) > 1:
                     word_colors[keyword] = color
+        
+        # Debug: Print color distribution
+        color_counts = {}
+        for color in word_colors.values():
+            color_counts[color] = color_counts.get(color, 0) + 1
+        
+        print(f"\n[DEBUG] Color distribution for PC{pc_idx+1}:")
+        for color_hex, count in sorted(color_counts.items()):
+            color_name = [k for k, v in colors.items() if v == color_hex][0]
+            print(f"  {color_name} ({color_hex}): {count} words")
                     
         return word_colors
     
