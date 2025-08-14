@@ -1057,10 +1057,6 @@ class HAAMVisualizer:
                                       percentile_threshold: float = 90.0,
                                       arrow_mode: str = 'all',
                                       color_by_usage: bool = True,
-                                      color_mode: str = 'legacy',
-                                      criterion: Optional[np.ndarray] = None,
-                                      human_judgment: Optional[np.ndarray] = None,
-                                      ai_judgment: Optional[np.ndarray] = None,
                                       show_topic_labels: Union[bool, int] = 10,
                                       output_file: Optional[str] = None,
                                       display: bool = True) -> go.Figure:
@@ -1093,16 +1089,6 @@ class HAAMVisualizer:
             Arrow display mode: 'single', 'list', or 'all'
         color_by_usage : bool, default=True
             Whether to color topics by HU/AI usage patterns
-        color_mode : str, default='legacy'
-            Coloring mode when color_by_usage=True:
-            - 'legacy': Use PC coefficient-based inference (original behavior)
-            - 'validity': Use direct Y/HU/AI measurement (consistent with word clouds)
-        criterion : np.ndarray, optional
-            Ground truth values (Y) for validity coloring mode
-        human_judgment : np.ndarray, optional
-            Human judgment values (HU) for validity coloring mode
-        ai_judgment : np.ndarray, optional
-            AI judgment values (AI) for validity coloring mode
         show_topic_labels : bool or int, default=10
             - If True: Show all topic labels
             - If False: Hide all topic labels (hover still works)
@@ -1153,207 +1139,69 @@ class HAAMVisualizer:
                 'centroid': centroid,
                 'size': topic_mask.sum(),
                 'keywords': topic_keywords.get(topic_id, f'Topic {topic_id}'),
-                'pc_scores': topic_pc_scores,
-                'mask': topic_mask  # Store mask for validity coloring
+                'pc_scores': topic_pc_scores
             })
         
         # Determine colors based on usage patterns
         if color_by_usage and hasattr(self, 'results'):
-            if color_mode == 'validity' and criterion is not None and human_judgment is not None and ai_judgment is not None:
-                # NEW: Direct measurement coloring (consistent with word clouds)
+            # Calculate quartiles for HU and AI
+            hu_scores = []
+            ai_scores = []
+            y_scores = []
+            
+            for td in topic_data:
+                # Use average PC coefficients weighted by topic's PC scores
+                hu_coefs = self.results['debiased_lasso']['HU']['coefs_std']
+                ai_coefs = self.results['debiased_lasso']['AI']['coefs_std']
+                y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
                 
-                # First, calculate means for ALL topics to establish topic-level quartiles
-                all_topic_means = {'Y': [], 'HU': [], 'AI': []}
+                hu_score = np.dot(td['pc_scores'], hu_coefs)
+                ai_score = np.dot(td['pc_scores'], ai_coefs)
+                y_score = np.dot(td['pc_scores'], y_coefs)
                 
-                for td in topic_data:
-                    topic_mask = td['mask']
-                    
-                    # Y (criterion)
-                    y_values = criterion[topic_mask]
-                    y_valid = y_values[~np.isnan(y_values)]
-                    if len(y_valid) > 0:
-                        all_topic_means['Y'].append(np.mean(y_valid))
-                    
-                    # HU (human judgment)
-                    hu_values = human_judgment[topic_mask]
-                    hu_valid = hu_values[~np.isnan(hu_values)]
-                    if len(hu_valid) > 0:
-                        all_topic_means['HU'].append(np.mean(hu_valid))
-                    
-                    # AI (ai judgment)
-                    ai_values = ai_judgment[topic_mask]
-                    ai_valid = ai_values[~np.isnan(ai_values)]
-                    if len(ai_valid) > 0:
-                        all_topic_means['AI'].append(np.mean(ai_valid))
+                hu_scores.append(hu_score)
+                ai_scores.append(ai_score)
+                y_scores.append(y_score)
                 
-                # Calculate quartiles based on TOPIC MEANS
-                y_q25 = np.percentile(all_topic_means['Y'], 25) if all_topic_means['Y'] else np.nan
-                y_q75 = np.percentile(all_topic_means['Y'], 75) if all_topic_means['Y'] else np.nan
-                hu_q25 = np.percentile(all_topic_means['HU'], 25) if all_topic_means['HU'] else np.nan
-                hu_q75 = np.percentile(all_topic_means['HU'], 75) if all_topic_means['HU'] else np.nan
-                ai_q25 = np.percentile(all_topic_means['AI'], 25) if all_topic_means['AI'] else np.nan
-                ai_q75 = np.percentile(all_topic_means['AI'], 75) if all_topic_means['AI'] else np.nan
+                td['hu_score'] = hu_score
+                td['ai_score'] = ai_score
+                td['y_score'] = y_score
+            
+            # Calculate quartiles
+            hu_q75 = np.percentile(hu_scores, 75)
+            hu_q25 = np.percentile(hu_scores, 25)
+            ai_q75 = np.percentile(ai_scores, 75)
+            ai_q25 = np.percentile(ai_scores, 25)
+            y_q75 = np.percentile(y_scores, 75)
+            y_q25 = np.percentile(y_scores, 25)
+            
+            # Assign colors
+            for td in topic_data:
+                hu_high = td['hu_score'] >= hu_q75
+                hu_low = td['hu_score'] <= hu_q25
+                ai_high = td['ai_score'] >= ai_q75
+                ai_low = td['ai_score'] <= ai_q25
+                y_high = td['y_score'] >= y_q75
+                y_low = td['y_score'] <= y_q25
                 
-                # Assign colors using same logic as word clouds
-                for td in topic_data:
-                    topic_mask = td['mask']
-                    
-                    # Calculate mean Y/HU/AI values for this topic
-                    y_values = criterion[topic_mask]
-                    y_valid = y_values[~np.isnan(y_values)]
-                    y_mean = np.mean(y_valid) if len(y_valid) > 0 else np.nan
-                    
-                    hu_values = human_judgment[topic_mask]
-                    hu_valid = hu_values[~np.isnan(hu_values)]
-                    hu_mean = np.mean(hu_valid) if len(hu_valid) > 0 else np.nan
-                    
-                    ai_values = ai_judgment[topic_mask]
-                    ai_valid = ai_values[~np.isnan(ai_values)]
-                    ai_mean = np.mean(ai_valid) if len(ai_valid) > 0 else np.nan
-                    
-                    # Count valid measures
-                    valid_count = sum([not np.isnan(x) for x in [y_mean, hu_mean, ai_mean]])
-                    
-                    # Determine quartile positions
-                    n_high = 0
-                    n_low = 0
-                    
-                    if not np.isnan(y_mean) and not np.isnan(y_q25) and not np.isnan(y_q75):
-                        if y_mean >= y_q75:
-                            n_high += 1
-                        elif y_mean <= y_q25:
-                            n_low += 1
-                    
-                    if not np.isnan(hu_mean) and not np.isnan(hu_q25) and not np.isnan(hu_q75):
-                        if hu_mean >= hu_q75:
-                            n_high += 1
-                        elif hu_mean <= hu_q25:
-                            n_low += 1
-                    
-                    if not np.isnan(ai_mean) and not np.isnan(ai_q25) and not np.isnan(ai_q75):
-                        if ai_mean >= ai_q75:
-                            n_high += 1
-                        elif ai_mean <= ai_q25:
-                            n_low += 1
-                    
-                    # Assign color based on pattern (same as word clouds)
-                    if valid_count == 0:
-                        td['color'] = '#B0B0B0'  # Light grey
-                        td['color_desc'] = 'No valid data'
-                    elif n_high > 0 and n_low > 0:
-                        td['color'] = '#4A4A4A'  # Dark grey
-                        td['color_desc'] = 'Opposing signals'
-                    elif valid_count < 3:
-                        # With sparse data, if all available measures agree, use dark color
-                        if n_high == valid_count and n_high > 0:
-                            td['color'] = '#8B0000'  # Dark red
-                            td['color_desc'] = f'All {valid_count} measures high'
-                        elif n_low == valid_count and n_low > 0:
-                            td['color'] = '#00008B'  # Dark blue
-                            td['color_desc'] = f'All {valid_count} measures low'
-                        elif n_high > 0:
-                            td['color'] = '#FF6B6B'  # Light red
-                            td['color_desc'] = 'Some high'
-                        elif n_low > 0:
-                            td['color'] = '#6B9AFF'  # Light blue
-                            td['color_desc'] = 'Some low'
-                        else:
-                            td['color'] = '#B0B0B0'  # Light grey
-                            td['color_desc'] = 'All middle'
-                    else:
-                        # All three measures available
-                        if n_high == 3:
-                            td['color'] = '#8B0000'  # Dark red
-                            td['color_desc'] = 'Consensus high (Y, HU, AI)'
-                        elif n_high > 0:
-                            td['color'] = '#FF6B6B'  # Light red
-                            td['color_desc'] = 'Some high'
-                        elif n_low == 3:
-                            td['color'] = '#00008B'  # Dark blue
-                            td['color_desc'] = 'Consensus low (Y, HU, AI)'
-                        elif n_low > 0:
-                            td['color'] = '#6B9AFF'  # Light blue
-                            td['color_desc'] = 'Some low'
-                        else:
-                            td['color'] = '#B0B0B0'  # Light grey
-                            td['color_desc'] = 'All middle'
-                            
-            else:
-                # LEGACY: PC coefficient-based coloring (original implementation)
-                # Calculate quartiles for HU and AI based on PC scores
-                hu_scores = []
-                ai_scores = []
-                y_scores = []
-                
-                for td in topic_data:
-                    # Use average PC coefficients weighted by topic's PC scores
-                    # Check if each model exists (HU might have insufficient data)
-                    if 'HU' in self.results['debiased_lasso']:
-                        hu_coefs = self.results['debiased_lasso']['HU']['coefs_std']
-                        hu_score = np.dot(td['pc_scores'], hu_coefs)
-                    else:
-                        hu_score = np.nan
-                        
-                    if 'AI' in self.results['debiased_lasso']:
-                        ai_coefs = self.results['debiased_lasso']['AI']['coefs_std']
-                        ai_score = np.dot(td['pc_scores'], ai_coefs)
-                    else:
-                        ai_score = np.nan
-                        
-                    if 'SC' in self.results['debiased_lasso']:
-                        y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
-                        y_score = np.dot(td['pc_scores'], y_coefs)
-                    else:
-                        y_score = np.nan
-                    
-                    hu_scores.append(hu_score)
-                    ai_scores.append(ai_score)
-                    y_scores.append(y_score)
-                    
-                    td['hu_score'] = hu_score
-                    td['ai_score'] = ai_score
-                    td['y_score'] = y_score
-                
-                # Calculate quartiles (handle NaN values)
-                hu_valid = [s for s in hu_scores if not np.isnan(s)]
-                ai_valid = [s for s in ai_scores if not np.isnan(s)]
-                y_valid = [s for s in y_scores if not np.isnan(s)]
-                
-                hu_q75 = np.percentile(hu_valid, 75) if hu_valid else np.nan
-                hu_q25 = np.percentile(hu_valid, 25) if hu_valid else np.nan
-                ai_q75 = np.percentile(ai_valid, 75) if ai_valid else np.nan
-                ai_q25 = np.percentile(ai_valid, 25) if ai_valid else np.nan
-                y_q75 = np.percentile(y_valid, 75) if y_valid else np.nan
-                y_q25 = np.percentile(y_valid, 25) if y_valid else np.nan
-                
-                # Assign colors (original scheme)
-                for td in topic_data:
-                    # Handle NaN values in comparisons
-                    hu_high = not np.isnan(td['hu_score']) and not np.isnan(hu_q75) and td['hu_score'] >= hu_q75
-                    hu_low = not np.isnan(td['hu_score']) and not np.isnan(hu_q25) and td['hu_score'] <= hu_q25
-                    ai_high = not np.isnan(td['ai_score']) and not np.isnan(ai_q75) and td['ai_score'] >= ai_q75
-                    ai_low = not np.isnan(td['ai_score']) and not np.isnan(ai_q25) and td['ai_score'] <= ai_q25
-                    y_high = not np.isnan(td['y_score']) and not np.isnan(y_q75) and td['y_score'] >= y_q75
-                    y_low = not np.isnan(td['y_score']) and not np.isnan(y_q25) and td['y_score'] <= y_q25
-                    
-                    # Legacy color scheme
-                    if hu_high and ai_high and y_high:
-                        td['color'] = '#8B0000'  # Dark red
-                        td['color_desc'] = 'All High (HU, AI, Y) - PC inference'
-                    elif hu_low and ai_low and y_low:
-                        td['color'] = '#00008B'  # Dark blue
-                        td['color_desc'] = 'All Low (HU, AI, Y) - PC inference'
-                    elif hu_high and ai_high:
-                        td['color'] = '#FF6B6B'  # Light red (same as word clouds)
-                        td['color_desc'] = 'HU & AI High - PC inference'
-                    elif hu_low and ai_low:
-                        td['color'] = '#6B9AFF'  # Light blue (same as word clouds)
-                        td['color_desc'] = 'HU & AI Low - PC inference'
-                    else:
-                        td['color'] = '#4A4A4A'  # Dark grey (same as word clouds mixed)
-                        td['color_desc'] = 'Mixed - PC inference'
+                # Color scheme as before
+                if hu_high and ai_high and y_high:
+                    td['color'] = '#8B0000'  # Dark red
+                    td['color_desc'] = 'All High (HU, AI, Y)'
+                elif hu_low and ai_low and y_low:
+                    td['color'] = '#00008B'  # Dark blue
+                    td['color_desc'] = 'All Low (HU, AI, Y)'
+                elif hu_high and ai_high:
+                    td['color'] = '#FF4444'  # Red
+                    td['color_desc'] = 'HU & AI High'
+                elif hu_low and ai_low:
+                    td['color'] = '#4444FF'  # Blue
+                    td['color_desc'] = 'HU & AI Low'
+                else:
+                    td['color'] = '#888888'  # Gray
+                    td['color_desc'] = 'Mixed'
         else:
-            # Default coloring by size
+            # Default coloring
             for td in topic_data:
                 td['color'] = '#888888'
                 td['color_desc'] = f'Size: {td["size"]}'

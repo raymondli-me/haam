@@ -606,6 +606,7 @@ class HAAM:
                                      percentile_threshold: float = 90.0,
                                      arrow_mode: str = 'all',
                                      color_by_usage: bool = True,
+                                     color_mode: str = 'legacy',
                                      show_topic_labels: Union[bool, int] = 10,
                                      output_dir: Optional[str] = None,
                                      display: bool = True) -> str:
@@ -640,12 +641,11 @@ class HAAM:
             - 'list': Show arrows for specified list of PCs
             - 'all': Show arrows for first 3 PCs
         color_by_usage : bool, default=True
-            Whether to color topics by HU/AI usage patterns:
-            - Dark red: All three (HU, AI, Y) in top quartile
-            - Red: HU & AI both in top quartile
-            - Dark blue: All three in bottom quartile
-            - Blue: HU & AI both in bottom quartile
-            - Gray: Mixed patterns
+            Whether to color topics by HU/AI usage patterns
+        color_mode : str, default='legacy'
+            Coloring mode when color_by_usage=True:
+            - 'legacy': Use PC coefficient-based inference (original behavior)
+            - 'validity': Use direct Y/HU/AI measurement (consistent with word clouds)
         show_topic_labels : bool or int, default=10
             Controls topic label display:
             - True: Show all topic labels
@@ -663,21 +663,26 @@ class HAAM:
             
         Examples
         --------
-        # Show arrows for first 3 PCs with default settings
-        haam.create_3d_umap_with_pc_arrows()
+        # Show arrows with new validity coloring (consistent with word clouds)
+        haam.create_3d_umap_with_pc_arrows(color_mode='validity')
         
-        # Show arrow only for PC5, using top/bottom 3 topics
-        haam.create_3d_umap_with_pc_arrows(pc_indices=4, top_k=3, arrow_mode='single')
+        # Use legacy PC-based coloring (default)
+        haam.create_3d_umap_with_pc_arrows(color_mode='legacy')
+        
+        # Show arrow only for PC5 with validity coloring
+        haam.create_3d_umap_with_pc_arrows(
+            pc_indices=4, 
+            arrow_mode='single',
+            color_mode='validity'
+        )
         
         # Show arrows for specific PCs with stricter threshold
         haam.create_3d_umap_with_pc_arrows(
             pc_indices=[0, 3, 7], 
             percentile_threshold=95.0,  # Top/bottom 5%
-            arrow_mode='list'
+            arrow_mode='list',
+            color_mode='validity'
         )
-        
-        # Use more topics for more stable arrow directions
-        haam.create_3d_umap_with_pc_arrows(top_k=10, percentile_threshold=80.0)
         """
         if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
@@ -691,13 +696,14 @@ class HAAM:
         os.makedirs(output_dir, exist_ok=True)
         
         # Create filename based on options
+        mode_suffix = '_validity' if color_mode == 'validity' else ''
         if isinstance(pc_indices, int):
-            filename = f'3d_umap_pc{pc_indices+1}_arrow.html'
+            filename = f'3d_umap_pc{pc_indices+1}_arrow{mode_suffix}.html'
         elif isinstance(pc_indices, list):
             pc_str = '_'.join([str(idx+1) for idx in pc_indices[:3]])  # Limit filename length
-            filename = f'3d_umap_pc{pc_str}_arrows.html'
+            filename = f'3d_umap_pc{pc_str}_arrows{mode_suffix}.html'
         else:
-            filename = '3d_umap_with_pc_arrows.html'
+            filename = f'3d_umap_with_pc_arrows{mode_suffix}.html'
         
         output_file = os.path.join(output_dir, filename)
         
@@ -712,6 +718,10 @@ class HAAM:
             percentile_threshold=percentile_threshold,
             arrow_mode=arrow_mode,
             color_by_usage=color_by_usage,
+            color_mode=color_mode,
+            criterion=self.criterion if color_mode == 'validity' else None,
+            human_judgment=self.human_judgment if color_mode == 'validity' else None,
+            ai_judgment=self.ai_judgment if color_mode == 'validity' else None,
             show_topic_labels=show_topic_labels,
             output_file=output_file,
             display=display
