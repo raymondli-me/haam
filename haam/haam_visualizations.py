@@ -1244,12 +1244,12 @@ class HAAMVisualizer:
                         td['color'] = '#4A4A4A'  # Dark grey
                         td['color_desc'] = 'Opposing signals'
                     elif valid_count < 3:
-                        # With sparse data, if all available measures agree, use dark color
+                        # With sparse data, use light colors (same as "some high/low")
                         if n_high == valid_count and n_high > 0:
-                            td['color'] = '#8B0000'  # Dark red
+                            td['color'] = '#FF6B6B'  # Light red (same as "some high")
                             td['color_desc'] = f'All {valid_count} measures high'
                         elif n_low == valid_count and n_low > 0:
-                            td['color'] = '#00008B'  # Dark blue
+                            td['color'] = '#6B9AFF'  # Light blue (same as "some low")
                             td['color_desc'] = f'All {valid_count} measures low'
                         elif n_high > 0:
                             td['color'] = '#FF6B6B'  # Light red
@@ -1277,6 +1277,34 @@ class HAAMVisualizer:
                         else:
                             td['color'] = '#B0B0B0'  # Light grey
                             td['color_desc'] = 'All middle'
+                
+                # Calculate and print data quality statistics
+                incomplete_topics = 0
+                total_topics = len(topic_data)
+                
+                for td in topic_data:
+                    topic_mask = td['mask']
+                    
+                    # Check how many valid measures this topic has
+                    y_values = criterion[topic_mask]
+                    y_valid = y_values[~np.isnan(y_values)]
+                    hu_values = human_judgment[topic_mask]
+                    hu_valid = hu_values[~np.isnan(hu_values)]
+                    ai_values = ai_judgment[topic_mask]
+                    ai_valid = ai_values[~np.isnan(ai_values)]
+                    
+                    valid_measures = sum([len(y_valid) > 0, len(hu_valid) > 0, len(ai_valid) > 0])
+                    if valid_measures < 3:
+                        incomplete_topics += 1
+                
+                # Print data quality report
+                print("\n" + "="*60)
+                print("DATA QUALITY REPORT - Validity Coloring Mode")
+                print("="*60)
+                print(f"Total topics: {total_topics}")
+                print(f"Topics with incomplete data: {incomplete_topics}/{total_topics} ({incomplete_topics/total_topics*100:.1f}%)")
+                print(f"Topics with complete data: {total_topics-incomplete_topics}/{total_topics} ({(total_topics-incomplete_topics)/total_topics*100:.1f}%)")
+                print("="*60 + "\n")
                             
             else:
                 # LEGACY: PC coefficient-based coloring (original implementation)
