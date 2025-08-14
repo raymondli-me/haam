@@ -1577,13 +1577,25 @@ class HAAMVisualizer:
         # Add legend for colors if using usage-based coloring
         if color_by_usage:
             # Add invisible traces for legend
-            legend_items = [
-                ('All High (HU, AI, Y)', '#8B0000'),
-                ('HU & AI High', '#FF4444'),
-                ('Mixed', '#888888'),
-                ('HU & AI Low', '#4444FF'),
-                ('All Low (HU, AI, Y)', '#00008B')
-            ]
+            if color_mode == 'validity':
+                # Validity mode legend (direct measurement)
+                legend_items = [
+                    ('Consensus high (Y, HU, AI)', '#8B0000'),
+                    ('Some high', '#FF6B6B'),
+                    ('Opposing signals', '#4A4A4A'),
+                    ('Some low', '#6B9AFF'),
+                    ('Consensus low (Y, HU, AI)', '#00008B'),
+                    ('All middle', '#B0B0B0')
+                ]
+            else:
+                # Legacy mode legend (PC inference)
+                legend_items = [
+                    ('All High (HU, AI, Y) - PC', '#8B0000'),
+                    ('HU & AI High - PC', '#FF6B6B'),
+                    ('Mixed - PC', '#4A4A4A'),
+                    ('HU & AI Low - PC', '#6B9AFF'),
+                    ('All Low (HU, AI, Y) - PC', '#00008B')
+                ]
             
             for label, color in legend_items:
                 fig.add_trace(go.Scatter3d(
@@ -1888,9 +1900,9 @@ class HAAMVisualizer:
             # Add invisible traces for legend
             legend_items = [
                 ('All High (HU, AI, Y)', '#8B0000'),
-                ('HU & AI High', '#FF4444'),
-                ('Mixed', '#888888'),
-                ('HU & AI Low', '#4444FF'),
+                ('HU & AI High', '#FF6B6B'),
+                ('Mixed', '#4A4A4A'),
+                ('HU & AI Low', '#6B9AFF'),
                 ('All Low (HU, AI, Y)', '#00008B')
             ]
             
