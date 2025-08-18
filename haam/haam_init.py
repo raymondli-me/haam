@@ -13,6 +13,9 @@ import numpy as np
 import pandas as pd
 import umap
 import os
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
 from typing import Dict, List, Optional, Tuple, Union, Any
 
 
@@ -980,10 +983,6 @@ class HAAM:
             generate_3d_umap=False
         )
         """
-        import matplotlib.pyplot as plt
-        import matplotlib.gridspec as gridspec
-        from matplotlib.patches import Patch
-        
         if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
             raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
         
