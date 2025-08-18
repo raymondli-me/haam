@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Anger Family Analysis - Colab Version
-=====================================
+Anger Family Analysis - Colab Tutorial Version
+==============================================
 End-to-end analysis with word cloud generation for anger_family.csv
+Using 5% sample for faster tutorial execution
 """
 
 # Install required packages
@@ -21,7 +22,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 print("="*80)
-print("ANGER FAMILY ANALYSIS WITH VALIDITY COLORING")
+print("ANGER FAMILY ANALYSIS WITH VALIDITY COLORING (TUTORIAL - 5% SAMPLE)")
 print("="*80)
 
 # ==============================================================================
@@ -37,8 +38,13 @@ df = pd.read_csv(github_url)
 print(f"✓ Loaded: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # Filter to texts with exactly 3 raters
-df_filtered = df[df['num_raters'] == 3].copy()
-print(f"✓ Filtered to 3 raters: {len(df_filtered)} texts ({len(df_filtered)/len(df)*100:.1f}%)")
+df_3_raters = df[df['num_raters'] == 3].copy()
+print(f"✓ Filtered to 3 raters: {len(df_3_raters)} texts ({len(df_3_raters)/len(df)*100:.1f}%)")
+
+# Take only 5% sample for tutorial (set random_state for reproducibility)
+sample_size = int(len(df_3_raters) * 0.05)
+df_filtered = df_3_raters.sample(n=sample_size, random_state=42)
+print(f"✓ Using 5% sample for tutorial: {len(df_filtered)} texts")
 
 # ==============================================================================
 # CREATE GROUND TRUTH: ANGRY WORD COUNT

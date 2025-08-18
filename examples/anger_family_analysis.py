@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-HAAM Analysis of Anger Family Dataset
-====================================
+HAAM Analysis of Anger Family Dataset - Tutorial Version
+========================================================
 Uses number of angry words as ground truth criterion (Y),
 human ratings as HU, and GPT ratings as AI.
-Filters to texts with exactly 3 raters for consistency.
+Filters to texts with exactly 3 raters and uses 5% sample for tutorial.
 """
 
 import pandas as pd
@@ -19,7 +19,7 @@ import warnings
 warnings.filterwarnings('ignore')
 
 print("="*80)
-print("HAAM ANALYSIS: ANGER FAMILY DATASET")
+print("HAAM ANALYSIS: ANGER FAMILY DATASET (TUTORIAL - 5% SAMPLE)")
 print("="*80)
 
 # ==============================================================================
@@ -35,8 +35,13 @@ df = pd.read_csv(data_path)
 print(f"✓ Loaded: {df.shape[0]} rows, {df.shape[1]} columns")
 
 # Filter to texts with exactly 3 raters
-df_filtered = df[df['num_raters'] == 3].copy()
-print(f"✓ Filtered to 3 raters: {len(df_filtered)} texts ({len(df_filtered)/len(df)*100:.1f}%)")
+df_3_raters = df[df['num_raters'] == 3].copy()
+print(f"✓ Filtered to 3 raters: {len(df_3_raters)} texts ({len(df_3_raters)/len(df)*100:.1f}%)")
+
+# Take only 5% sample for tutorial (set random_state for reproducibility)
+sample_size = int(len(df_3_raters) * 0.05)
+df_filtered = df_3_raters.sample(n=sample_size, random_state=42)
+print(f"✓ Using 5% sample for tutorial: {len(df_filtered)} texts")
 
 # Define angry words (expand this list as needed)
 ANGRY_WORDS = [
