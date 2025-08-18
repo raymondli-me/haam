@@ -28,8 +28,6 @@ extensions = [
     'sphinx.ext.intersphinx',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
-    'sphinx_autodoc_typehints',
-    'myst_nb',             # For Jupyter notebooks
 ]
 
 templates_path = ['_templates']
