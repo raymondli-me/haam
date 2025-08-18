@@ -911,6 +911,498 @@ class HAAM:
             color_mode=color_mode
         )
     
+    def create_comprehensive_pc_analysis(self,
+                                       pc_indices: Optional[List[int]] = None,
+                                       n_pcs: int = 15,
+                                       k_topics: int = 3,
+                                       max_words: int = 100,
+                                       generate_wordclouds: bool = True,
+                                       generate_3d_umap: bool = True,
+                                       umap_arrow_k: int = 1,
+                                       show_data_counts: bool = True,
+                                       output_dir: Optional[str] = None,
+                                       display: bool = True) -> Dict[str, Any]:
+        """
+        Create comprehensive PC analysis with word cloud table and 3D UMAP visualization.
+        
+        This method generates a complete analysis similar to the Colab scripts, including:
+        - Individual word clouds for each PC's high and low poles
+        - A comprehensive table showing all PCs with X/HU/AI quartile labels
+        - 3D UMAP visualization with PC arrows (optional)
+        - Summary report with data availability statistics
+        
+        Parameters
+        ----------
+        pc_indices : List[int], optional
+            List of PC indices (0-based) to analyze. If None, uses first n_pcs PCs.
+            Example: [2, 1, 3, 4, 5] for PC3, PC2, PC4, PC5, PC6
+        n_pcs : int, default=15
+            Number of PCs to analyze if pc_indices not provided
+        k_topics : int, default=3
+            Number of topics to include from each pole in word clouds
+        max_words : int, default=100
+            Maximum words to display in each word cloud
+        generate_wordclouds : bool, default=True
+            Whether to generate word cloud table
+        generate_3d_umap : bool, default=True
+            Whether to generate 3D UMAP visualization with PC arrows
+        umap_arrow_k : int, default=1
+            Number of topics for arrow endpoints in UMAP (1 = single topic endpoints)
+        show_data_counts : bool, default=True
+            Whether to show data availability counts (e.g., "HU: n=3" for sparse data)
+        output_dir : str, optional
+            Directory to save all outputs. If None, creates 'haam_comprehensive_analysis'
+        display : bool, default=True
+            Whether to display visualizations
+            
+        Returns
+        -------
+        Dict[str, Any]
+            Dictionary containing:
+            - 'wordcloud_paths': Dict mapping PC index to (high_path, low_path)
+            - 'table_path': Path to comprehensive PC table image
+            - 'umap_path': Path to 3D UMAP HTML (if generated)
+            - 'report_path': Path to text report with statistics
+            - 'summary': Dict with analysis summary statistics
+            
+        Examples
+        --------
+        # Analyze first 15 PCs with all defaults
+        results = haam.create_comprehensive_pc_analysis()
+        
+        # Analyze specific PCs
+        specific_pcs = [2, 1, 3, 4, 5, 14, 13, 11, 12, 46, 9, 17, 16, 20, 105]
+        results = haam.create_comprehensive_pc_analysis(pc_indices=specific_pcs)
+        
+        # Only generate word clouds, skip 3D UMAP
+        results = haam.create_comprehensive_pc_analysis(
+            n_pcs=10,
+            generate_3d_umap=False
+        )
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        from matplotlib.patches import Patch
+        
+        if not hasattr(self, 'topic_analyzer') or self.topic_analyzer is None:
+            raise ValueError("Topic analysis not performed. Initialize with texts to enable topic analysis.")
+        
+        # Set up output directory
+        if output_dir is None:
+            output_dir = os.path.join(os.getcwd(), 'haam_comprehensive_analysis')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Determine which PCs to analyze
+        if pc_indices is None:
+            pc_indices = list(range(min(n_pcs, self.n_components)))
+        
+        print("="*80)
+        print("COMPREHENSIVE PC ANALYSIS WITH VALIDITY COLORING")
+        print("="*80)
+        print(f"\nAnalyzing {len(pc_indices)} PCs: {[pc+1 for pc in pc_indices]}")
+        print(f"Output directory: {output_dir}")
+        
+        results = {
+            'wordcloud_paths': {},
+            'table_path': None,
+            'umap_path': None,
+            'report_path': None,
+            'summary': {}
+        }
+        
+        # Initialize word cloud generator if needed
+        if not hasattr(self, 'wordcloud_generator'):
+            self.wordcloud_generator = PCWordCloudGenerator(
+                self.topic_analyzer,
+                self.analysis.results,
+                criterion=self.criterion,
+                human_judgment=self.human_judgment,
+                ai_judgment=self.ai_judgment
+            )
+        
+        # ==============================================================================
+        # STEP 1: GENERATE INDIVIDUAL WORD CLOUDS
+        # ==============================================================================
+        
+        if generate_wordclouds:
+            print("\n1. GENERATING INDIVIDUAL WORD CLOUDS...")
+            print("-"*60)
+            
+            wordcloud_dir = os.path.join(output_dir, 'wordclouds')
+            os.makedirs(wordcloud_dir, exist_ok=True)
+            
+            for i, pc_idx in enumerate(pc_indices):
+                print(f"\n[{i+1}/{len(pc_indices)}] PC{pc_idx + 1}:")
+                try:
+                    fig, high_path, low_path = self.create_pc_wordclouds(
+                        pc_idx=pc_idx,
+                        k=k_topics,
+                        max_words=max_words,
+                        figsize=(16, 8),
+                        output_dir=wordcloud_dir,
+                        display=False,  # Don't display individual clouds
+                        color_mode='validity'  # Use validity coloring
+                    )
+                    results['wordcloud_paths'][pc_idx] = (high_path, low_path)
+                    print(f"  ✓ Generated word clouds")
+                except Exception as e:
+                    print(f"  ✗ Error: {str(e)}")
+            
+            # ==============================================================================
+            # STEP 2: CREATE COMPREHENSIVE TABLE
+            # ==============================================================================
+            
+            print("\n2. CREATING COMPREHENSIVE PC TABLE...")
+            print("-"*60)
+            
+            # Create a large figure for the table
+            fig = plt.figure(figsize=(24, 4 * len(pc_indices)))
+            
+            # Create grid
+            gs = gridspec.GridSpec(len(pc_indices), 3, width_ratios=[1, 2, 2], 
+                                  wspace=0.2, hspace=0.3)
+            
+            for i, pc_idx in enumerate(pc_indices):
+                print(f"  Processing PC{pc_idx + 1}...")
+                
+                # Get topics
+                pc_topics = self.topic_analyzer.get_pc_high_low_topics(
+                    pc_idx=pc_idx, n_high=k_topics, n_low=k_topics, p_threshold=0.05
+                )
+                
+                # Column 1: PC Label
+                ax_label = plt.subplot(gs[i, 0])
+                ax_label.axis('off')
+                
+                # Get PC associations
+                pc_assoc = self._get_pc_associations(pc_idx)
+                
+                label_text = f'PC{pc_idx + 1}\n\n'
+                label_text += f"PC coefficients:\n"
+                label_text += f"X: {pc_assoc.get('X', '?')} | "
+                label_text += f"HU: {pc_assoc.get('HU', '?')} | "
+                label_text += f"AI: {pc_assoc.get('AI', '?')}"
+                
+                ax_label.text(0.5, 0.5, label_text, ha='center', va='center',
+                             fontsize=14, fontweight='bold',
+                             bbox=dict(boxstyle="round,pad=0.3", facecolor='lightyellow'))
+                
+                # Column 2: High Pole
+                self._add_wordcloud_to_table(gs[i, 1], pc_idx, pc_topics.get('high', []),
+                                           'high', k_topics, max_words, show_data_counts)
+                
+                # Column 3: Low Pole  
+                self._add_wordcloud_to_table(gs[i, 2], pc_idx, pc_topics.get('low', []),
+                                           'low', k_topics, max_words, show_data_counts)
+            
+            # Add main title and legend
+            plt.suptitle(f'Principal Components Analysis - Validity Colored Word Clouds',
+                        fontsize=24, fontweight='bold', y=0.995)
+            
+            # Add color legend
+            legend_elements = [
+                Patch(facecolor='#8B0000', label='Consensus high'),
+                Patch(facecolor='#FF6B6B', label='Any high'),
+                Patch(facecolor='#00008B', label='Consensus low'),
+                Patch(facecolor='#6B9AFF', label='Any low'),
+                Patch(facecolor='#4A4A4A', label='Opposing'),
+                Patch(facecolor='#B0B0B0', label='All middle')
+            ]
+            plt.figlegend(handles=legend_elements, loc='lower center',
+                         bbox_to_anchor=(0.5, -0.005), ncol=6, fontsize=14)
+            
+            # Save table
+            table_path = os.path.join(output_dir, 'pc_table_comprehensive.png')
+            plt.savefig(table_path, dpi=200, bbox_inches='tight', facecolor='white')
+            results['table_path'] = table_path
+            print(f"✓ Saved comprehensive table: {table_path}")
+            
+            if display:
+                plt.show()
+            else:
+                plt.close()
+        
+        # ==============================================================================
+        # STEP 3: CREATE 3D UMAP VISUALIZATION
+        # ==============================================================================
+        
+        if generate_3d_umap:
+            print("\n3. CREATING 3D UMAP VISUALIZATION...")
+            print("-"*60)
+            
+            try:
+                umap_path = self.create_3d_umap_with_pc_arrows(
+                    pc_indices=pc_indices,
+                    arrow_mode='list',
+                    top_k=umap_arrow_k,
+                    percentile_threshold=90.0,
+                    color_by_usage=True,
+                    color_mode='validity',
+                    show_topic_labels=False,
+                    output_dir=output_dir,
+                    display=display
+                )
+                results['umap_path'] = umap_path
+                print(f"✓ Created 3D UMAP visualization: {umap_path}")
+            except Exception as e:
+                print(f"✗ Error creating 3D UMAP: {str(e)}")
+        
+        # ==============================================================================
+        # STEP 4: CREATE SUMMARY REPORT
+        # ==============================================================================
+        
+        print("\n4. CREATING SUMMARY REPORT...")
+        print("-"*60)
+        
+        report_lines = ["PC Validity Analysis Report"]
+        report_lines.append("="*120)
+        report_lines.append("PC\tPC Coefs\tHigh Pole Quartiles\tHU Data\tLow Pole Quartiles\tHU Data\tSamples")
+        report_lines.append("-"*120)
+        
+        total_high_samples = 0
+        total_low_samples = 0
+        
+        for pc_idx in pc_indices:
+            try:
+                # Get PC associations
+                pc_assoc = self._get_pc_associations(pc_idx)
+                pc_pattern = f"X:{pc_assoc.get('X', '?')} HU:{pc_assoc.get('HU', '?')} AI:{pc_assoc.get('AI', '?')}"
+                
+                # Get topics
+                pc_topics = self.topic_analyzer.get_pc_high_low_topics(
+                    pc_idx=pc_idx, n_high=k_topics, n_low=k_topics, p_threshold=0.05
+                )
+                
+                # Get quartiles for each pole
+                high_topic_ids = [t['topic_id'] for t in pc_topics.get('high', [])]
+                low_topic_ids = [t['topic_id'] for t in pc_topics.get('low', [])]
+                
+                high_quartiles = self._get_topic_quartile_positions(high_topic_ids)
+                low_quartiles = self._get_topic_quartile_positions(low_topic_ids)
+                
+                high_pattern = f"X:{high_quartiles['X']} HU:{high_quartiles['HU']} AI:{high_quartiles['AI']}"
+                low_pattern = f"X:{low_quartiles['X']} HU:{low_quartiles['HU']} AI:{low_quartiles['AI']}"
+                
+                # Get HU data counts
+                high_hu_n = high_quartiles.get('_counts', {}).get('HU', 0)
+                low_hu_n = low_quartiles.get('_counts', {}).get('HU', 0)
+                
+                # Get sample sizes
+                high_samples = sum(t.get('size', 0) for t in pc_topics.get('high', []))
+                low_samples = sum(t.get('size', 0) for t in pc_topics.get('low', []))
+                
+                total_high_samples += high_samples
+                total_low_samples += low_samples
+                
+                report_lines.append(
+                    f"PC{pc_idx+1}\t{pc_pattern}\t{high_pattern}\tn={high_hu_n}\t"
+                    f"{low_pattern}\tn={low_hu_n}\t"
+                    f"H:{high_samples:,} L:{low_samples:,}"
+                )
+            except:
+                report_lines.append(f"PC{pc_idx+1}\tError\tError\t-\tError\t-\tError")
+        
+        # Add summary statistics
+        report_lines.append("-"*120)
+        report_lines.append(f"TOTAL SAMPLES: High poles: {total_high_samples:,}, Low poles: {total_low_samples:,}")
+        
+        # Calculate data availability
+        x_avail = (~np.isnan(self.criterion)).sum()
+        hu_avail = (~np.isnan(self.human_judgment)).sum()
+        ai_avail = (~np.isnan(self.ai_judgment)).sum()
+        total_n = len(self.criterion)
+        
+        report_lines.append(f"\nDATA AVAILABILITY:")
+        report_lines.append(f"  X (criterion): {x_avail:,}/{total_n:,} ({x_avail/total_n*100:.1f}%)")
+        report_lines.append(f"  HU (human): {hu_avail:,}/{total_n:,} ({hu_avail/total_n*100:.1f}%)")
+        report_lines.append(f"  AI: {ai_avail:,}/{total_n:,} ({ai_avail/total_n*100:.1f}%)")
+        
+        # Save report
+        report_path = os.path.join(output_dir, 'validity_analysis_report.txt')
+        with open(report_path, 'w') as f:
+            f.write('\n'.join(report_lines))
+        results['report_path'] = report_path
+        
+        # Display summary
+        print("\nValidity Analysis Summary:")
+        print("-"*120)
+        for line in report_lines[:min(20, len(report_lines))]:
+            print(line)
+        if len(report_lines) > 20:
+            print("...")
+        print(f"\n✓ Full report saved to: {report_path}")
+        
+        # Store summary statistics
+        results['summary'] = {
+            'n_pcs_analyzed': len(pc_indices),
+            'total_high_samples': total_high_samples,
+            'total_low_samples': total_low_samples,
+            'data_availability': {
+                'X': f"{x_avail/total_n*100:.1f}%",
+                'HU': f"{hu_avail/total_n*100:.1f}%", 
+                'AI': f"{ai_avail/total_n*100:.1f}%"
+            }
+        }
+        
+        # ==============================================================================
+        # FINAL SUMMARY
+        # ==============================================================================
+        
+        print("\n" + "="*80)
+        print("COMPREHENSIVE ANALYSIS COMPLETE!")
+        print("="*80)
+        print(f"\nAll outputs saved to: {output_dir}/")
+        print("\n✅ Generated:")
+        if generate_wordclouds:
+            print(f"  - {len(results['wordcloud_paths'])} PC word cloud pairs")
+            print(f"  - 1 comprehensive PC table")
+        if generate_3d_umap:
+            print(f"  - 1 3D UMAP visualization with PC arrows")
+        print(f"  - 1 summary report")
+        
+        return results
+    
+    def _get_pc_associations(self, pc_idx: int) -> Dict[str, str]:
+        """Get X/HU/AI associations for a PC based on coefficients."""
+        associations = {}
+        try:
+            for outcome in ['X', 'AI', 'HU']:
+                if outcome in self.analysis.results['debiased_lasso']:
+                    coef = self.analysis.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
+                    associations[outcome] = 'H' if coef > 0 else 'L'
+        except:
+            pass
+        return associations
+    
+    def _get_topic_quartile_positions(self, topic_ids: List[int]) -> Dict[str, Any]:
+        """
+        Calculate actual quartile positions for topics using available data.
+        Handles sparse data by using nanmean and showing actual values when available.
+        """
+        if not topic_ids:
+            return {'X': '?', 'HU': '?', 'AI': '?'}
+        
+        # Get the cluster labels
+        cluster_labels = self.topic_analyzer.cluster_labels
+        
+        # Calculate means for the specified topics using available data
+        topic_means = {'X': [], 'HU': [], 'AI': []}
+        topic_counts = {'X': 0, 'HU': 0, 'AI': 0}
+        
+        for topic_id in topic_ids:
+            # Get documents in this topic
+            topic_mask = cluster_labels == topic_id
+            
+            if np.any(topic_mask):
+                # For X (criterion)
+                x_values = self.criterion[topic_mask]
+                x_valid = x_values[~np.isnan(x_values)]
+                if len(x_valid) > 0:
+                    topic_means['X'].append(np.mean(x_valid))
+                    topic_counts['X'] += len(x_valid)
+                
+                # For HU (human judgment)
+                hu_values = self.human_judgment[topic_mask]
+                hu_valid = hu_values[~np.isnan(hu_values)]
+                if len(hu_valid) > 0:
+                    topic_means['HU'].append(np.mean(hu_valid))
+                    topic_counts['HU'] += len(hu_valid)
+                
+                # For AI
+                ai_values = self.ai_judgment[topic_mask]
+                ai_valid = ai_values[~np.isnan(ai_values)]
+                if len(ai_valid) > 0:
+                    topic_means['AI'].append(np.mean(ai_valid))
+                    topic_counts['AI'] += len(ai_valid)
+        
+        # Calculate average across topics (only for topics with data)
+        avg_means = {}
+        for measure in ['X', 'HU', 'AI']:
+            if topic_means[measure]:
+                avg_means[measure] = np.mean(topic_means[measure])
+            else:
+                avg_means[measure] = np.nan
+        
+        # Calculate global quartiles using only non-NaN values
+        quartiles = {}
+        for measure, values in [('X', self.criterion),
+                               ('HU', self.human_judgment),
+                               ('AI', self.ai_judgment)]:
+            # Get non-NaN values for quartile calculation
+            valid_values = values[~np.isnan(values)]
+            
+            if len(valid_values) > 0:
+                q25 = np.percentile(valid_values, 25)
+                q75 = np.percentile(valid_values, 75)
+                
+                if np.isnan(avg_means[measure]):
+                    # No data for this measure in these topics
+                    quartiles[measure] = '?'
+                elif avg_means[measure] >= q75:
+                    quartiles[measure] = 'H'
+                elif avg_means[measure] <= q25:
+                    quartiles[measure] = 'L'
+                else:
+                    quartiles[measure] = 'M'
+            else:
+                # No valid data for this measure at all
+                quartiles[measure] = '?'
+        
+        # Add data counts for transparency
+        quartiles['_counts'] = topic_counts
+        
+        return quartiles
+    
+    def _add_wordcloud_to_table(self, ax, pc_idx: int, topics: List[Dict], 
+                               pole: str, k: int, max_words: int, 
+                               show_data_counts: bool):
+        """Add word cloud to table subplot."""
+        ax_subplot = plt.subplot(ax)
+        n_topics = len(topics)
+        samples = sum(t.get('size', 0) for t in topics)
+        
+        try:
+            if n_topics > 0:
+                # Generate word cloud with validity coloring
+                temp_fig, _, _ = self.create_pc_wordclouds(
+                    pc_idx=pc_idx, k=k, max_words=max_words,
+                    output_dir=None, display=False, color_mode='validity'
+                )
+                
+                # Extract the appropriate pole image
+                temp_axes = temp_fig.get_axes()
+                pole_idx = 0 if pole == 'high' else 1
+                if temp_axes and len(temp_axes) > pole_idx:
+                    for child in temp_axes[pole_idx].get_children():
+                        if hasattr(child, 'get_array') and child.get_array() is not None:
+                            ax_subplot.imshow(child.get_array())
+                            break
+                plt.close(temp_fig)
+                
+                # Get quartiles
+                topic_ids = [t['topic_id'] for t in topics]
+                quartiles = self._get_topic_quartile_positions(topic_ids)
+                
+                title = f'{pole.capitalize()} ({n_topics} topics, n={samples:,})\n'
+                title += f"X:{quartiles['X']} HU:{quartiles['HU']} AI:{quartiles['AI']}"
+                
+                # Add HU count if sparse and requested
+                if show_data_counts and '_counts' in quartiles and quartiles['_counts']['HU'] < 10:
+                    title += f" (HU:n={quartiles['_counts']['HU']})"
+                
+                color = 'darkred' if pole == 'high' else 'darkblue'
+                ax_subplot.set_title(title, fontsize=12, color=color)
+            else:
+                ax_subplot.text(0.5, 0.5, f'No {pole} topics', ha='center', va='center')
+                color = 'darkred' if pole == 'high' else 'darkblue'
+                ax_subplot.set_title(f'{pole.capitalize()} (0 topics)', fontsize=12, color=color)
+        except:
+            ax_subplot.text(0.5, 0.5, 'Error', ha='center', va='center')
+            color = 'darkred' if pole == 'high' else 'darkblue'
+            ax_subplot.set_title(f'{pole.capitalize()} (error)', fontsize=12, color=color)
+        
+        ax_subplot.axis('off')
+    
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
         """
         Export all results and create all visualizations.
