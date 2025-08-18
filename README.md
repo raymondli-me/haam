@@ -29,7 +29,7 @@ HAAM provides a rigorous statistical framework to:
 
 ### Quick Install
 ```bash
-pip install haam
+pip install haam (TBA - not available yet)
 ```
 
 ### Development Install
