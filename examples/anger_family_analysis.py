@@ -110,7 +110,7 @@ print(f"  AI (GPT score): {ai_judgment.shape}")
 print("\n2. RUNNING HAAM ANALYSIS...")
 print("-"*60)
 
-# Initialize HAAM (will extract embeddings from texts)
+# Initialize HAAM (will automatically extract embeddings from texts)
 haam = HAAM(
     criterion=criterion,
     ai_judgment=ai_judgment,
@@ -122,8 +122,7 @@ haam = HAAM(
     umap_n_components=3,
     standardize=True,
     sample_split_post_lasso=False,
-    auto_run=True,
-    embedding_model='sentence-transformers/all-MiniLM-L6-v2'
+    auto_run=True
 )
 
 # Get results

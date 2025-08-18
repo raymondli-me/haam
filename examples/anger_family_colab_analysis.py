@@ -116,7 +116,7 @@ print(f"  AI (GPT score): {(~np.isnan(ai_judgment)).sum():,} ({(~np.isnan(ai_jud
 print("\n3. RUNNING HAAM ANALYSIS...")
 print("-"*60)
 
-# Initialize HAAM
+# Initialize HAAM (will automatically extract embeddings from texts)
 haam = HAAM(
     criterion=criterion,
     ai_judgment=ai_judgment,
@@ -128,8 +128,7 @@ haam = HAAM(
     umap_n_components=3,
     standardize=True,
     sample_split_post_lasso=False,
-    auto_run=True,
-    embedding_model='sentence-transformers/all-MiniLM-L6-v2'
+    auto_run=True
 )
 
 print("✓ HAAM analysis complete!")
