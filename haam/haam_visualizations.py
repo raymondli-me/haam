@@ -97,7 +97,7 @@ class HAAMVisualizer:
         Create main HAAM framework visualization with dynamic metrics.
         
         The visualization now shows:
-        - Generic "Y" label instead of "SC" for criterion
+        - Generic "X" label instead of "SC" for criterion
         - Dynamically calculated R², PoMA, and unmodeled path percentages
         - Custom PC names when provided (shows "-" otherwise)
         - Enhanced topic display using c-TF-IDF
@@ -113,7 +113,7 @@ class HAAMVisualizer:
             If not provided, uses "-" for all PCs.
             Example: {0: "Formality", 3: "Complexity", 6: "Sentiment"}
         ranking_method : str, default='HU'
-            Method used to rank PCs: 'HU', 'AI', 'Y', or 'triple'
+            Method used to rank PCs: 'HU', 'AI', 'X', or 'triple'
             
         Returns
         -------
@@ -131,10 +131,10 @@ class HAAMVisualizer:
                 'corrs': []
             }
             
-            # Get correlations/coefficients for each outcome (Y, AI, HU)
-            # Changed SC to Y to match the template
-            outcome_map = {'Y': 'SC', 'AI': 'AI', 'HU': 'HU'}
-            for display_outcome in ['Y', 'AI', 'HU']:
+            # Get correlations/coefficients for each outcome (X, AI, HU)
+            # Direct mapping without conversion
+            outcome_map = {'X': 'X', 'AI': 'AI', 'HU': 'HU'}
+            for display_outcome in ['X', 'AI', 'HU']:
                 internal_outcome = outcome_map[display_outcome]
                 if internal_outcome in self.results['debiased_lasso']:
                     coef = self.results['debiased_lasso'][internal_outcome]['coefs_std'][pc_idx]
@@ -191,8 +191,8 @@ class HAAMVisualizer:
         ranking_descriptions = {
             'HU': 'Human judgment coefficients',
             'AI': 'AI judgment coefficients',
-            'Y': 'Criterion (Y) coefficients',
-            'SC': 'Criterion (Y) coefficients',  # Handle SC as alias for Y
+            'X': 'Criterion (X) coefficients',
+            'X': 'Criterion (X) coefficients',
             'triple': 'Triple selection (top 3 from each outcome)'
         }
         ranking_desc = ranking_descriptions.get(ranking_method, f'{ranking_method} coefficients')
@@ -213,28 +213,28 @@ class HAAMVisualizer:
         html_content = html_content.replace('%%R2_HU%%', f"{metrics['r2_hu']:.3f}")
         
         # Total Effects (DML coefficients)
-        html_content = html_content.replace('%%TOTAL_EFFECT_Y_AI%%', f"{metrics['total_effect_y_ai']:.3f}")
-        html_content = html_content.replace('%%TOTAL_EFFECT_Y_HU%%', f"{metrics['total_effect_y_hu']:.3f}")
+        html_content = html_content.replace('%%TOTAL_EFFECT_X_AI%%', f"{metrics['total_effect_x_ai']:.3f}")
+        html_content = html_content.replace('%%TOTAL_EFFECT_X_HU%%', f"{metrics['total_effect_x_hu']:.3f}")
         html_content = html_content.replace('%%TOTAL_EFFECT_HU_AI%%', f"{metrics['total_effect_hu_ai']:.3f}")
         
         # DML Check Betas
-        html_content = html_content.replace('%%DML_CHECK_Y_AI%%', f"{metrics['dml_check_y_ai']:.3f}")
-        html_content = html_content.replace('%%DML_CHECK_Y_HU%%', f"{metrics['dml_check_y_hu']:.3f}")
+        html_content = html_content.replace('%%DML_CHECK_X_AI%%', f"{metrics['dml_check_x_ai']:.3f}")
+        html_content = html_content.replace('%%DML_CHECK_X_HU%%', f"{metrics['dml_check_x_hu']:.3f}")
         html_content = html_content.replace('%%DML_CHECK_HU_AI%%', f"{metrics['dml_check_hu_ai']:.3f}")
         
         # Residual Correlations
         html_content = html_content.replace('%%C_AI_HU%%', f"{metrics['c_ai_hu']:.3f}")
-        html_content = html_content.replace('%%C_Y_AI%%', f"{metrics['c_y_ai']:.3f}")
-        html_content = html_content.replace('%%C_Y_HU%%', f"{metrics['c_y_hu']:.3f}")
+        html_content = html_content.replace('%%C_X_AI%%', f"{metrics['c_x_ai']:.3f}")
+        html_content = html_content.replace('%%C_X_HU%%', f"{metrics['c_x_hu']:.3f}")
         
         # Value-Prediction Correlations
-        html_content = html_content.replace('%%R_Y_YHAT%%', f"{metrics['r_y_yhat']:.3f}")
+        html_content = html_content.replace('%%R_X_XHAT%%', f"{metrics['r_x_xhat']:.3f}")
         html_content = html_content.replace('%%R_AI_AIHAT%%', f"{metrics['r_ai_aihat']:.3f}")
         html_content = html_content.replace('%%R_HU_HUHAT%%', f"{metrics['r_hu_huhat']:.3f}")
         
         # Policy Similarities
-        html_content = html_content.replace('%%R_YHAT_AIHAT%%', f"{metrics['r_yhat_aihat']:.3f}")
-        html_content = html_content.replace('%%R_YHAT_HUHAT%%', f"{metrics['r_yhat_huhat']:.3f}")
+        html_content = html_content.replace('%%R_XHAT_AIHAT%%', f"{metrics['r_xhat_aihat']:.3f}")
+        html_content = html_content.replace('%%R_XHAT_HUHAT%%', f"{metrics['r_xhat_huhat']:.3f}")
         html_content = html_content.replace('%%R_AIHAT_HUHAT%%', f"{metrics['r_aihat_huhat']:.3f}")
         
         # PoMA and Unmodeled paths
@@ -246,7 +246,7 @@ class HAAMVisualizer:
         html_content = html_content.replace('%%UNMODELED_HU_AI%%', f"{metrics['unmodeled_hu_ai']:.1f}%")
         
         # Number of selected components
-        html_content = html_content.replace('%%N_SELECTED_Y%%', str(metrics['n_selected_y']))
+        html_content = html_content.replace('%%N_SELECTED_X%%', str(metrics['n_selected_x']))
         html_content = html_content.replace('%%N_SELECTED_AI%%', str(metrics['n_selected_ai']))
         html_content = html_content.replace('%%N_SELECTED_HU%%', str(metrics['n_selected_hu']))
         
@@ -284,63 +284,63 @@ class HAAMVisualizer:
         metrics = {}
         
         # R² values (cross-validated)
-        metrics['r2_y'] = self.results['debiased_lasso'].get('SC', {}).get('r2_cv', 0.0)
+        metrics['r2_x'] = self.results['debiased_lasso'].get('X', {}).get('r2_cv', 0.0)
         metrics['r2_ai'] = self.results['debiased_lasso'].get('AI', {}).get('r2_cv', 0.0)
         metrics['r2_hu'] = self.results['debiased_lasso'].get('HU', {}).get('r2_cv', 0.0)
         
         # Number of selected components
-        metrics['n_selected_y'] = self.results['debiased_lasso'].get('SC', {}).get('n_selected', 0)
+        metrics['n_selected_x'] = self.results['debiased_lasso'].get('X', {}).get('n_selected', 0)
         metrics['n_selected_ai'] = self.results['debiased_lasso'].get('AI', {}).get('n_selected', 0)
         metrics['n_selected_hu'] = self.results['debiased_lasso'].get('HU', {}).get('n_selected', 0)
         
         # Total Effects (DML coefficients)
         if 'total_effects' in self.results:
             te = self.results['total_effects']
-            metrics['total_effect_y_ai'] = te.get('Y_AI', {}).get('coefficient', 0.0)
-            metrics['total_effect_y_hu'] = te.get('Y_HU', {}).get('coefficient', 0.0)
+            metrics['total_effect_x_ai'] = te.get('X_AI', {}).get('coefficient', 0.0)
+            metrics['total_effect_x_hu'] = te.get('X_HU', {}).get('coefficient', 0.0)
             metrics['total_effect_hu_ai'] = te.get('HU_AI', {}).get('coefficient', 0.0)
             
             # DML check betas
-            metrics['dml_check_y_ai'] = te.get('Y_AI', {}).get('check_beta', 0.0)
-            metrics['dml_check_y_hu'] = te.get('Y_HU', {}).get('check_beta', 0.0)
+            metrics['dml_check_x_ai'] = te.get('X_AI', {}).get('check_beta', 0.0)
+            metrics['dml_check_x_hu'] = te.get('X_HU', {}).get('check_beta', 0.0)
             metrics['dml_check_hu_ai'] = te.get('HU_AI', {}).get('check_beta', 0.0)
         else:
             # Default values
-            metrics['total_effect_y_ai'] = 0.0
-            metrics['total_effect_y_hu'] = 0.0
+            metrics['total_effect_x_ai'] = 0.0
+            metrics['total_effect_x_hu'] = 0.0
             metrics['total_effect_hu_ai'] = 0.0
-            metrics['dml_check_y_ai'] = 0.0
-            metrics['dml_check_y_hu'] = 0.0
+            metrics['dml_check_x_ai'] = 0.0
+            metrics['dml_check_x_hu'] = 0.0
             metrics['dml_check_hu_ai'] = 0.0
         
         # Residual Correlations (C's) - all pairwise
         if 'residual_correlations' in self.results:
             rc = self.results['residual_correlations']
             metrics['c_ai_hu'] = rc.get('AI_HU', 0.0)  # corr(e_AI, e_HU) after controlling for PCs
-            metrics['c_y_ai'] = rc.get('Y_AI', 0.0)    # corr(e_Y, e_AI) after controlling for PCs
-            metrics['c_y_hu'] = rc.get('Y_HU', 0.0)    # corr(e_Y, e_HU) after controlling for PCs
+            metrics['c_x_ai'] = rc.get('X_AI', 0.0)    # corr(e_X, e_AI) after controlling for PCs
+            metrics['c_x_hu'] = rc.get('X_HU', 0.0)    # corr(e_X, e_HU) after controlling for PCs
         else:
             # Default values
             metrics['c_ai_hu'] = 0.0
-            metrics['c_y_ai'] = 0.0
-            metrics['c_y_hu'] = 0.0
+            metrics['c_x_ai'] = 0.0
+            metrics['c_x_hu'] = 0.0
         
-        # Value-Prediction Correlations: r(Y, Y_hat), r(AI, AI_hat), r(HU, HU_hat)
+        # Value-Prediction Correlations: r(X, X_hat), r(AI, AI_hat), r(HU, HU_hat)
         # These are the square roots of R² values
-        metrics['r_y_yhat'] = np.sqrt(metrics['r2_y'])
+        metrics['r_x_xhat'] = np.sqrt(metrics['r2_x'])
         metrics['r_ai_aihat'] = np.sqrt(metrics['r2_ai'])
         metrics['r_hu_huhat'] = np.sqrt(metrics['r2_hu'])
         
         # Policy Similarities: correlations between predictions
         if 'policy_similarities' in self.results:
             ps = self.results['policy_similarities']
-            metrics['r_yhat_aihat'] = ps.get('Y_AI', 0.0)
-            metrics['r_yhat_huhat'] = ps.get('Y_HU', 0.0)
+            metrics['r_xhat_aihat'] = ps.get('X_AI', 0.0)
+            metrics['r_xhat_huhat'] = ps.get('X_HU', 0.0)
             metrics['r_aihat_huhat'] = ps.get('AI_HU', 0.0)
         else:
             # Default values if not calculated
-            metrics['r_yhat_aihat'] = 0.0
-            metrics['r_yhat_huhat'] = 0.0
+            metrics['r_xhat_aihat'] = 0.0
+            metrics['r_xhat_huhat'] = 0.0
             metrics['r_aihat_huhat'] = 0.0
         
         # Calculate PoMA (Proportion of Maximum Achievable)
@@ -348,7 +348,7 @@ class HAAMVisualizer:
         if 'mediation_analysis' in self.results:
             med = self.results['mediation_analysis']
             
-            # For Y→AI path
+            # For X→AI path
             if 'AI' in med and med['AI'] is not None:
                 total_effect_ai = med['AI'].get('total_effect', 0)
                 indirect_effect_ai = med['AI'].get('indirect_effect', 0)
@@ -362,7 +362,7 @@ class HAAMVisualizer:
                 metrics['poma_ai'] = 50.0  # Default if not calculated
                 metrics['unmodeled_ai'] = 50.0
                 
-            # For Y→HU path
+            # For X→HU path
             if 'HU' in med and med['HU'] is not None:
                 total_effect_hu = med['HU'].get('total_effect', 0)
                 indirect_effect_hu = med['HU'].get('indirect_effect', 0)
@@ -489,7 +489,7 @@ class HAAMVisualizer:
         fig, axes = plt.subplots(1, 3, figsize=figsize)
         fig.suptitle(f'PC{pc_idx + 1} Effects Analysis', fontsize=16, fontweight='bold')
         
-        outcomes = ['SC', 'AI', 'HU']
+        outcomes = ['X', 'AI', 'HU']
         colors = ['#334155', '#be123c', '#d97706']
         
         for ax, outcome, color in zip(axes, outcomes, colors):
@@ -531,7 +531,7 @@ class HAAMVisualizer:
     
     def create_umap_visualization(self,
                                  umap_embeddings: np.ndarray,
-                                 color_by: str = 'SC',
+                                 color_by: str = 'X',
                                  topic_labels: Optional[Dict] = None,
                                  show_topics: bool = True,
                                  output_file: Optional[str] = None) -> go.Figure:
@@ -543,7 +543,7 @@ class HAAMVisualizer:
         umap_embeddings : np.ndarray
             2D or 3D UMAP embeddings
         color_by : str
-            Variable to color by: 'SC', 'AI', 'HU', or 'PC1', 'PC2', etc.
+            Variable to color by: 'X', 'AI', 'HU', or 'PC1', 'PC2', etc.
         topic_labels : Dict, optional
             Topic labels for points
         show_topics : bool
@@ -560,8 +560,8 @@ class HAAMVisualizer:
         is_3d = umap_embeddings.shape[1] == 3
         
         # Get color values
-        if color_by in ['SC', 'AI', 'HU']:
-            outcome_map = {'SC': 'criterion', 'AI': 'ai_judgment', 'HU': 'human_judgment'}
+        if color_by in ['X', 'AI', 'HU']:
+            outcome_map = {'X': 'criterion', 'AI': 'ai_judgment', 'HU': 'human_judgment'}
             color_values = getattr(self, outcome_map[color_by], None)
             color_title = f'{color_by} Values'
         elif color_by.startswith('PC'):
@@ -907,7 +907,7 @@ class HAAMVisualizer:
         
         # Get coefficient data
         coef_data = []
-        outcomes = ['SC', 'AI', 'HU']
+        outcomes = ['X', 'AI', 'HU']
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
         
         for outcome in outcomes:
@@ -965,11 +965,11 @@ class HAAMVisualizer:
         Create a comprehensive summary of all HAAM metrics.
         
         This method exports:
-        - Model performance metrics (R² values for Y, AI, HU)
+        - Model performance metrics (R² values for X, AI, HU)
         - Policy similarities between predictions
         - Mediation analysis results (PoMA percentages)
         - Feature selection statistics
-        - Compatible with the new generic "Y" labeling
+        - Compatible with the new generic "X" labeling
         
         Parameters
         ----------
@@ -993,14 +993,14 @@ class HAAMVisualizer:
         }
         
         # Model Performance (R² values)
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 res = self.results['debiased_lasso'][outcome]
-                outcome_display = 'Y' if outcome == 'SC' else outcome
+                outcome_display = outcome
                 summary['model_performance'][outcome_display] = {
                     'r2_cv': float(res.get('r2_cv', 0)),
                     'r2_insample': float(res.get('r2_insample', 0)),
-                    'r_y_yhat': float(np.sqrt(res.get('r2_cv', 0)))  # correlation between y and y_hat
+                    'r_x_xhat': float(np.sqrt(res.get('r2_cv', 0)))  # correlation between x and x_hat
                 }
         
         # Policy Similarities (if available)
@@ -1030,10 +1030,10 @@ class HAAMVisualizer:
                     }
         
         # Feature Selection
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 res = self.results['debiased_lasso'][outcome]
-                outcome_display = 'Y' if outcome == 'SC' else outcome
+                outcome_display = outcome
                 summary['feature_selection'][outcome_display] = {
                     'n_selected': int(res.get('n_selected', 0)),
                     'selected_indices': [int(idx) for idx in res.get('selected_indices', [])]
@@ -1096,9 +1096,9 @@ class HAAMVisualizer:
         color_mode : str, default='legacy'
             Coloring mode when color_by_usage=True:
             - 'legacy': Use PC coefficient-based inference (original behavior)
-            - 'validity': Use direct Y/HU/AI measurement (consistent with word clouds)
+            - 'validity': Use direct X/HU/AI measurement (consistent with word clouds)
         criterion : np.ndarray, optional
-            Ground truth values (Y) for validity coloring mode
+            Ground truth values (X) for validity coloring mode
         human_judgment : np.ndarray, optional
             Human judgment values (HU) for validity coloring mode
         ai_judgment : np.ndarray, optional
@@ -1163,16 +1163,16 @@ class HAAMVisualizer:
                 # NEW: Direct measurement coloring (consistent with word clouds)
                 
                 # First, calculate means for ALL topics to establish topic-level quartiles
-                all_topic_means = {'Y': [], 'HU': [], 'AI': []}
+                all_topic_means = {'X': [], 'HU': [], 'AI': []}
                 
                 for td in topic_data:
                     topic_mask = td['mask']
                     
-                    # Y (criterion)
-                    y_values = criterion[topic_mask]
-                    y_valid = y_values[~np.isnan(y_values)]
-                    if len(y_valid) > 0:
-                        all_topic_means['Y'].append(np.mean(y_valid))
+                    # X (criterion)
+                    x_values = criterion[topic_mask]
+                    x_valid = x_values[~np.isnan(x_values)]
+                    if len(x_valid) > 0:
+                        all_topic_means['X'].append(np.mean(x_valid))
                     
                     # HU (human judgment)
                     hu_values = human_judgment[topic_mask]
@@ -1187,8 +1187,8 @@ class HAAMVisualizer:
                         all_topic_means['AI'].append(np.mean(ai_valid))
                 
                 # Calculate quartiles based on TOPIC MEANS
-                y_q25 = np.percentile(all_topic_means['Y'], 25) if all_topic_means['Y'] else np.nan
-                y_q75 = np.percentile(all_topic_means['Y'], 75) if all_topic_means['Y'] else np.nan
+                x_q25 = np.percentile(all_topic_means['X'], 25) if all_topic_means['X'] else np.nan
+                x_q75 = np.percentile(all_topic_means['X'], 75) if all_topic_means['X'] else np.nan
                 hu_q25 = np.percentile(all_topic_means['HU'], 25) if all_topic_means['HU'] else np.nan
                 hu_q75 = np.percentile(all_topic_means['HU'], 75) if all_topic_means['HU'] else np.nan
                 ai_q25 = np.percentile(all_topic_means['AI'], 25) if all_topic_means['AI'] else np.nan
@@ -1198,10 +1198,10 @@ class HAAMVisualizer:
                 for td in topic_data:
                     topic_mask = td['mask']
                     
-                    # Calculate mean Y/HU/AI values for this topic
-                    y_values = criterion[topic_mask]
-                    y_valid = y_values[~np.isnan(y_values)]
-                    y_mean = np.mean(y_valid) if len(y_valid) > 0 else np.nan
+                    # Calculate mean X/HU/AI values for this topic
+                    x_values = criterion[topic_mask]
+                    x_valid = x_values[~np.isnan(x_values)]
+                    x_mean = np.mean(x_valid) if len(x_valid) > 0 else np.nan
                     
                     hu_values = human_judgment[topic_mask]
                     hu_valid = hu_values[~np.isnan(hu_values)]
@@ -1212,16 +1212,16 @@ class HAAMVisualizer:
                     ai_mean = np.mean(ai_valid) if len(ai_valid) > 0 else np.nan
                     
                     # Count valid measures
-                    valid_count = sum([not np.isnan(x) for x in [y_mean, hu_mean, ai_mean]])
+                    valid_count = sum([not np.isnan(x) for x in [x_mean, hu_mean, ai_mean]])
                     
                     # Determine quartile positions
                     n_high = 0
                     n_low = 0
                     
-                    if not np.isnan(y_mean) and not np.isnan(y_q25) and not np.isnan(y_q75):
-                        if y_mean >= y_q75:
+                    if not np.isnan(x_mean) and not np.isnan(x_q25) and not np.isnan(x_q75):
+                        if x_mean >= x_q75:
                             n_high += 1
-                        elif y_mean <= y_q25:
+                        elif x_mean <= x_q25:
                             n_low += 1
                     
                     if not np.isnan(hu_mean) and not np.isnan(hu_q25) and not np.isnan(hu_q75):
@@ -1264,13 +1264,13 @@ class HAAMVisualizer:
                         # All three measures available
                         if n_high == 3:
                             td['color'] = '#8B0000'  # Dark red
-                            td['color_desc'] = 'Consensus high (Y, HU, AI)'
+                            td['color_desc'] = 'Consensus high (X, HU, AI)'
                         elif n_high > 0:
                             td['color'] = '#FF6B6B'  # Light red
                             td['color_desc'] = 'Some high'
                         elif n_low == 3:
                             td['color'] = '#00008B'  # Dark blue
-                            td['color_desc'] = 'Consensus low (Y, HU, AI)'
+                            td['color_desc'] = 'Consensus low (X, HU, AI)'
                         elif n_low > 0:
                             td['color'] = '#6B9AFF'  # Light blue
                             td['color_desc'] = 'Some low'
@@ -1286,14 +1286,14 @@ class HAAMVisualizer:
                     topic_mask = td['mask']
                     
                     # Check how many valid measures this topic has
-                    y_values = criterion[topic_mask]
-                    y_valid = y_values[~np.isnan(y_values)]
+                    x_values = criterion[topic_mask]
+                    x_valid = x_values[~np.isnan(x_values)]
                     hu_values = human_judgment[topic_mask]
                     hu_valid = hu_values[~np.isnan(hu_values)]
                     ai_values = ai_judgment[topic_mask]
                     ai_valid = ai_values[~np.isnan(ai_values)]
                     
-                    valid_measures = sum([len(y_valid) > 0, len(hu_valid) > 0, len(ai_valid) > 0])
+                    valid_measures = sum([len(x_valid) > 0, len(hu_valid) > 0, len(ai_valid) > 0])
                     if valid_measures < 3:
                         incomplete_topics += 1
                 
@@ -1311,7 +1311,7 @@ class HAAMVisualizer:
                 # Calculate quartiles for HU and AI based on PC scores
                 hu_scores = []
                 ai_scores = []
-                y_scores = []
+                x_scores = []
                 
                 for td in topic_data:
                     # Use average PC coefficients weighted by topic's PC scores
@@ -1328,31 +1328,31 @@ class HAAMVisualizer:
                     else:
                         ai_score = np.nan
                         
-                    if 'SC' in self.results['debiased_lasso']:
-                        y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
-                        y_score = np.dot(td['pc_scores'], y_coefs)
+                    if 'X' in self.results['debiased_lasso']:
+                        x_coefs = self.results['debiased_lasso']['X']['coefs_std']
+                        x_score = np.dot(td['pc_scores'], x_coefs)
                     else:
-                        y_score = np.nan
+                        x_score = np.nan
                     
                     hu_scores.append(hu_score)
                     ai_scores.append(ai_score)
-                    y_scores.append(y_score)
+                    x_scores.append(x_score)
                     
                     td['hu_score'] = hu_score
                     td['ai_score'] = ai_score
-                    td['y_score'] = y_score
+                    td['x_score'] = x_score
                 
                 # Calculate quartiles (handle NaN values)
                 hu_valid = [s for s in hu_scores if not np.isnan(s)]
                 ai_valid = [s for s in ai_scores if not np.isnan(s)]
-                y_valid = [s for s in y_scores if not np.isnan(s)]
+                x_valid = [s for s in x_scores if not np.isnan(s)]
                 
                 hu_q75 = np.percentile(hu_valid, 75) if hu_valid else np.nan
                 hu_q25 = np.percentile(hu_valid, 25) if hu_valid else np.nan
                 ai_q75 = np.percentile(ai_valid, 75) if ai_valid else np.nan
                 ai_q25 = np.percentile(ai_valid, 25) if ai_valid else np.nan
-                y_q75 = np.percentile(y_valid, 75) if y_valid else np.nan
-                y_q25 = np.percentile(y_valid, 25) if y_valid else np.nan
+                x_q75 = np.percentile(x_valid, 75) if x_valid else np.nan
+                x_q25 = np.percentile(x_valid, 25) if x_valid else np.nan
                 
                 # Assign colors (original scheme)
                 for td in topic_data:
@@ -1361,16 +1361,16 @@ class HAAMVisualizer:
                     hu_low = not np.isnan(td['hu_score']) and not np.isnan(hu_q25) and td['hu_score'] <= hu_q25
                     ai_high = not np.isnan(td['ai_score']) and not np.isnan(ai_q75) and td['ai_score'] >= ai_q75
                     ai_low = not np.isnan(td['ai_score']) and not np.isnan(ai_q25) and td['ai_score'] <= ai_q25
-                    y_high = not np.isnan(td['y_score']) and not np.isnan(y_q75) and td['y_score'] >= y_q75
-                    y_low = not np.isnan(td['y_score']) and not np.isnan(y_q25) and td['y_score'] <= y_q25
+                    x_high = not np.isnan(td['x_score']) and not np.isnan(x_q75) and td['x_score'] >= x_q75
+                    x_low = not np.isnan(td['x_score']) and not np.isnan(x_q25) and td['x_score'] <= x_q25
                     
                     # Legacy color scheme
-                    if hu_high and ai_high and y_high:
+                    if hu_high and ai_high and x_high:
                         td['color'] = '#8B0000'  # Dark red
-                        td['color_desc'] = 'All High (HU, AI, Y) - PC inference'
-                    elif hu_low and ai_low and y_low:
+                        td['color_desc'] = 'All High (HU, AI, X) - PC inference'
+                    elif hu_low and ai_low and x_low:
                         td['color'] = '#00008B'  # Dark blue
-                        td['color_desc'] = 'All Low (HU, AI, Y) - PC inference'
+                        td['color_desc'] = 'All Low (HU, AI, X) - PC inference'
                     elif hu_high and ai_high:
                         td['color'] = '#FF6B6B'  # Light red (same as word clouds)
                         td['color_desc'] = 'HU & AI High - PC inference'
@@ -1608,21 +1608,21 @@ class HAAMVisualizer:
             if color_mode == 'validity':
                 # Validity mode legend (direct measurement)
                 legend_items = [
-                    ('Consensus high (Y, HU, AI)', '#8B0000'),
+                    ('Consensus high (X, HU, AI)', '#8B0000'),
                     ('Some high', '#FF6B6B'),
                     ('Opposing signals', '#4A4A4A'),
                     ('Some low', '#6B9AFF'),
-                    ('Consensus low (Y, HU, AI)', '#00008B'),
+                    ('Consensus low (X, HU, AI)', '#00008B'),
                     ('All middle', '#B0B0B0')
                 ]
             else:
                 # Legacy mode legend (PC inference)
                 legend_items = [
-                    ('All High (HU, AI, Y) - PC', '#8B0000'),
+                    ('All High (HU, AI, X) - PC', '#8B0000'),
                     ('HU & AI High - PC', '#FF6B6B'),
                     ('Mixed - PC', '#4A4A4A'),
                     ('HU & AI Low - PC', '#6B9AFF'),
-                    ('All Low (HU, AI, Y) - PC', '#00008B')
+                    ('All Low (HU, AI, X) - PC', '#00008B')
                 ]
             
             for label, color in legend_items:
@@ -1742,7 +1742,7 @@ class HAAMVisualizer:
                 # Use average PC coefficients weighted by topic's PC scores
                 hu_coefs = self.results['debiased_lasso']['HU']['coefs_std']
                 ai_coefs = self.results['debiased_lasso']['AI']['coefs_std']
-                y_coefs = self.results['debiased_lasso']['SC']['coefs_std']
+                y_coefs = self.results['debiased_lasso']['X']['coefs_std']
                 
                 hu_score = np.dot(td['pc_scores'], hu_coefs)
                 ai_score = np.dot(td['pc_scores'], ai_coefs)
@@ -1781,10 +1781,10 @@ class HAAMVisualizer:
                 # Mixed: gray
                 if hu_high and ai_high and y_high:
                     td['color'] = '#8B0000'  # Dark red
-                    td['color_desc'] = 'All High (HU, AI, Y)'
+                    td['color_desc'] = 'All High (HU, AI, X)'
                 elif hu_low and ai_low and y_low:
                     td['color'] = '#00008B'  # Dark blue
-                    td['color_desc'] = 'All Low (HU, AI, Y)'
+                    td['color_desc'] = 'All Low (HU, AI, X)'
                 elif hu_high and ai_high:
                     td['color'] = '#FF4444'  # Red
                     td['color_desc'] = 'HU & AI High'
@@ -1927,11 +1927,11 @@ class HAAMVisualizer:
         if color_by_usage:
             # Add invisible traces for legend
             legend_items = [
-                ('All High (HU, AI, Y)', '#8B0000'),
+                ('All High (HU, AI, X)', '#8B0000'),
                 ('HU & AI High', '#FF6B6B'),
                 ('Mixed', '#4A4A4A'),
                 ('HU & AI Low', '#6B9AFF'),
-                ('All Low (HU, AI, Y)', '#00008B')
+                ('All Low (HU, AI, X)', '#00008B')
             ]
             
             for label, color in legend_items:
@@ -2103,31 +2103,31 @@ class HAAMVisualizer:
                 <!-- Total Effects Column -->
                 <g transform="translate(0, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Total Effects (β)</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%TOTAL_EFFECT_Y_AI%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%TOTAL_EFFECT_Y_HU%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">X → AI: <tspan font-weight="600" fill="#be123c">%%TOTAL_EFFECT_X_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">X → HU: <tspan font-weight="600" fill="#d97706">%%TOTAL_EFFECT_X_HU%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%TOTAL_EFFECT_HU_AI%%</tspan></text>
                 </g>
                 
                 <!-- DML Check Betas -->
                 <g transform="translate(150, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">DML β<tspan font-size="10" baseline-shift="sub">check</tspan></text>
-                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%DML_CHECK_Y_AI%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%DML_CHECK_Y_HU%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">X → AI: <tspan font-weight="600" fill="#be123c">%%DML_CHECK_X_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">X → HU: <tspan font-weight="600" fill="#d97706">%%DML_CHECK_X_HU%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%DML_CHECK_HU_AI%%</tspan></text>
                 </g>
                 
                 <!-- Residual Correlations -->
                 <g transform="translate(300, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Residual Corr. (C)</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">C(Y, AI): <tspan font-weight="600">%%C_Y_AI%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">C(Y, HU): <tspan font-weight="600">%%C_Y_HU%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">C(X, AI): <tspan font-weight="600">%%C_X_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">C(X, HU): <tspan font-weight="600">%%C_X_HU%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">C(AI, HU): <tspan font-weight="600" fill="#9333ea">%%C_AI_HU%%</tspan></text>
                 </g>
                 
                 <!-- Value-Prediction Correlations -->
                 <g transform="translate(450, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Value-Pred Corr.</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">r(Y, Ŷ): <tspan font-weight="600">%%R_Y_YHAT%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">r(X, X̂): <tspan font-weight="600">%%R_X_XHAT%%</tspan></text>
                     <text x="0" y="45" font-size="12" fill="#334155">r(AI, ÂI): <tspan font-weight="600" fill="#be123c">%%R_AI_AIHAT%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">r(HU, ĤU): <tspan font-weight="600" fill="#d97706">%%R_HU_HUHAT%%</tspan></text>
                 </g>
@@ -2135,16 +2135,16 @@ class HAAMVisualizer:
                 <!-- Policy Similarities -->
                 <g transform="translate(600, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Policy Sim. (G)</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">r(Ŷ, ÂI): <tspan font-weight="600">%%R_YHAT_AIHAT%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">r(Ŷ, ĤU): <tspan font-weight="600">%%R_YHAT_HUHAT%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">r(X̂, ÂI): <tspan font-weight="600">%%R_XHAT_AIHAT%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">r(X̂, ĤU): <tspan font-weight="600">%%R_XHAT_HUHAT%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">r(ĤU, ÂI): <tspan font-weight="600">%%R_AIHAT_HUHAT%%</tspan></text>
                 </g>
                 
                 <!-- PoMA Analysis -->
                 <g transform="translate(750, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Proportion Mediated (PoMA)</text>
-                    <text x="0" y="25" font-size="12" fill="#334155">Y → AI: <tspan font-weight="600" fill="#be123c">%%POMA_AI%%</tspan></text>
-                    <text x="0" y="45" font-size="12" fill="#334155">Y → HU: <tspan font-weight="600" fill="#d97706">%%POMA_HU%%</tspan></text>
+                    <text x="0" y="25" font-size="12" fill="#334155">X → AI: <tspan font-weight="600" fill="#be123c">%%POMA_AI%%</tspan></text>
+                    <text x="0" y="45" font-size="12" fill="#334155">X → HU: <tspan font-weight="600" fill="#d97706">%%POMA_HU%%</tspan></text>
                     <text x="0" y="65" font-size="12" fill="#334155">HU → AI: <tspan font-weight="600" fill="#9333ea">%%POMA_HU_AI%%</tspan></text>
                 </g>
                 
@@ -2170,7 +2170,7 @@ class HAAMVisualizer:
                 <!-- Model Selection Info -->
                 <g transform="translate(1100, 10)">
                     <text font-size="14" font-weight="600" fill="#1e293b">Feature Selection</text>
-                    <text x="0" y="25" font-size="11" fill="#334155">Y model: <tspan font-weight="600">%%N_SELECTED_Y%%</tspan> PCs</text>
+                    <text x="0" y="25" font-size="11" fill="#334155">X model: <tspan font-weight="600">%%N_SELECTED_X%%</tspan> PCs</text>
                     <text x="0" y="45" font-size="11" fill="#334155">AI model: <tspan font-weight="600" fill="#be123c">%%N_SELECTED_AI%%</tspan> PCs</text>
                     <text x="0" y="65" font-size="11" fill="#334155">HU model: <tspan font-weight="600" fill="#d97706">%%N_SELECTED_HU%%</tspan> PCs</text>
                     <text x="0" y="85" font-size="10" fill="#64748b" font-style="italic">(out of 200 total)</text>
@@ -2241,7 +2241,7 @@ class HAAMVisualizer:
                     }
 
                     const dotPositions = [-25, 0, 25];
-                    const labels = ['Y', 'AI Use', 'Human Use'];
+                    const labels = ['X', 'AI Use', 'Human Use'];
 
                     data.corrs.forEach((corr, i) => {
                         let colorClass = 'neutral-fill';
@@ -2389,7 +2389,7 @@ class HAAMVisualizer:
             const tooltip = document.createElement('div');
             tooltip.className = 'tooltip-text';
             tooltip.innerHTML = `
-                <div><strong>SC:</strong> ${pcData.sc.toFixed(4)}</div>
+                <div><strong>X:</strong> ${pcData.x.toFixed(4)}</div>
                 <div><strong>AI:</strong> ${pcData.ai.toFixed(4)}</div>
                 <div><strong>HU:</strong> ${pcData.hu.toFixed(4)}</div>
             `;

@@ -148,7 +148,7 @@ class HAAMwithBWS:
         results = {}
         
         for outcome_name, outcome_values in [
-            ('SC', self.criterion),
+            ('X', self.criterion),
             ('AI', self.ai_judgment),
             ('HU', self.human_judgment)
         ]:
@@ -254,7 +254,7 @@ class HAAMwithBWS:
         # Store coefficients
         coef_data = {'Feature': self.feature_names}
         
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if self.results['debiased_lasso'].get(outcome):
                 res = self.results['debiased_lasso'][outcome]
                 coef_data[f'{outcome}_coef'] = res['coefficients']
@@ -270,17 +270,17 @@ class HAAMwithBWS:
         """Calculate total effects between outcomes."""
         effects = {}
         
-        # Y → AI
+        # X → AI
         mask = ~np.isnan(self.criterion) & ~np.isnan(self.ai_judgment)
         if mask.sum() > 50:
             corr = np.corrcoef(self.criterion[mask], self.ai_judgment[mask])[0, 1]
-            effects['Y_AI'] = {'coefficient': corr}
+            effects['X_AI'] = {'coefficient': corr}
         
-        # Y → HU
+        # X → HU
         mask = ~np.isnan(self.criterion) & ~np.isnan(self.human_judgment)
         if mask.sum() > 50:
             corr = np.corrcoef(self.criterion[mask], self.human_judgment[mask])[0, 1]
-            effects['Y_HU'] = {'coefficient': corr}
+            effects['X_HU'] = {'coefficient': corr}
         
         return effects
     
@@ -288,7 +288,7 @@ class HAAMwithBWS:
         """Create model summary DataFrame."""
         summary_data = []
         
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if self.results['debiased_lasso'].get(outcome):
                 res = self.results['debiased_lasso'][outcome]
                 summary_data.append({

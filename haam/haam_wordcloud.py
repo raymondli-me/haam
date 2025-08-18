@@ -32,7 +32,7 @@ class PCWordCloudGenerator:
         analysis_results : dict, optional
             HAAM analysis results containing model coefficients for validity coloring
         criterion : array-like, optional
-            Ground truth values (Y) for direct validity measurement
+            Ground truth values (X) for direct validity measurement
         human_judgment : array-like, optional
             Human judgment values (HU) for direct validity measurement
         ai_judgment : array-like, optional
@@ -71,7 +71,7 @@ class PCWordCloudGenerator:
             Whether to display the plots
         color_mode : str, optional
             'pole' (default): Red for high pole, blue for low pole
-            'validity': Color based on Y/HU/AI agreement:
+            'validity': Color based on X/HU/AI agreement:
                 - Dark red: consensus high (all in top quartile)
                 - Light red: any high signal (at least one in top quartile)
                 - Dark blue: consensus low (all in bottom quartile)
@@ -281,13 +281,13 @@ class PCWordCloudGenerator:
     
     def _calculate_topic_validity_colors(self, topics: List[Dict], pc_idx: int) -> Dict[str, str]:
         """
-        Calculate color for each word based on topic's validity across Y/HU/AI.
+        Calculate color for each word based on topic's validity across X/HU/AI.
         
-        This method uses direct measurement of topic Y/HU/AI values to determine colors.
+        This method uses direct measurement of topic X/HU/AI values to determine colors.
         It calculates the actual mean values for each topic and compares them to
         global quartiles to identify:
-        - Valid markers: High/low in all three (Y, HU, AI)
-        - Perceived markers: High/low in HU & AI but not Y
+        - Valid markers: High/low in all three (X, HU, AI)
+        - Perceived markers: High/low in HU & AI but not X
         - Mixed signals: Inconsistent patterns
         
         Parameters
@@ -315,7 +315,7 @@ class PCWordCloudGenerator:
             'light_grey': '#B0B0B0'    # All middle quartiles
         }
         
-        # Check if we have Y/HU/AI data for direct measurement
+        # Check if we have X/HU/AI data for direct measurement
         if self.criterion is None or self.human_judgment is None or self.ai_judgment is None:
             # Fall back to old method if data not available
             print(f"[DEBUG] Falling back to legacy color method. criterion={self.criterion is not None}, "
@@ -325,7 +325,7 @@ class PCWordCloudGenerator:
         # First, calculate means for ALL topics to establish topic-level quartiles
         # This ensures topics can actually reach the extreme quartiles
         all_cluster_ids = np.unique(self.topic_analyzer.cluster_labels[self.topic_analyzer.cluster_labels != -1])
-        all_topic_means = {'Y': [], 'HU': [], 'AI': []}
+        all_topic_means = {'X': [], 'HU': [], 'AI': []}
         
         for cluster_id in all_cluster_ids:
             topic_mask = self.topic_analyzer.cluster_labels == cluster_id
@@ -334,7 +334,7 @@ class PCWordCloudGenerator:
                 y_values = self.criterion[topic_mask]
                 y_valid = y_values[~np.isnan(y_values)]
                 if len(y_valid) > 0:
-                    all_topic_means['Y'].append(np.mean(y_valid))
+                    all_topic_means['X'].append(np.mean(y_valid))
                 
                 # HU (human judgment) - handle sparse data
                 hu_values = self.human_judgment[topic_mask]
@@ -349,8 +349,8 @@ class PCWordCloudGenerator:
                     all_topic_means['AI'].append(np.mean(ai_valid))
         
         # Calculate quartiles based on TOPIC MEANS, not document values
-        y_q25 = np.percentile(all_topic_means['Y'], 25) if all_topic_means['Y'] else np.nan
-        y_q75 = np.percentile(all_topic_means['Y'], 75) if all_topic_means['Y'] else np.nan
+        y_q25 = np.percentile(all_topic_means['X'], 25) if all_topic_means['X'] else np.nan
+        y_q75 = np.percentile(all_topic_means['X'], 75) if all_topic_means['X'] else np.nan
         hu_q25 = np.percentile(all_topic_means['HU'], 25) if all_topic_means['HU'] else np.nan
         hu_q75 = np.percentile(all_topic_means['HU'], 75) if all_topic_means['HU'] else np.nan
         ai_q25 = np.percentile(all_topic_means['AI'], 25) if all_topic_means['AI'] else np.nan
@@ -369,7 +369,7 @@ class PCWordCloudGenerator:
                 # No documents in topic, use default color
                 color = colors['light_grey']
             else:
-                # Calculate mean Y/HU/AI values for this topic (handling NaN)
+                # Calculate mean X/HU/AI values for this topic (handling NaN)
                 y_values = self.criterion[topic_mask]
                 y_valid = y_values[~np.isnan(y_values)]
                 y_mean = np.mean(y_valid) if len(y_valid) > 0 else np.nan
@@ -410,7 +410,7 @@ class PCWordCloudGenerator:
                 # Debug output for extreme cases
                 if n_high == 3 or n_low == 3:
                     print(f"[DEBUG] Topic {topic_id}: n_high={n_high}, n_low={n_low}, "
-                          f"Y={y_mean:.2f} (q25={y_q25:.2f}, q75={y_q75:.2f}), "
+                          f"X={y_mean:.2f} (q25={y_q25:.2f}, q75={y_q75:.2f}), "
                           f"HU={hu_mean:.2f} (q25={hu_q25:.2f}, q75={hu_q75:.2f}), "
                           f"AI={ai_mean:.2f} (q25={ai_q25:.2f}, q75={ai_q75:.2f})")
                 
@@ -467,7 +467,7 @@ class PCWordCloudGenerator:
     
     def _calculate_topic_validity_colors_legacy(self, topics: List[Dict], pc_idx: int) -> Dict[str, str]:
         """
-        Legacy method for backward compatibility when Y/HU/AI data not available.
+        Legacy method for backward compatibility when X/HU/AI data not available.
         Uses PC-based inference as in the original implementation.
         """
         # Color definitions
@@ -509,7 +509,7 @@ class PCWordCloudGenerator:
         pc_associations = {}
         
         if self.analysis_results and 'debiased_lasso' in self.analysis_results:
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.analysis_results['debiased_lasso']:
                     coef = self.analysis_results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
                     pc_associations[outcome] = 'positive' if coef > 0 else 'negative'
@@ -543,9 +543,9 @@ class PCWordCloudGenerator:
             
             # Check for opposing signals across outcomes
             has_positive = any(pc_associations.get(outcome) == 'positive' 
-                             for outcome in ['SC', 'AI', 'HU'])
+                             for outcome in ['X', 'AI', 'HU'])
             has_negative = any(pc_associations.get(outcome) == 'negative' 
-                             for outcome in ['SC', 'AI', 'HU'])
+                             for outcome in ['X', 'AI', 'HU'])
             
             if has_positive and has_negative:
                 # Opposing signals
@@ -553,7 +553,7 @@ class PCWordCloudGenerator:
             elif is_high_topic:
                 # This topic is associated with high PC values
                 all_positive = all(pc_associations.get(outcome) == 'positive' 
-                                 for outcome in ['SC', 'AI', 'HU'])
+                                 for outcome in ['X', 'AI', 'HU'])
                 if all_positive:
                     color = colors['dark_red']
                 else:
@@ -561,7 +561,7 @@ class PCWordCloudGenerator:
             elif is_low_topic:
                 # This topic is associated with low PC values
                 all_negative = all(pc_associations.get(outcome) == 'negative' 
-                                 for outcome in ['SC', 'AI', 'HU'])
+                                 for outcome in ['X', 'AI', 'HU'])
                 if all_negative:
                     color = colors['dark_blue']
                 else:
@@ -665,7 +665,7 @@ class PCWordCloudGenerator:
             Whether to display the plot
         color_mode : str
             'pole' (default): Red for high pole, blue for low pole
-            'validity': Color based on Y/HU/AI agreement
+            'validity': Color based on X/HU/AI agreement
             
         Returns
         -------

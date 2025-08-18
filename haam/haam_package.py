@@ -67,7 +67,7 @@ class HAAMAnalysis:
         random_state : int, default=42
             Random state for reproducibility
         standardize : bool, default=False
-            Whether to standardize X and Y variables for both total effects and DML calculations.
+            Whether to standardize X and outcome variables for both total effects and DML calculations.
             When True, all coefficients will be in standardized units.
         """
         self.criterion = self._validate_input(criterion, "criterion")
@@ -191,7 +191,7 @@ class HAAMAnalysis:
             Dictionary containing all results
         """
         outcomes = {
-            'SC': self.criterion,
+            'X': self.criterion,
             'AI': self.ai_judgment,
             'HU': self.human_judgment
         }
@@ -430,15 +430,15 @@ class HAAMAnalysis:
         """Calculate Double Machine Learning (DML) total effects with proper residual-on-residual regression."""
         # Get predictions from each model
         predictions = {}
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 X = self.results['pca_features']
                 coefs = self.results['debiased_lasso'][outcome]['coefs_std']
                 predictions[outcome] = X @ coefs
         
         # Calculate total effects for key paths
-        # Y -> AI (direct effect of criterion on AI)
-        if 'SC' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
+        # X -> AI (direct effect of criterion on AI)
+        if 'X' in self.results['debiased_lasso'] and 'AI' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
             if mask.sum() > 50:
                 # Prepare data for total effect
@@ -462,11 +462,11 @@ class HAAMAnalysis:
                     self.criterion[mask], 
                     self.ai_judgment[mask], 
                     self.results['pca_features'][mask],
-                    self.results['debiased_lasso']['SC']['selected'],
+                    self.results['debiased_lasso']['X']['selected'],
                     self.results['debiased_lasso']['AI']['selected']
                 )
                 
-                self.results['total_effects']['Y_AI'] = {
+                self.results['total_effects']['X_AI'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
                     'n_obs': mask.sum(),  # Store sample size for degrees of freedom
@@ -483,8 +483,8 @@ class HAAMAnalysis:
                     'check_beta_n': check_beta_results['n']  # Store DML sample size
                 }
         
-        # Y -> HU (direct effect of criterion on human)
-        if 'SC' in self.results['debiased_lasso'] and 'HU' in self.results['debiased_lasso']:
+        # X -> HU (direct effect of criterion on human)
+        if 'X' in self.results['debiased_lasso'] and 'HU' in self.results['debiased_lasso']:
             mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
             if mask.sum() > 50:
                 # Prepare data for total effect
@@ -508,11 +508,11 @@ class HAAMAnalysis:
                     self.criterion[mask], 
                     self.human_judgment[mask], 
                     self.results['pca_features'][mask],
-                    self.results['debiased_lasso']['SC']['selected'],
+                    self.results['debiased_lasso']['X']['selected'],
                     self.results['debiased_lasso']['HU']['selected']
                 )
                 
-                self.results['total_effects']['Y_HU'] = {
+                self.results['total_effects']['X_HU'] = {
                     'coefficient': model.params[1],
                     'se': model.bse[1],
                     'n_obs': mask.sum(),  # Store sample size for degrees of freedom
@@ -590,15 +590,15 @@ class HAAMAnalysis:
         Parameters
         ----------
         X_var : np.ndarray
-            Treatment variable (e.g., criterion for Y->AI)
+            Treatment variable (e.g., criterion for X->AI)
         Y_var : np.ndarray
-            Outcome variable (e.g., AI judgment for Y->AI)
+            Outcome variable (e.g., AI judgment for X->AI)
         pca_features : np.ndarray
             PCA features for predictions
         X_selected : np.ndarray
             Selected features for X model
         Y_selected : np.ndarray
-            Selected features for Y model
+            Selected features for X model
             
         Returns
         -------
@@ -654,7 +654,7 @@ class HAAMAnalysis:
             else:
                 X_resid_test = X_test_std
             
-            # Get residuals for Y (outcome)
+            # Get residuals for X (outcome)
             if len(Y_selected) > 0:
                 Y_features_train = pca_train[:, Y_selected]
                 Y_features_test = pca_test[:, Y_selected]
@@ -726,7 +726,7 @@ class HAAMAnalysis:
         """
         # Get the actual values for each outcome
         outcome_values = {
-            'SC': self.criterion,
+            'X': self.criterion,
             'AI': self.ai_judgment,
             'HU': self.human_judgment
         }
@@ -745,7 +745,7 @@ class HAAMAnalysis:
         
         # Get predictions from PC models (standardized scale)
         predictions = {}
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 selected = self.results['debiased_lasso'][outcome]['selected']
                 if len(selected) > 0:
@@ -771,33 +771,33 @@ class HAAMAnalysis:
         else:
             self.results['residual_correlations']['AI_HU'] = 0.0
         
-        # C(Y,AI) - correlation between Y and AI residuals after controlling for their PC predictions
+        # C(X,AI) - correlation between X and AI residuals after controlling for their PC predictions
         mask = ~(np.isnan(self.criterion) | np.isnan(self.ai_judgment))
-        if mask.sum() > 50 and 'SC' in predictions and 'AI' in predictions:
+        if mask.sum() > 50 and 'X' in predictions and 'AI' in predictions:
             # Get residuals after controlling for PCs (on standardized scale)
-            resid_y = standardized_values['SC'][mask] - predictions['SC'][mask]
+            resid_y = standardized_values['X'][mask] - predictions['X'][mask]
             resid_ai = standardized_values['AI'][mask] - predictions['AI'][mask]
             
-            # C(Y,AI) = corr(e_Y, e_AI)
+            # C(X,AI) = corr(e_X, e_AI)
             if np.std(resid_y) > 0 and np.std(resid_ai) > 0:
-                self.results['residual_correlations']['Y_AI'] = np.corrcoef(resid_y, resid_ai)[0, 1]
+                self.results['residual_correlations']['X_AI'] = np.corrcoef(resid_y, resid_ai)[0, 1]
             else:
-                self.results['residual_correlations']['Y_AI'] = 0.0
+                self.results['residual_correlations']['X_AI'] = 0.0
         else:
             self.results['residual_correlations']['Y_AI'] = 0.0
         
-        # C(Y,HU) - correlation between Y and HU residuals after controlling for their PC predictions
+        # C(X,HU) - correlation between X and HU residuals after controlling for their PC predictions
         mask = ~(np.isnan(self.criterion) | np.isnan(self.human_judgment))
-        if mask.sum() > 50 and 'SC' in predictions and 'HU' in predictions:
+        if mask.sum() > 50 and 'X' in predictions and 'HU' in predictions:
             # Get residuals after controlling for PCs (on standardized scale)
-            resid_y = standardized_values['SC'][mask] - predictions['SC'][mask]
+            resid_y = standardized_values['X'][mask] - predictions['X'][mask]
             resid_hu = standardized_values['HU'][mask] - predictions['HU'][mask]
             
-            # C(Y,HU) = corr(e_Y, e_HU)
+            # C(X,HU) = corr(e_X, e_HU)
             if np.std(resid_y) > 0 and np.std(resid_hu) > 0:
-                self.results['residual_correlations']['Y_HU'] = np.corrcoef(resid_y, resid_hu)[0, 1]
+                self.results['residual_correlations']['X_HU'] = np.corrcoef(resid_y, resid_hu)[0, 1]
             else:
-                self.results['residual_correlations']['Y_HU'] = 0.0
+                self.results['residual_correlations']['X_HU'] = 0.0
         else:
             self.results['residual_correlations']['Y_HU'] = 0.0
     
@@ -805,7 +805,7 @@ class HAAMAnalysis:
         """Calculate correlations between model predictions (policy similarities)."""
         # Get predictions from each model using LASSO coefficients
         predictions = {}
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 X = self.results['pca_features']
                 # Use LASSO coefficients for global metrics
@@ -813,23 +813,23 @@ class HAAMAnalysis:
                 predictions[outcome] = X @ coefs
         
         # Calculate pairwise correlations between predictions
-        if 'SC' in predictions and 'AI' in predictions:
-            mask = ~(np.isnan(predictions['SC']) | np.isnan(predictions['AI']))
+        if 'X' in predictions and 'AI' in predictions:
+            mask = ~(np.isnan(predictions['X']) | np.isnan(predictions['AI']))
             if mask.sum() > 50:
-                self.results['policy_similarities']['Y_AI'] = np.corrcoef(
-                    predictions['SC'][mask], predictions['AI'][mask]
+                self.results['policy_similarities']['X_AI'] = np.corrcoef(
+                    predictions['X'][mask], predictions['AI'][mask]
                 )[0, 1]
             else:
-                self.results['policy_similarities']['Y_AI'] = 0.0
+                self.results['policy_similarities']['X_AI'] = 0.0
         
-        if 'SC' in predictions and 'HU' in predictions:
-            mask = ~(np.isnan(predictions['SC']) | np.isnan(predictions['HU']))
+        if 'X' in predictions and 'HU' in predictions:
+            mask = ~(np.isnan(predictions['X']) | np.isnan(predictions['HU']))
             if mask.sum() > 50:
-                self.results['policy_similarities']['Y_HU'] = np.corrcoef(
-                    predictions['SC'][mask], predictions['HU'][mask]
+                self.results['policy_similarities']['X_HU'] = np.corrcoef(
+                    predictions['X'][mask], predictions['HU'][mask]
                 )[0, 1]
             else:
-                self.results['policy_similarities']['Y_HU'] = 0.0
+                self.results['policy_similarities']['X_HU'] = 0.0
         
         if 'AI' in predictions and 'HU' in predictions:
             mask = ~(np.isnan(predictions['AI']) | np.isnan(predictions['HU']))
@@ -850,10 +850,10 @@ class HAAMAnalysis:
         - β_total = total effect (from simple regression)
         - β_check = DML check beta (direct effect after controlling for mediators)
         """
-        # For Y -> AI path
-        if 'Y_AI' in self.results['total_effects']:
-            total_effect = self.results['total_effects']['Y_AI']['coefficient']
-            check_beta = self.results['total_effects']['Y_AI']['check_beta']
+        # For X -> AI path
+        if 'X_AI' in self.results['total_effects']:
+            total_effect = self.results['total_effects']['X_AI']['coefficient']
+            check_beta = self.results['total_effects']['X_AI']['check_beta']
             
             # PoMA = 1 - (direct effect / total effect)
             # The indirect effect is what's mediated through PCs
@@ -866,10 +866,10 @@ class HAAMAnalysis:
                 'direct_effect': direct_effect
             }
         
-        # For Y -> HU path
-        if 'Y_HU' in self.results['total_effects']:
-            total_effect = self.results['total_effects']['Y_HU']['coefficient']
-            check_beta = self.results['total_effects']['Y_HU']['check_beta']
+        # For X -> HU path
+        if 'X_HU' in self.results['total_effects']:
+            total_effect = self.results['total_effects']['X_HU']['coefficient']
+            check_beta = self.results['total_effects']['X_HU']['check_beta']
             
             direct_effect = check_beta
             indirect_effect = total_effect - direct_effect
@@ -905,7 +905,7 @@ class HAAMAnalysis:
         n_top : int, default=9
             Number of top PCs to return
         ranking_method : str, default='triple'
-            Method for ranking: 'SC', 'AI', 'HU', or 'triple'
+            Method for ranking: 'X', 'AI', 'HU', or 'triple'
             
         Returns
         -------
@@ -915,7 +915,7 @@ class HAAMAnalysis:
         if ranking_method == 'triple':
             # Get top 3 from each model
             top_pcs = []
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     coefs = np.abs(self.results['debiased_lasso'][outcome]['coefs_std'])
                     top_indices = np.argsort(coefs)[::-1][:3]
@@ -933,8 +933,8 @@ class HAAMAnalysis:
             
         else:
             # Rank by single outcome
-            # Handle Y -> SC mapping for criterion
-            outcome_key = 'SC' if ranking_method == 'Y' else ranking_method
+            # Handle X mapping for criterion
+            outcome_key = ranking_method
             
             if outcome_key not in self.results['debiased_lasso']:
                 raise ValueError(f"No results for outcome: {ranking_method}")
@@ -967,7 +967,7 @@ class HAAMAnalysis:
         # Export comprehensive LASSO model outputs
         lasso_data = []
         for pc_idx in range(self.n_components):
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     res = self.results['debiased_lasso'][outcome]
                     lasso_coef = res['lasso_coefs_std'][pc_idx]
@@ -993,7 +993,7 @@ class HAAMAnalysis:
         # Export comprehensive post-LASSO OLS outputs with full inference
         post_lasso_data = []
         for pc_idx in range(self.n_components):
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     res = self.results['debiased_lasso'][outcome]
                     
@@ -1039,7 +1039,7 @@ class HAAMAnalysis:
         
         # Export model summary
         summary_data = []
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 res = self.results['debiased_lasso'][outcome]
                 summary_data.append({
@@ -1126,7 +1126,7 @@ class HAAMAnalysis:
                 poma = np.nan
                 
             med_data.append({
-                'Path': f'Y -> {outcome}' if outcome != 'HU_AI' else 'HU -> AI',
+                'Path': f'X -> {outcome}' if outcome != 'HU_AI' else 'HU -> AI',
                 'Total Effect': total_effect,
                 'Direct Effect': direct_effect,
                 'Indirect Effect': indirect_effect,
@@ -1243,8 +1243,8 @@ class HAAMAnalysis:
         print("-" * 80)
         
         beta_data = []
-        paths = [('Y → AI', 'Y_AI', 'SC', 'AI'), 
-                 ('Y → HU', 'Y_HU', 'SC', 'HU'), 
+        paths = [('X → AI', 'X_AI', 'X', 'AI'), 
+                 ('X → HU', 'X_HU', 'X', 'HU'), 
                  ('HU → AI', 'HU_AI', 'HU', 'AI')]
         
         for path_name, path_key, X_name, Y_name in paths:
@@ -1352,26 +1352,26 @@ class HAAMAnalysis:
         print("\n\n2. RESIDUAL CORRELATIONS (C)")
         print("-" * 60)
         if 'residual_correlations' in self.results:
-            print(f"C(Y, AI) = {self.results['residual_correlations'].get('Y_AI', 0):.3f}")
-            print(f"C(Y, HU) = {self.results['residual_correlations'].get('Y_HU', 0):.3f}")
+            print(f"C(X, AI) = {self.results['residual_correlations'].get('X_AI', 0):.3f}")
+            print(f"C(X, HU) = {self.results['residual_correlations'].get('X_HU', 0):.3f}")
             print(f"C(HU, AI) = {self.results['residual_correlations'].get('AI_HU', 0):.3f}")
         
         # Section 3: Policy Similarities (G)
         print("\n\n3. POLICY SIMILARITIES (G)")
         print("-" * 60)
         if 'policy_similarities' in self.results:
-            print(f"G(Y → AI) = {self.results['policy_similarities'].get('Y_AI', 0):.3f}")
-            print(f"G(Y → HU) = {self.results['policy_similarities'].get('Y_HU', 0):.3f}")
+            print(f"G(X → AI) = {self.results['policy_similarities'].get('X_AI', 0):.3f}")
+            print(f"G(X → HU) = {self.results['policy_similarities'].get('X_HU', 0):.3f}")
             print(f"G(HU → AI) = {self.results['policy_similarities'].get('AI_HU', 0):.3f}")
         
         # Section 4: Value-Prediction Correlations
         print("\n\n4. VALUE-PREDICTION CORRELATIONS")
         print("-" * 60)
         if 'debiased_lasso' in self.results:
-            # For Y (SC) model
-            if 'SC' in self.results['debiased_lasso']:
-                r2_sc = self.results['debiased_lasso']['SC'].get('r2_cv_lasso', 0)
-                print(f"r(Y, Ŷ) = {np.sqrt(r2_sc):.3f}")
+            # For X model
+            if 'X' in self.results['debiased_lasso']:
+                r2_x = self.results['debiased_lasso']['X'].get('r2_cv_lasso', 0)
+                print(f"r(X, X̂) = {np.sqrt(r2_x):.3f}")
             
             # For AI model  
             if 'AI' in self.results['debiased_lasso']:
@@ -1392,7 +1392,7 @@ class HAAMAnalysis:
                     med = self.results['mediation_analysis'][outcome]
                     if med['total_effect'] != 0:
                         poma = (med['indirect_effect'] / med['total_effect']) * 100
-                        print(f"PoMA(Y → {outcome}) = {poma:.1f}%")
+                        print(f"PoMA(X → {outcome}) = {poma:.1f}%")
             
             # For HU → AI, we need to check differently
             if 'HU_AI' in self.results.get('total_effects', {}):
@@ -1405,7 +1405,7 @@ class HAAMAnalysis:
         print("\n\n6. FEATURE SELECTION SUMMARY")
         print("-" * 60)
         if 'debiased_lasso' in self.results:
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     res = self.results['debiased_lasso'][outcome]
                     print(f"{outcome} model: {res['n_selected']} PCs selected (CV R² = {res['r2_cv_lasso']:.3f})")
@@ -1415,7 +1415,7 @@ class HAAMAnalysis:
         print("-" * 140)
         r2_data = []
         
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 res = self.results['debiased_lasso'][outcome]
                 row = {
@@ -1458,7 +1458,7 @@ class HAAMAnalysis:
         print("="*120)
         
         # For each outcome, show complete model information
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome not in self.results['debiased_lasso']:
                 continue
                 
@@ -1539,7 +1539,7 @@ class HAAMAnalysis:
         
         # Export detailed DML statistics
         dml_data = []
-        for path_name, path_key in [('Y → AI', 'Y_AI'), ('Y → HU', 'Y_HU'), ('HU → AI', 'HU_AI')]:
+        for path_name, path_key in [('X → AI', 'X_AI'), ('X → HU', 'X_HU'), ('HU → AI', 'HU_AI')]:
             if path_key in self.results.get('total_effects', {}):
                 te = self.results['total_effects'][path_key]
                 dml_data.append({
@@ -1565,7 +1565,7 @@ class HAAMAnalysis:
         
         # Export R² values
         r2_data = []
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.results['debiased_lasso']:
                 res = self.results['debiased_lasso'][outcome]
                 row = {
@@ -1602,7 +1602,7 @@ class HAAMAnalysis:
         lasso_data = []
         for pc_idx in range(self.n_components):
             row = {'PC': pc_idx + 1}
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     row[f'{outcome}_lasso_coef'] = self.results['debiased_lasso'][outcome]['lasso_coefs_std'][pc_idx]
                 else:
@@ -1619,7 +1619,7 @@ class HAAMAnalysis:
         for pc_idx in range(self.n_components):
             row = {'PC': pc_idx + 1}
             
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.results['debiased_lasso']:
                     res = self.results['debiased_lasso'][outcome]
                     coef = res['coefs_std'][pc_idx]
@@ -1681,7 +1681,7 @@ class HAAMAnalysis:
                 coef_data = []
                 for pc_idx in range(self.n_components):
                     row = {'PC': pc_idx + 1}
-                    for outcome in ['SC', 'AI', 'HU']:
+                    for outcome in ['X', 'AI', 'HU']:
                         if outcome in self.results['debiased_lasso']:
                             row[f'{outcome}_coef'] = self.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
                             # Check if PC was selected by LASSO
@@ -1698,13 +1698,13 @@ class HAAMAnalysis:
                 
                 # Show top 20 PCs with highest absolute coefficients
                 # Calculate max absolute coefficient for each PC
-                coef_df['max_abs_coef'] = coef_df[['SC_coef', 'AI_coef', 'HU_coef']].abs().max(axis=1)
+                coef_df['max_abs_coef'] = coef_df[['X_coef', 'AI_coef', 'HU_coef']].abs().max(axis=1)
                 top_pcs = coef_df.nlargest(20, 'max_abs_coef')
                 
                 # Format for display
-                styled_df = top_pcs[['PC', 'SC_coef', 'SC_selected', 'AI_coef', 'AI_selected', 'HU_coef', 'HU_selected']].style\
+                styled_df = top_pcs[['PC', 'X_coef', 'X_selected', 'AI_coef', 'AI_selected', 'HU_coef', 'HU_selected']].style\
                     .format({
-                        'SC_coef': '{:.4f}',
+                        'X_coef': '{:.4f}',
                         'AI_coef': '{:.4f}',
                         'HU_coef': '{:.4f}'
                     })\
@@ -1715,11 +1715,11 @@ class HAAMAnalysis:
             # Display model summary
             if 'debiased_lasso' in self.results:
                 summary_data = []
-                for outcome in ['SC', 'AI', 'HU']:
+                for outcome in ['X', 'AI', 'HU']:
                     if outcome in self.results['debiased_lasso']:
                         res = self.results['debiased_lasso'][outcome]
                         summary_data.append({
-                            'Outcome': 'Y' if outcome == 'SC' else outcome,
+                            'Outcome': 'X' if outcome == 'X' else outcome,
                             'N_selected': res['n_selected'],
                             'R²(CV)': res['r2_cv'],
                             'R²(In-sample)': res['r2_insample'],

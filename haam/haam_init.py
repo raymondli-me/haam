@@ -45,7 +45,7 @@ class HAAM:
         - UMAP: n_neighbors=5, min_dist=0.0, metric='cosine'
         - HDBSCAN: min_cluster_size=10, min_samples=2
         - c-TF-IDF implementation with BERTopic formula
-        - Generic "Y" labeling instead of "SC" in visualizations
+        - Generic "X" labeling instead of "SC" in visualizations
         
         Parameters
         ----------
@@ -70,7 +70,7 @@ class HAAM:
         umap_n_components : int, default=3
             Number of UMAP components for clustering (3D by default)
         standardize : bool, default=False
-            Whether to standardize X and Y variables for both total effects and DML calculations.
+            Whether to standardize X and outcome variables for both total effects and DML calculations.
             When True, all coefficients will be in standardized units.
         sample_split_post_lasso : bool, default=True
             Whether to use sample splitting for post-LASSO inference.
@@ -197,7 +197,7 @@ class HAAM:
         data = []
         for i in range(self.n_components):
             row = {'PC': i + 1}
-            for outcome in ['SC', 'AI', 'HU']:
+            for outcome in ['X', 'AI', 'HU']:
                 if outcome in self.analysis.results['debiased_lasso']:
                     res = self.analysis.results['debiased_lasso'][outcome]
                     row[f'{outcome}_coef'] = res['coefs_std'][i]
@@ -211,7 +211,7 @@ class HAAM:
     def _get_model_summary(self) -> pd.DataFrame:
         """Get model summary dataframe."""
         data = []
-        for outcome in ['SC', 'AI', 'HU']:
+        for outcome in ['X', 'AI', 'HU']:
             if outcome in self.analysis.results['debiased_lasso']:
                 res = self.analysis.results['debiased_lasso'][outcome]
                 data.append({
@@ -329,7 +329,7 @@ class HAAM:
         Create and save comprehensive metrics summary.
         
         Exports all key metrics including:
-        - Model performance (R² values for Y, AI, HU)
+        - Model performance (R² values for X, AI, HU)
         - Policy similarities between predictions
         - Mediation analysis (PoMA percentages)
         - Feature selection statistics
@@ -434,7 +434,7 @@ class HAAM:
     
     def create_umap_visualization(self,
                                  n_components: int = 3,
-                                 color_by: str = 'SC',
+                                 color_by: str = 'X',
                                  output_dir: Optional[str] = None) -> str:
         """
         Create UMAP visualization.
@@ -444,7 +444,7 @@ class HAAM:
         n_components : int
             Number of UMAP components (2 or 3)
         color_by : str
-            Variable to color by: 'SC', 'AI', 'HU', or 'PC1', 'PC2', etc.
+            Variable to color by: 'X', 'AI', 'HU', or 'PC1', 'PC2', etc.
         output_dir : str, optional
             Directory to save output
             
@@ -645,7 +645,7 @@ class HAAM:
         color_mode : str, default='legacy'
             Coloring mode when color_by_usage=True:
             - 'legacy': Use PC coefficient-based inference (original behavior)
-            - 'validity': Use direct Y/HU/AI measurement (consistent with word clouds)
+            - 'validity': Use direct X/HU/AI measurement (consistent with word clouds)
         show_topic_labels : bool or int, default=10
             Controls topic label display:
             - True: Show all topic labels
@@ -756,8 +756,8 @@ class HAAM:
             Whether to display the plots
         color_mode : str, optional
             'pole' (default): Red for high pole, blue for low pole
-            'validity': Color based on Y/HU/AI agreement:
-                - Dark red: top quartile for all (Y, HU, AI)
+            'validity': Color based on X/HU/AI agreement:
+                - Dark red: top quartile for all (X, HU, AI)
                 - Light red: top quartile for HU & AI only
                 - Dark blue: bottom quartile for all
                 - Light blue: bottom quartile for HU & AI only
@@ -866,7 +866,7 @@ class HAAM:
         pc_indices : List[int], optional
             List of PC indices. If None, uses top PCs by ranking_method
         ranking_method : str
-            Method to rank PCs if pc_indices not provided: 'triple', 'HU', 'AI', 'SC'
+            Method to rank PCs if pc_indices not provided: 'triple', 'HU', 'AI', 'X'
         n_pcs : int
             Number of top PCs to include if pc_indices not provided
         k : int
@@ -879,7 +879,7 @@ class HAAM:
             Whether to display the plot
         color_mode : str
             'pole' (default): Red for high pole, blue for low pole
-            'validity': Color based on Y/HU/AI agreement
+            'validity': Color based on X/HU/AI agreement
             
         Returns
         -------
@@ -950,7 +950,7 @@ class HAAM:
         outputs['mini_grid'] = self.create_mini_grid(output_dir)
         
         # Create UMAP visualizations
-        for color_by in ['SC', 'AI', 'HU']:
+        for color_by in ['X', 'AI', 'HU']:
             outputs[f'umap_3d_{color_by}'] = self.create_umap_visualization(
                 n_components=3, 
                 color_by=color_by, 
@@ -976,7 +976,7 @@ def example_usage():
     
     # Simulate some data
     criterion = np.random.normal(3, 1, n_samples)  # Social class 1-5
-    ai_judgment = criterion + np.random.normal(0, 0.5, n_samples)  # AI correlates with SC
+    ai_judgment = criterion + np.random.normal(0, 0.5, n_samples)  # AI correlates with X
     human_judgment = criterion + np.random.normal(0, 0.7, n_samples)  # Human also correlates
     
     # Generate example texts
