@@ -2,7 +2,7 @@
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Documentation Status](https://readthedocs.org/projects/haam/badge/?version=latest)](https://haam.readthedocs.io/en/latest/?badge=latest)
+[![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://raymondli-me.github.io/haam/)
 
 Implementation of the Double Machine Learning Lens Model Equation (DML-LME) for analyzing perceptual accuracy in high-dimensional settings. HAAM quantifies how humans and AI systems achieve accuracy when making judgments, decomposing their decision-making processes into interpretable components.
 
@@ -201,7 +201,7 @@ The method combines:
 
 ## Documentation
 
-Full documentation available at: [[https://haam.readthedocs.io](https://raymondli-me.github.io/haam/index.html)]([https://haam.readthedocs.io](https://raymondli-me.github.io/haam/index.html))
+Full documentation available at: [https://raymondli-me.github.io/haam/](https://raymondli-me.github.io/haam/)
 
 ## Contributing
 

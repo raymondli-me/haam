@@ -48,7 +48,7 @@ dev = [
 
 [project.urls]
 Homepage = "https://github.com/raymondli-me/haam"
-Documentation = "https://github.com/raymondli-me/haam#readme"
+Documentation = "https://raymondli-me.github.io/haam/"
 Repository = "https://github.com/raymondli-me/haam.git"
 Issues = "https://github.com/raymondli-me/haam/issues"
 
