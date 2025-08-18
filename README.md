@@ -201,7 +201,7 @@ The method combines:
 
 ## Documentation
 
-Full documentation available at: [https://haam.readthedocs.io](https://haam.readthedocs.io)
+Full documentation available at: [[https://haam.readthedocs.io](https://raymondli-me.github.io/haam/index.html)]([https://haam.readthedocs.io](https://raymondli-me.github.io/haam/index.html))
 
 ## Contributing
 
