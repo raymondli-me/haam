@@ -29,8 +29,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -e .
+        pip install numpy pandas scikit-learn matplotlib seaborn scipy wordcloud
         pip install sphinx sphinx-rtd-theme
+        pip install -e .
     
     - name: Build documentation
       run: |
