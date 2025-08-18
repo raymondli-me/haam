@@ -29,7 +29,7 @@ For the latest development version:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/haam.git
+   git clone https://github.com/raymondli-me/haam.git
    cd haam
    pip install -e .
 

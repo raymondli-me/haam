@@ -28,12 +28,12 @@ HAAM addresses a fundamental question in AI evaluation: When both humans and AI 
 Core Features
 -------------
 
-* **Double Machine Learning**: Debiased estimation of causal effects in high-dimensional settings
+* **Double Machine Learning**: Debiased estimation through cross-fitting and post-lasso regression
 * **Lens Model Analysis**: Decompose judgment accuracy using Brunswikian theory
 * **Human-AI Comparison**: Statistical framework for comparing perceptual strategies
 * **Rich Visualizations**: 3D UMAP projections, principal component analysis, and interpretable word clouds
 * **Topic Modeling**: Automatic discovery of content themes in judgment tasks
-* **Comprehensive Metrics**: Correlations, ANOVA, regression coefficients, and mediation analysis
+* **Comprehensive Metrics**: Correlations, regression coefficients, cross-validated R², and PoMA calculations
 
 Quick Example
 -------------
@@ -131,9 +131,9 @@ For a complete theoretical treatment, see :doc:`theoretical_framework`.
 Getting Help
 ------------
 
-* **Issues**: Report bugs or request features on `GitHub Issues <https://github.com/yourusername/haam/issues>`_
-* **Discussions**: Join the community on `GitHub Discussions <https://github.com/yourusername/haam/discussions>`_
-* **Email**: Contact the maintainers at your.email@example.com
+* **Issues**: Report bugs or request features on `GitHub Issues <https://github.com/raymondli-me/haam/issues>`_
+* **Discussions**: Join the community on `GitHub Discussions <https://github.com/raymondli-me/haam/discussions>`_
+* **Email**: Contact the maintainers at raymond.li@psych.ubc.ca
 
 Indices and tables
 ==================

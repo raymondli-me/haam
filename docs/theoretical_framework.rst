@@ -30,10 +30,10 @@ The classical LME decomposes perceptual accuracy into interpretable components:
 
 Where:
 
-* :math:`r_a` = Achievement (correlation between judgment and criterion)
-* :math:`G` = Linear knowledge (correlation between predicted and actual cue validities)
+* :math:`r_a` = Achievement accuracy (correlation between judgment and criterion)
+* :math:`G` = Matching coefficient (correlation between predicted and actual cue validities)
 * :math:`R_e` = Environmental predictability (multiple correlation of cues with criterion)
-* :math:`R_s` = Cognitive control (multiple correlation of cues with judgment)
+* :math:`R_s` = Response consistency (multiple correlation of cues with judgment)
 * :math:`C` = Unmodeled knowledge (residual accuracy)
 
 Mediation Analysis Framework
@@ -150,4 +150,4 @@ References
 
 * Brunswik, E. (1952). The conceptual framework of psychology. University of Chicago Press.
 * Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C., Newey, W., & Robins, J. (2018). Double/debiased machine learning for treatment and structural parameters. The Econometrics Journal, 21(1), C1-C68.
-* [Your paper citation]
+* Li, R. V., & Biesanz, J. C. (2025). High-dimensional perception with the Double Machine Learning Lens Model Equation (DML-LME). *Psychometrika*.

@@ -2,13 +2,13 @@
 
 ## Overview
 
-The validity coloring mode is an advanced feature for HAAM word clouds that helps distinguish between **valid** and **perceived** social class markers. This feature was developed to address a key research question: which linguistic markers truly indicate social class versus which are merely perceived to indicate social class?
+The validity coloring mode is an advanced feature for HAAM word clouds that helps distinguish between **valid** and **perceived** markers of the criterion variable. This feature was developed to address a key research question: which perceptual cues truly indicate the criterion (Y) versus which are merely perceived to indicate it?
 
 ## What is Validity Coloring?
 
 Validity coloring uses different colors to show the level of agreement across measures:
 
-1. **Consensus markers (dark colors)**: All three measures agree (Y, HU, AI all high or all low)
+1. **Consensus markers (dark colors)**: All three measures agree (Y, Human, AI all high or all low)
 2. **Any signal markers (light colors)**: At least one measure indicates high/low
 3. **Opposing signals (dark grey)**: Disagreement - some measures say high, others say low
 4. **Neutral markers (light grey)**: All measures in the middle range
@@ -16,11 +16,11 @@ Validity coloring uses different colors to show the level of agreement across me
 ## Color Scheme
 
 ### High-Associated Topics
-- **Dark Red (#8B0000)**: Consensus high - ALL three measures (Y+HU+AI) in top quartile
+- **Dark Red (#8B0000)**: Consensus high - ALL three measures (Y+Human+AI) in top quartile
 - **Light Red (#FF6B6B)**: Any high signal - At least one measure in top quartile
 
 ### Low-Associated Topics
-- **Dark Blue (#00008B)**: Consensus low - ALL three measures (Y+HU+AI) in bottom quartile
+- **Dark Blue (#00008B)**: Consensus low - ALL three measures (Y+Human+AI) in bottom quartile
 - **Light Blue (#6B9AFF)**: Any low signal - At least one measure in bottom quartile
 
 ### Mixed/Neutral Signals
@@ -31,7 +31,7 @@ Validity coloring uses different colors to show the level of agreement across me
 
 1. **Topic Percentiles**: For each PC, topics are ranked by their average PC values
 2. **Quartile Calculation**: Topics in the top 25% (>75th percentile) are "high", bottom 25% (<25th percentile) are "low"
-3. **PC Associations**: The method checks whether the PC is positively or negatively associated with each outcome (Y, HU, AI)
+3. **PC Associations**: The method checks whether the PC is positively or negatively associated with each outcome (Y, Human, AI)
 4. **Color Assignment**: Colors are assigned based on the consistency of associations across outcomes
 
 ## Usage
@@ -75,37 +75,37 @@ grid_fig = haam.create_top_pcs_wordcloud_grid(
 
 ### Consensus Markers (Dark Colors)
 **Dark Red/Blue**: All three measures agree - these are the most reliable indicators
-- Dark red = consensus that this indicates high social class
-- Dark blue = consensus that this indicates low social class
+- Dark red = consensus that this indicates high criterion values
+- Dark blue = consensus that this indicates low criterion values
 - High confidence markers for research
 
 ### Any Signal Markers (Light Colors)
 **Light Red/Blue**: At least one measure indicates high/low
-- Light red = some evidence of high social class association
-- Light blue = some evidence of low social class association
-- May include both valid markers and stereotypes
-- Useful for exploring potential associations
+- Light red = some evidence of high criterion association
+- Light blue = some evidence of low criterion association
+- May include both valid markers and perceived associations
+- Useful for exploring potential relationships
 
 ### Opposing Signals (Dark Grey)
 **Dark Grey**: Measures disagree - some say high, others say low
 - Indicates complex or contested markers
-- May reveal cultural disagreements about class markers
+- May reveal disagreements between actual criterion and perceptions
 - Warrants deeper investigation
 
 ### Neutral Markers (Light Grey)
 **Light Grey**: All measures in the middle range
-- Not strongly associated with high or low social class
-- Common/universal experiences
-- Less informative for class distinction
+- Not strongly associated with high or low criterion values
+- Common/universal features
+- Less informative for distinguishing criterion levels
 
 ## Example Interpretation
 
-Consider a word cloud for PC3:
+Consider a word cloud for PC3 (using social class as an example criterion):
 
-- **"Private school" (Dark Red)**: Valid high-class marker - genuinely associated with higher social class
-- **"Luxury brands" (Light Red)**: Perceived high-class marker - people think it indicates high class, but it doesn't
-- **"Public housing" (Dark Blue)**: Valid low-class marker - genuinely associated with lower social class
-- **"Fast food" (Light Blue)**: Perceived low-class marker - stereotypically "low class" but not actually predictive
+- **"Private school" (Dark Red)**: Valid high-criterion marker - genuinely associated with higher criterion values
+- **"Luxury brands" (Light Red)**: Perceived high-criterion marker - people think it indicates high values, but it doesn't
+- **"Public housing" (Dark Blue)**: Valid low-criterion marker - genuinely associated with lower criterion values
+- **"Fast food" (Light Blue)**: Perceived low-criterion marker - stereotypically associated but not actually predictive
 
 ## Technical Details
 
@@ -116,7 +116,7 @@ The validity coloring algorithm:
 3. Checks the PC's relationship with each outcome (positive/negative coefficient)
 4. Assigns colors based on consistency:
    - All three consistent = dark color (valid)
-   - HU+AI consistent, Y different = light color (perceived)
+   - Human+AI consistent, Y different = light color (perceived)
    - Inconsistent = grey (mixed)
 
 ## When to Use Validity Coloring

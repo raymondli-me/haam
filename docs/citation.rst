@@ -5,12 +5,12 @@ If you use HAAM in your research, please cite our paper:
 
 .. code-block:: bibtex
 
-   @article{haam2024,
-     title={The Human-AI Accuracy Model: A Double Machine Learning Lens Model 
-            Equation for Understanding How Humans and AI Achieve Perceptual Accuracy},
-     author={[Author names]},
-     journal={[Journal]},
-     year={2024},
+   @article{li2025dml,
+     title={High-Dimensional Perception with the Double Machine Learning Lens Model 
+            Equation (DML-LME)},
+     author={Li, Raymond V. and Biesanz, Jeremy C.},
+     journal={Psychometrika},
+     year={2025},
      doi={10.xxxx/xxxxx}
    }
 
@@ -23,10 +23,10 @@ To cite the HAAM software package specifically:
 
    @software{haam_package,
      title={HAAM: Human-AI Accuracy Model Python Package},
-     author={[Author names]},
-     year={2024},
+     author={Li, Raymond V. and Biesanz, Jeremy C.},
+     year={2025},
      version={1.0},
-     url={https://github.com/yourusername/haam}
+     url={https://github.com/raymondli-me/haam}
    }
 
 Related Papers
@@ -110,19 +110,18 @@ Example Citations in Text
 
 When citing HAAM in your manuscript, you might write:
 
-   *"We used the Human-AI Accuracy Model (HAAM; [citation]) to decompose 
+   *"We used the Human-AI Accuracy Model (HAAM; Li & Biesanz, 2025) to decompose 
    perceptual accuracy into direct and mediated pathways. The Percentage 
    of Mediated Accuracy (PoMA) was calculated using the Double Machine 
    Learning Lens Model Equation (DML-LME) as implemented in the HAAM 
-   Python package (version 1.0; [software citation])."*
+   Python package (version 1.0; Li & Biesanz, 2025)."*
 
 Or in the methods section:
 
-   *"Following [citation], we applied the DML-LME framework to obtain 
+   *"Following Li & Biesanz (2025), we applied the DML-LME framework to obtain 
    debiased estimates of mediation effects in our high-dimensional 
-   setting. The analysis used cross-fitting with random forests for 
-   nuisance function estimation and stratified bootstrap (B=1,000) 
-   for inference."*
+   setting. The analysis used cross-fitting with post-lasso regression for 
+   feature selection and debiased coefficient estimation."*
 
 Acknowledgments
 ---------------
@@ -132,4 +131,4 @@ statistics, and machine learning. We are grateful for the foundational
 work that made this integration possible.
 
 If you have questions about citations or want to report usage of HAAM 
-in your research, please contact us at [email].
+in your research, please contact us at raymond.li@psych.ubc.ca.

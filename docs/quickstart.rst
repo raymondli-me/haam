@@ -16,7 +16,7 @@ Or install from source:
 
 .. code-block:: bash
 
-   git clone https://github.com/yourusername/haam.git
+   git clone https://github.com/raymondli-me/haam.git
    cd haam
    pip install -e .
 
@@ -50,7 +50,7 @@ Understanding the Output
 
 HAAM generates several types of output:
 
-1. **Statistical Summary**: Correlations, ANOVA results, and validity metrics
+1. **Statistical Summary**: Correlations, cross-validated R², and model performance metrics
 2. **Visualizations**: 3D PCA plots showing relationships between variables
 3. **Performance Metrics**: Classification accuracy, regression R²
 4. **Topic Analysis**: If text data is provided, automatic topic discovery
@@ -111,7 +111,7 @@ Interpreting Results
 Key metrics to look for:
 
 * **Correlation > 0.7**: Strong alignment between AI and ground truth
-* **ANOVA p < 0.05**: AI can distinguish between criterion levels
+* **Model R² > 0**: The model explains variance in the criterion beyond chance
 * **High Topic Coherence**: Well-defined content clusters
 * **Validity Coloring**: Visual indicator of measurement quality
 

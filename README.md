@@ -18,12 +18,12 @@ HAAM provides a rigorous statistical framework to:
 
 ## Key Features
 
-- **🎯 DML-LME Implementation**: Double/debiased machine learning for causal inference in high dimensions
+- **🎯 DML-LME Implementation**: Double Machine Learning Lens Model Equation for high-dimensional perception
 - **📊 PoMA Calculation**: Quantify what percentage of accuracy flows through measured perceptual cues
 - **🧠 Human-AI Comparison**: Statistical framework for comparing perceptual strategies
 - **📈 Rich Visualizations**: 3D UMAP projections, PCA analysis, word clouds
 - **🔍 Topic Modeling**: Automatic discovery and labeling of content themes via BERTopic
-- **📉 Comprehensive Metrics**: Correlations, ANOVA, mediation analysis, bootstrap inference
+- **📉 Comprehensive Metrics**: Correlations, regression coefficients, cross-validated R², PoMA decomposition
 
 ## Installation
 
@@ -34,7 +34,7 @@ pip install haam
 
 ### Development Install
 ```bash
-git clone https://github.com/yourusername/haam.git
+git clone https://github.com/raymondli-me/haam.git
 cd haam
 pip install -e .
 ```
@@ -126,11 +126,11 @@ analysis.create_mini_grid()
 stats = analysis.get_statistical_summary()
 
 # Includes:
-# - Correlations (Pearson, Spearman)
-# - ANOVA with effect sizes
-# - Regression coefficients with CIs
-# - Mediation analysis results
-# - Model performance metrics (R², RMSE)
+# - Correlations (achievement accuracy)
+# - Cross-validated R² for all models
+# - Post-lasso regression coefficients
+# - PoMA (Percentage of Mediated Accuracy)
+# - Lens model statistics (G, C, RX, RY)
 ```
 
 ## Advanced Usage

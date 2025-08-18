@@ -70,19 +70,28 @@ Using DML, decompose into:
 
    \text{PoMA} = \frac{\text{Indirect Effect}}{\text{Total Effect}} \times 100\%
 
+Performance Metrics
+-------------------
+
+HAAM reports several key performance metrics:
+
+1. **Cross-validated R²**: Out-of-sample predictive accuracy
+2. **Value-prediction Correlation**: Correlation between predicted and actual values
+3. **Environmental Predictability (R_e)**: How well cues predict the criterion
+4. **Response Consistency (R_s)**: How well cues predict judgments
+5. **Matching Coefficient (G)**: Alignment between cue validities and usage
+
 Implementation Details
 ----------------------
 
 **Machine Learning Models**
 
-HAAM uses several ML algorithms for nuisance function estimation:
+HAAM uses post-lasso regression as the primary method:
 
-1. **Random Forests**: Default for general nonlinear relationships
-2. **Gradient Boosting**: Alternative for complex interactions  
-3. **Elastic Net**: When linear relationships are expected
-4. **Neural Networks**: For very high-dimensional text/image data
-
-The choice is made via cross-validation or can be specified by the user.
+1. **Lasso with CV**: Feature selection via cross-validation
+2. **Post-Lasso OLS**: Debiased coefficients on selected features
+3. **Ridge Regression**: Alternative when all features are relevant
+4. **PCA + Lasso**: Dimensionality reduction before selection
 
 **Cross-Fitting Procedure**
 
@@ -97,14 +106,14 @@ To prevent overfitting, HAAM implements K-fold cross-fitting:
 3. Combine predictions across all folds
 4. Estimate treatment effect on out-of-sample predictions
 
-**Bootstrap Inference**
+**Post-Lasso Inference**
 
-Confidence intervals use stratified bootstrap:
+Statistical inference uses post-lasso regression:
 
-1. Resample observations with replacement (B=1000 iterations)
-2. Maintain treatment/control balance in each bootstrap sample
-3. Re-estimate PoMA for each bootstrap sample
-4. Use percentile method for 95% CI
+1. Use Lasso with cross-validation to select features
+2. Refit OLS on selected features only
+3. Apply standard OLS inference on refitted model
+4. Value-prediction correlations assess model fit
 
 Statistical Tests
 -----------------
@@ -119,7 +128,7 @@ Tests whether indirect effect differs from zero:
 
    H_0: \text{Indirect Effect} = 0
 
-Uses bootstrap distribution of indirect effects.
+Uses post-lasso coefficient estimates and standard errors.
 
 **2. Human-AI Comparison Test**
 
@@ -129,7 +138,7 @@ Tests whether humans and AI have different PoMA values:
 
    H_0: \text{PoMA}_{human} = \text{PoMA}_{AI}
 
-Uses paired bootstrap test.
+Uses cross-fitted estimates from DML framework.
 
 **3. Cue Importance Tests**
 
@@ -199,7 +208,7 @@ Computational Considerations
 HAAM scales to large datasets through:
 
 - Sparse matrix representations for text
-- Parallel processing for bootstrap
+- Parallel processing for cross-fitting
 - Efficient ML implementations (scikit-learn)
 - Optional GPU acceleration for neural networks
 

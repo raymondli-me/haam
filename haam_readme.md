@@ -3,7 +3,7 @@
 [![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A lightweight Python package for analyzing human-AI accuracy models using sample-split post-lasso regression, automatic topic modeling, and interactive visualizations.
+A Python package implementing the Double Machine Learning Lens Model Equation (DML-LME) for analyzing how humans and AI achieve perceptual accuracy in high-dimensional settings.
 
 ## 🎯 What is HAAM?
 
@@ -16,7 +16,7 @@ HAAM implements the Human-AI Accuracy Model framework for understanding how huma
 
 ### Key Features
 
-- 📊 **Sample-split post-lasso regression** for unbiased statistical inference
+- 📊 **Cross-fitted post-lasso regression** for debiased coefficient estimation
 - 🔍 **Automatic topic modeling** to interpret principal components using c-TF-IDF
 - 📈 **Interactive visualizations** including framework diagrams, coefficient grids, and 3D UMAP plots
 - 💾 **Comprehensive metrics export** including top/bottom topics for all 200 PCs
@@ -375,10 +375,17 @@ haam = HAAM(..., texts=your_texts)
 If you use HAAM in your research, please cite:
 
 ```bibtex
-@software{haam2024,
+@article{li2025dml,
+  title = {High-Dimensional Perception with the Double Machine Learning Lens Model Equation (DML-LME)},
+  author = {Li, Raymond V. and Biesanz, Jeremy C.},
+  journal = {Psychometrika},
+  year = {2025}
+}
+
+@software{haam_package,
   title = {HAAM: Human-AI Accuracy Model Analysis Package},
-  author = {Li, Raymond},
-  year = {2024},
+  author = {Li, Raymond V. and Biesanz, Jeremy C.},
+  year = {2025},
   url = {https://github.com/raymondli-me/haam}
 }
 ```
