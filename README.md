@@ -111,7 +111,7 @@ if df_filtered_github is not None:
 
 ## Theoretical Background
 
-HAAM implements the framework that is described in an upcoming research paper, the High-Dimensional Perception with the Double Machine Learning Lens Model Equation. 
+HAAM implements the framework that is described in an upcoming research paper, _High-Dimensional Perception with the Double Machine Learning Lens Model Equation (DML-LME)._ 
 
 The method combines:
 1. **Brunswik's Lens Model** - Perceptual cues mediate between environment and judgment
