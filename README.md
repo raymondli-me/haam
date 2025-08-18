@@ -1,397 +1,224 @@
-# HAAM - Human-AI Accuracy Model Analysis Package
+# HAAM: Human-AI Accuracy Model
 
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Documentation Status](https://readthedocs.org/projects/haam/badge/?version=latest)](https://haam.readthedocs.io/en/latest/?badge=latest)
 
-A lightweight Python package for analyzing human-AI accuracy models using sample-split post-lasso regression, automatic topic modeling, and interactive visualizations.
+Implementation of the Double Machine Learning Lens Model Equation (DML-LME) for analyzing perceptual accuracy in high-dimensional settings. HAAM quantifies how humans and AI systems achieve accuracy when making judgments, decomposing their decision-making processes into interpretable components.
 
-## 🎯 What is HAAM?
+## What is HAAM?
 
-HAAM implements the Human-AI Accuracy Model framework for understanding how humans and AI systems use information when making judgments. It answers questions like:
+The **Human-AI Accuracy Model** addresses a fundamental question: When humans and AI achieve similar accuracy levels, are they using the same perceptual cues and cognitive strategies? 
 
-- What features (principal components) do humans vs AI rely on?
-- How much do human and AI judgments align with ground truth?
-- What semantic topics characterize the information being used?
-- How can we visualize these relationships interactively?
+HAAM provides a rigorous statistical framework to:
+- Decompose judgment accuracy into direct and mediated pathways
+- Quantify the **Percentage of Mediated Accuracy (PoMA)** for any perceiver
+- Compare how humans vs AI utilize high-dimensional perceptual features
+- Handle thousands of features using debiased machine learning
 
-### Key Features
+## Key Features
 
-- 📊 **Sample-split post-lasso regression** for unbiased statistical inference
-- 🔍 **Automatic topic modeling** to interpret principal components using c-TF-IDF
-- 📈 **Interactive visualizations** including framework diagrams, coefficient grids, and 3D UMAP plots
-- ☁️ **Word cloud visualizations** for PC poles with customizable color schemes (red for high, blue for low)
-- 💾 **Comprehensive metrics export** including top/bottom topics for all 200 PCs
-- 🔄 **R compatibility** via reticulate
+- **🎯 DML-LME Implementation**: Double/debiased machine learning for causal inference in high dimensions
+- **📊 PoMA Calculation**: Quantify what percentage of accuracy flows through measured perceptual cues
+- **🧠 Human-AI Comparison**: Statistical framework for comparing perceptual strategies
+- **📈 Rich Visualizations**: 3D UMAP projections, PCA analysis, word clouds
+- **🔍 Topic Modeling**: Automatic discovery and labeling of content themes via BERTopic
+- **📉 Comprehensive Metrics**: Correlations, ANOVA, mediation analysis, bootstrap inference
 
-### Recent Updates (v1.1.0)
+## Installation
 
-- **Enhanced UMAP parameters**: Now uses `n_neighbors=5`, `min_dist=0.0`, `metric='cosine'` for better clustering
-- **Improved HDBSCAN clustering**: `min_cluster_size=10`, `min_samples=2` matching BERTopic-style parameters
-- **c-TF-IDF implementation**: Uses the BERTopic formula for better topic extraction
-- **Generic criterion labeling**: All "SC" references changed to "Y" for flexibility
-- **Dynamic metrics calculation**: R², PoMA, and other metrics calculated from actual data
-- **Manual PC naming**: New `pc_names` parameter for custom PC labels
-- **Metrics summary export**: New `create_metrics_summary()` method exports comprehensive JSON
-
-## 🚀 Installation
-
-### Quick Install (when package is published)
-
+### Quick Install
 ```bash
 pip install haam
 ```
 
-### Install from GitHub
-
+### Development Install
 ```bash
-pip install git+https://github.com/raymondli-me/haam.git
-```
-
-### Local Development Install
-
-```bash
-git clone https://github.com/raymondli-me/haam.git
+git clone https://github.com/yourusername/haam.git
 cd haam
 pip install -e .
 ```
 
-### Dependencies
-
-Core requirements:
-- `numpy`, `pandas`, `scikit-learn`, `statsmodels`, `scipy`
-- `matplotlib`, `seaborn`, `plotly` (visualizations)
-- `sentence-transformers` (embeddings)
-- `umap-learn`, `hdbscan` (dimensionality reduction & clustering)
-
-## 📖 Quick Start
-
-### Basic Usage
+## Quick Start
 
 ```python
-from haam import HAAM
+from haam import HAAMAnalysis
 
-# Your data
-criterion = [...]        # Ground truth (any criterion variable, not just social class)
-ai_judgment = [...]      # AI predictions/ratings
-human_judgment = [...]   # Human ratings
-texts = [...]           # Text documents (optional if you have embeddings)
-
-# Run analysis with one line
-haam = HAAM(
-    criterion=criterion,
-    ai_judgment=ai_judgment,
-    human_judgment=human_judgment,
-    texts=texts,
-    n_components=200
-)
-
-# Export all results
-haam.export_all_results('./output')
-```
-
-### Example with Custom PC Names
-
-```python
-# Create visualizations with manual PC naming
-pc_names = {
-    0: "Formality",      # PC1
-    1: "Complexity",     # PC2  
-    3: "Sentiment",      # PC4
-    6: "Education"       # PC7
-}
-
-# Create main visualization with custom names
-haam.create_main_visualization(pc_names=pc_names)
-
-# PCs without custom names will show "-" in the visualization
-```
-
-### Google Colab Example
-
-```python
-# Install
-!pip install sentence-transformers umap-learn hdbscan plotly
-
-# Mount Drive and load data
-from google.colab import drive
-drive.mount('/content/drive')
-
-import pandas as pd
-df = pd.read_csv('/content/drive/MyDrive/your_data.csv')
+# Prepare your data
+criterion = [...]           # Ground truth labels (environmental criterion)
+human_judgment = [...]      # Human predictions/ratings  
+ai_judgment = [...]         # AI model outputs
+perceptual_cues = [...]     # High-dimensional features (or raw text)
 
 # Run analysis
-from haam import HAAM
-
-haam = HAAM(
-    criterion=df['target_variable'],  # Any criterion variable
-    ai_judgment=df['ai_rating'],
-    human_judgment=df['human_rating'],
-    texts=df['text_content'].tolist()
+analysis = HAAMAnalysis(
+    criterion=criterion,
+    human_judgment=human_judgment,
+    ai_judgment=ai_judgment,
+    perceptual_cues=perceptual_cues
 )
 
-# Export results including metrics summary
-haam.export_all_results('/content/drive/MyDrive/haam_output')
+# Calculate Percentage of Mediated Accuracy
+results = analysis.calculate_poma()
+print(f"Human PoMA: {results['human_poma']:.1%}")  # e.g., 73%
+print(f"AI PoMA: {results['ai_poma']:.1%}")        # e.g., 91%
 
-# Get comprehensive metrics
-metrics = haam.create_metrics_summary()
-print(f"AI Model R² (CV): {metrics['model_performance']['AI']['r2_cv']:.3f}")
-print(f"Human Model R² (CV): {metrics['model_performance']['HU']['r2_cv']:.3f}")
+# Generate comprehensive report
+analysis.display()
 ```
 
-## 🔧 Core Functions
+## Understanding the Output
 
-### Main Analysis Class
+HAAM reveals how perceivers achieve accuracy:
+
+- **High PoMA (>80%)**: Perceiver heavily relies on measured cue space
+- **Moderate PoMA (40-80%)**: Balanced use of measured and unmeasured information  
+- **Low PoMA (<40%)**: Perceiver uses information beyond measured cues
+
+Typically, AI shows higher PoMA (more cue-dependent) while humans show lower PoMA (more contextual processing).
+
+## Core Methods
+
+### The DML-LME Framework
 
 ```python
-# Initialize and run analysis
-haam = HAAM(
-    criterion,           # Ground truth variable (any criterion)
-    ai_judgment,         # AI predictions
-    human_judgment,      # Human ratings
-    texts=None,          # Optional: texts for topic modeling
-    embeddings=None,     # Optional: pre-computed embeddings
-    n_components=200,    # Number of PCA components
-    auto_run=True        # Run full pipeline automatically
+# Initialize with theoretical grounding
+analysis = HAAMAnalysis(
+    criterion=environmental_truth,      # Y_e: What is being judged
+    human_judgment=human_predictions,   # Y_h: Human ratings
+    ai_judgment=ai_outputs,            # Y_ai: AI predictions
+    perceptual_cues=feature_matrix,    # X: High-dimensional mediators
+    
+    # Advanced options
+    ml_method='random_forest',         # Nuisance function estimator
+    n_folds=5,                        # Cross-fitting folds
+    n_bootstrap=1000,                 # Bootstrap iterations
+    confidence_level=0.95             # CI coverage
 )
+
+# Get detailed decomposition
+decomposition = analysis.get_accuracy_decomposition()
+print(f"Total Effect: {decomposition['total_effect']:.3f}")
+print(f"Direct Effect: {decomposition['direct_effect']:.3f}")  
+print(f"Indirect Effect: {decomposition['indirect_effect']:.3f}")
 ```
 
-### Key Methods
-
-- **`export_all_results(output_dir)`** - Export all results and visualizations
-- **`create_main_visualization(pc_names=None)`** - Generate interactive HAAM framework diagram
-- **`create_mini_grid()`** - Create coefficient grid for all 200 PCs
-- **`explore_pc_topics(pc_indices)`** - Explore topic associations for specific PCs
-- **`plot_pc_effects(pc_idx)`** - Bar chart showing PC effects on outcomes
-- **`create_umap_visualization(color_by='Y')`** - 3D UMAP visualization
-- **`create_metrics_summary()`** - Export comprehensive metrics as JSON
-
-### Topic Analysis
+### Visualization Suite
 
 ```python
-# Explore topics for top PCs with enhanced c-TF-IDF
-pc_topics = haam.explore_pc_topics(
-    pc_indices=[4, 7, 1, 5, 172],  # 0-based indexing
-    n_topics=10
-)
+# 3D UMAP with PC arrows showing perceptual dimensions
+analysis.create_3d_umap_with_pc_arrows(top_pcs=5)
 
-# Get high/low topics for a specific PC
-topics = haam.topic_analyzer.get_pc_high_low_topics(
-    pc_idx=4,    # PC5 (0-based)
-    n_high=5,    # Top 5 high topics
-    n_low=5      # Top 5 low topics
-)
+# Word clouds for each principal component
+analysis.create_pc_wordclouds(pc_indices=[0, 1, 2, 3, 4])
 
-# Topics now use BERTopic-style c-TF-IDF for better quality
+# Framework diagram showing mediation pathways
+analysis.create_main_visualization()
+
+# Comprehensive grid of all 200 PCs
+analysis.create_mini_grid()
 ```
 
-### Visualization Options
+### Statistical Analysis
 
 ```python
-# Create all visualizations with custom PC names
+# Full statistical report
+stats = analysis.get_statistical_summary()
+
+# Includes:
+# - Correlations (Pearson, Spearman)
+# - ANOVA with effect sizes
+# - Regression coefficients with CIs
+# - Mediation analysis results
+# - Model performance metrics (R², RMSE)
+```
+
+## Advanced Usage
+
+### Working with Text Data
+
+```python
+# HAAM automatically extracts features from text
+analysis = HAAMAnalysis(
+    criterion=labels,
+    human_judgment=human_ratings,
+    ai_judgment=gpt_outputs,
+    texts=documents,  # Raw text input
+    embedding_model='sentence-transformers/all-MiniLM-L6-v2'
+)
+
+# Access extracted topics
+topics = analysis.get_topic_labels()
+```
+
+### Custom Principal Component Analysis
+
+```python
+# Name your PCs for better interpretability
 pc_names = {
-    0: "Writing Style",
-    3: "Technical Terms",
-    6: "Emotional Tone"
+    0: "Formality",
+    1: "Complexity",  
+    2: "Emotional Tone",
+    3: "Technicality"
 }
 
-haam.create_main_visualization(pc_names=pc_names)  # Shows custom names
-haam.create_mini_grid()                           # Grid showing all 200 PCs
-
-# UMAP with different coloring (now uses Y instead of SC)
-haam.create_umap_visualization(color_by='Y')    # Color by criterion
-haam.create_umap_visualization(color_by='AI')   # Color by AI judgment
-haam.create_umap_visualization(color_by='PC1')  # Color by PC1 scores
-
-# PC effects bar chart
-fig = haam.plot_pc_effects(pc_idx=4)  # For PC5 (0-based)
+analysis.create_main_visualization(pc_names=pc_names)
 ```
 
-### Metrics Export
+### Exporting Results
 
 ```python
-# Create comprehensive metrics summary
-metrics = haam.create_metrics_summary(output_file='metrics.json')
+# Export comprehensive results
+analysis.export_all_results('./output/')
 
-# Access specific metrics
-print(f"Y Model Performance: R²={metrics['model_performance']['Y']['r2_cv']:.3f}")
-print(f"AI PoMA: {metrics['mediation_analysis']['AI']['proportion_mediated']:.1f}%")
-print(f"Human PoMA: {metrics['mediation_analysis']['HU']['proportion_mediated']:.1f}%")
+# Creates:
+# - coefficients.csv (PC loadings)
+# - metrics_summary.json (all statistics)
+# - visualizations/ (all plots)
+# - topic_analysis/ (word clouds, topic labels)
 ```
 
-## 📊 Output Structure
+## Theoretical Background
 
-Running `export_all_results()` creates:
+HAAM implements the framework described in:
 
-```
-output_directory/
-├── haam_results_coefficients_[timestamp].csv  # All PC coefficients
-├── haam_results_summary_[timestamp].csv      # Model performance metrics
-├── pc_topic_exploration.csv                  # Topic associations for all 200 PCs
-├── haam_metrics_summary.json                 # Comprehensive metrics export
-├── haam_main_visualization.html              # Interactive framework diagram
-├── haam_mini_grid.html                       # Coefficient grid (200 PCs)
-├── haam_umap_3d_Y.html                      # UMAP colored by criterion
-├── haam_umap_3d_AI.html                     # UMAP colored by AI
-└── haam_umap_3d_HU.html                     # UMAP colored by human
-```
+> [Your Paper Title] (2024). *Journal Name*.
 
-## 🔬 Advanced Usage
+The method combines:
+1. **Brunswik's Lens Model** - Perceptual cues mediate between environment and judgment
+2. **Mediation Analysis** - Decompose total effects into pathways  
+3. **Double Machine Learning** - Debiased estimation in high dimensions
 
-### Using Pre-computed Embeddings
-
-```python
-# If you already have embeddings
-embeddings = np.load('embeddings.npy')
-
-haam = HAAM(
-    criterion=criterion,
-    ai_judgment=ai_judgment,
-    human_judgment=human_judgment,
-    embeddings=embeddings,  # Skip text processing
-    n_components=200
-)
-```
-
-### Custom PC Selection
-
-```python
-# Different ranking methods for selecting top PCs
-top_pcs_triple = haam.analysis.get_top_pcs(ranking_method='triple')  # Default
-top_pcs_by_ai = haam.analysis.get_top_pcs(ranking_method='AI')      # By AI importance
-top_pcs_by_human = haam.analysis.get_top_pcs(ranking_method='HU')   # By human importance
-```
-
-### Access Detailed Results
-
-```python
-# Coefficient DataFrame
-coef_df = haam.results['coefficients']
-
-# Model performance
-summary = haam.results['model_summary']
-
-# Access specific model results (Y is the generic criterion)
-y_results = haam.analysis.results['debiased_lasso']['SC']  # Internal still uses SC
-print(f"Y R² (CV): {y_results['r2_cv']:.4f}")
-print(f"Selected PCs: {y_results['selected']}")
-
-# Get topic information for all PCs
-all_topics = haam.results.get('all_pc_topics', {})
-```
-
-## 🌉 R Integration
-
-Use HAAM from R via reticulate:
-
-```r
-library(reticulate)
-
-# Install HAAM
-py_install("git+https://github.com/raymondli-me/haam.git")
-
-# Import
-haam <- import("haam")
-
-# Run analysis
-analysis <- haam$HAAM(
-  criterion = criterion_vector,
-  ai_judgment = ai_vector,
-  human_judgment = human_vector,
-  texts = as.list(text_vector),
-  n_components = 200L
-)
-
-# Create visualizations with custom PC names
-pc_names <- list(
-  "0" = "Formality",
-  "3" = "Complexity"
-)
-analysis$create_main_visualization(pc_names = pc_names)
-
-# Export results
-analysis$export_all_results("./output")
-
-# Access results in R
-model_summary <- analysis$results$model_summary
-coefficients <- py_to_r(analysis$results$coefficients)
-```
-
-## 📈 Interpreting Results
-
-### Key Metrics
-
-- **R² (CV)**: Cross-validated R-squared - use this over in-sample R²
-- **N_selected**: Number of PCs selected by lasso
-- **Coefficients**: Standardized effect of each PC on outcomes
-- **PoMA**: Proportion of Modeled Accuracy (mediation through PCs)
-
-### Understanding PCs
-
-Each PC is characterized by:
-- **HIGH topics**: Topics/keywords associated with high PC values (using c-TF-IDF)
-- **LOW topics**: Topics/keywords associated with low PC values
-- **Coefficients**: How strongly the PC predicts each outcome (Y, AI, Human)
-- **Names**: Optional custom labels for interpretability
-
-### Visualizations Guide
-
-1. **Main Visualization**: Shows top 9 PCs as mediators between criterion and judgments
-   - Now displays "Y" instead of "SC" for generic criterion
-   - Shows custom PC names when provided, otherwise shows "-"
-   - Dynamically calculates R², PoMA, and other metrics
-
-2. **Mini Grid**: Overview of all 200 PCs - size indicates magnitude, color indicates sign
-
-3. **UMAP**: Shows how outcomes vary in the embedding space
-   - Enhanced parameters for better clustering visualization
-   - Can color by Y (criterion), AI, or Human judgments
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Module not found:**
-```python
-import sys
-sys.path.append('/path/to/haam')
-```
-
-**Memory issues with large datasets:**
-```python
-# Use fewer components
-haam = HAAM(..., n_components=100)
-
-# Or pre-compute embeddings
-embeddings = HAAMAnalysis.generate_embeddings(texts)
-```
-
-**No topics in visualization:**
-```python
-# Make sure to provide texts, not just embeddings
-haam = HAAM(..., texts=your_texts)
-```
-
-## 📝 Citation
-
-If you use HAAM in your research, please cite:
+## Citation
 
 ```bibtex
-@software{haam2024,
-  title = {HAAM: Human-AI Accuracy Model Analysis Package},
-  author = {Li, Raymond},
-  year = {2024},
-  url = {https://github.com/raymondli-me/haam}
+@article{haam2024,
+  title={The Human-AI Accuracy Model: A Double Machine Learning 
+         Lens Model Equation for Understanding How Humans and AI 
+         Achieve Perceptual Accuracy},
+  author={[Your name]},
+  journal={[Journal]},
+  year={2024},
+  doi={10.xxxx/xxxxx}
+}
+
+@software{haam_package,
+  title={HAAM: Human-AI Accuracy Model Python Package},
+  author={[Your name]},
+  year={2024},
+  version={1.0},
+  url={https://github.com/yourusername/haam}
 }
 ```
 
-## 📄 License
+## Documentation
+
+Full documentation available at: [https://haam.readthedocs.io](https://haam.readthedocs.io)
+
+## Contributing
+
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
 
 MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 💬 Contact
-
-For questions or issues, please open an issue on [GitHub](https://github.com/raymondli-me/haam/issues).
