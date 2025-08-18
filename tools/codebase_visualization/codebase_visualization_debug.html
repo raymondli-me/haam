@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HAAM Codebase Debug Visualization</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        #main-container {
+            display: flex;
+            height: 100vh;
+        }
+        #cy {
+            flex: 1;
+            background: white;
+            position: relative;
+        }
+        #debug {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-size: 12px;
+            max-width: 300px;
+        }
+        #sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+    </style>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+</head>
+<body>
+    <div id="main-container">
+        <div id="cy">
+            <div id="debug">Debug info will appear here...</div>
+        </div>
+        <div id="sidebar">
+            <h2>HAAM Codebase</h2>
+            <div class="controls">
+                <h3>Test Controls</h3>
+                <button onclick="testVisualization()">Test Visualization</button>
+                <button onclick="addTestNodes()">Add Test Nodes</button>
+                <button onclick="testLayout('grid')">Test Grid Layout</button>
+                <button onclick="testLayout('circle')">Test Circle Layout</button>
+                <button onclick="fitView()">Fit to View</button>
+            </div>
+            <div id="node-info">
+                <h3>Node Info</h3>
+                <p>Click a node to see details</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let cy = null;
+        const debugEl = document.getElementById('debug');
+        
+        function log(msg) {
+            console.log(msg);
+            debugEl.innerHTML += msg + '<br>';
+        }
+        
+        // Test basic nodes
+        const testNodes = [
+            { data: { id: 'a', label: 'Node A' }, position: { x: 100, y: 100 } },
+            { data: { id: 'b', label: 'Node B' }, position: { x: 200, y: 100 } },
+            { data: { id: 'c', label: 'Node C' }, position: { x: 150, y: 200 } }
+        ];
+        
+        const testEdges = [
+            { data: { source: 'a', target: 'b' } },
+            { data: { source: 'b', target: 'c' } },
+            { data: { source: 'c', target: 'a' } }
+        ];
+        
+        // Initialize Cytoscape
+        try {
+            log('Initializing Cytoscape...');
+            
+            cy = cytoscape({
+                container: document.getElementById('cy'),
+                elements: {
+                    nodes: testNodes,
+                    edges: testEdges
+                },
+                style: [
+                    {
+                        selector: 'node',
+                        style: {
+                            'background-color': '#3498db',
+                            'label': 'data(label)',
+                            'text-valign': 'center',
+                            'color': 'white',
+                            'text-outline-width': 2,
+                            'text-outline-color': '#2c3e50',
+                            'width': 50,
+                            'height': 50
+                        }
+                    },
+                    {
+                        selector: 'edge',
+                        style: {
+                            'width': 3,
+                            'line-color': '#95a5a6',
+                            'target-arrow-color': '#95a5a6',
+                            'target-arrow-shape': 'triangle',
+                            'curve-style': 'bezier'
+                        }
+                    }
+                ],
+                layout: {
+                    name: 'preset'
+                }
+            });
+            
+            log('Cytoscape initialized successfully!');
+            log('Nodes: ' + cy.nodes().length);
+            log('Edges: ' + cy.edges().length);
+            
+            // Node click handler
+            cy.on('tap', 'node', function(evt){
+                const node = evt.target;
+                log('Clicked: ' + node.id());
+                document.getElementById('node-info').innerHTML = 
+                    '<h3>Node Info</h3><p>ID: ' + node.id() + '</p><p>Label: ' + node.data('label') + '</p>';
+            });
+            
+        } catch (e) {
+            log('ERROR: ' + e.message);
+            console.error(e);
+        }
+        
+        // Global functions for buttons
+        window.testVisualization = function() {
+            log('Testing visualization...');
+            if (cy) {
+                cy.fit();
+                log('Fit complete. Nodes visible: ' + cy.nodes().length);
+            } else {
+                log('ERROR: cy is not initialized');
+            }
+        };
+        
+        window.addTestNodes = function() {
+            log('Adding more test nodes...');
+            const newNode = {
+                data: { 
+                    id: 'd' + Date.now(), 
+                    label: 'New Node ' + Date.now() 
+                },
+                position: { 
+                    x: Math.random() * 400, 
+                    y: Math.random() * 400 
+                }
+            };
+            cy.add(newNode);
+            log('Added node: ' + newNode.data.id);
+        };
+        
+        window.testLayout = function(layoutName) {
+            log('Applying ' + layoutName + ' layout...');
+            try {
+                cy.layout({ name: layoutName, animate: true }).run();
+                log('Layout applied successfully');
+            } catch (e) {
+                log('Layout error: ' + e.message);
+            }
+        };
+        
+        window.fitView = function() {
+            log('Fitting view...');
+            cy.fit();
+            log('View fitted');
+        };
+        
+        // Log initial state
+        log('Page loaded');
+        log('Cytoscape version: ' + (typeof cytoscape !== 'undefined' ? 'loaded' : 'not loaded'));
+    </script>
+</body>
+</html>

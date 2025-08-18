@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Codebase Structure - Unified Analysis</title>
+    <meta charset="utf-8">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #container {
+            display: flex;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 10px;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        #cy {
+            flex: 1;
+            background: white;
+            border-radius: 12px 0 0 12px;
+        }
+        
+        #sidebar {
+            width: 420px;
+            background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+            border-left: 1px solid #e9ecef;
+            overflow-y: auto;
+            padding: 25px;
+            border-radius: 0 12px 12px 0;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        
+        .search-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        
+        #search-box {
+            width: 100%;
+            padding: 12px 40px 12px 15px;
+            border: 2px solid #e0e6ed;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        #search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #95a5a6;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+        
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #2c3e50;
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .controls {
+            margin-bottom: 25px;
+        }
+        
+        .control-section {
+            margin-bottom: 20px;
+        }
+        
+        h3 {
+            color: #34495e;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            background: white;
+            color: #34495e;
+            border: 2px solid #e0e6ed;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+        
+        button.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .node-info {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+        }
+        
+        .node-info h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f3f7;
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            color: #7f8c8d;
+            font-size: 13px;
+        }
+        
+        .info-value {
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        
+        .legend {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+        
+        .legend-color {
+            width: 24px;
+            height: 24px;
+            margin-right: 12px;
+            border-radius: 4px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        .legend-label {
+            color: #34495e;
+            font-size: 13px;
+        }
+        
+        /* Loading animation */
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #667eea;
+            z-index: 1000;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+</head>
+<body>
+    <div class="loading" id="loading">Initializing visualization...</div>
+    <div id="container" style="opacity: 0;">
+        <div id="cy"></div>
+        <div id="sidebar">
+            <h1>🗂️ Codebase Structure</h1>
+            <p class="subtitle">Generated: 2025-08-17 21:07:48</p>
+            
+            <div class="search-container">
+                <input type="text" id="search-box" placeholder="Search files, paths, or modules..." />
+                <span class="search-icon">🔍</span>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Files</div>
+                    <div class="stat-value">23</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Lines</div>
+                    <div class="stat-value">10,625</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Import Links</div>
+                    <div class="stat-value">22</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Orphan Files</div>
+                    <div class="stat-value">4</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Hub Files</div>
+                    <div class="stat-value">3</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Connections</div>
+                    <div class="stat-value">1.9</div>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="control-section">
+                    <h3>Layout Options</h3>
+                    <div class="button-group">
+                        <button onclick="applyLayout('cose')" class="active">Force-Directed</button>
+                        <button onclick="applyLayout('breadthfirst')">Hierarchy</button>
+                        <button onclick="applyLayout('circle')">Circle</button>
+                        <button onclick="applyLayout('grid')">Grid</button>
+                        <button onclick="applyLayout('concentric')">Concentric</button>
+                    </div>
+                </div>
+                
+                <div class="control-section">
+                    <h3>Highlight Filters</h3>
+                    <div class="button-group">
+                        <button onclick="highlightType('module')">Modules</button>
+                        <button onclick="highlightType('test')">Tests</button>
+                        <button onclick="highlightType('package')">Packages</button>
+                        <button onclick="highlightType('utility')">Utilities</button>
+                        <button onclick="highlightOrphans()">Orphans</button>
+                        <button onclick="highlightHubs()">Hubs</button>
+                        <button onclick="highlightLeaves()">Leaves</button>
+                        <button onclick="resetHighlight()">Reset All</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="node-info" id="node-info">
+                <h3>📋 Node Details</h3>
+                <p style="color: #95a5a6; text-align: center; padding: 20px;">
+                    Click on any node to view detailed information
+                </p>
+            </div>
+            
+            <div class="legend">
+                <h3>🎨 Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#3498db;"></div>
+                    <span class="legend-label">Module</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#2ecc71;"></div>
+                    <span class="legend-label">Script</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#f39c12;"></div>
+                    <span class="legend-label">Test</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#9b59b6;"></div>
+                    <span class="legend-label">Package</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#16a085;"></div>
+                    <span class="legend-label">Utility</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#95a5a6;"></div>
+                    <span class="legend-label">Example</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#e74c3c;"></div>
+                    <span class="legend-label">Setup</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const graphData = {"nodes": [{"data": {"id": "docs_conf", "label": "conf.py", "path": "docs/conf.py", "module_path": "docs.conf", "type": "documentation", "lines": 88, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 0, "color": "#8e44ad", "size": 48.76166303929372, "in_degree": 0, "out_degree": 0, "total_degree": 0}}, {"data": {"id": "examples_3d_pca_arrow_example", "label": "3d_pca_arrow_example.py", "path": "examples/3d_pca_arrow_example.py", "module_path": "examples.3d_pca_arrow_example", "type": "example", "lines": 273, "functions": 8, "classes": 0, "complexity": 6, "docstrings": 9, "color": "#95a5a6", "size": 63.04542328371661, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "examples_pc_umap_visualization_example", "label": "pc_umap_visualization_example.py", "path": "examples/pc_umap_visualization_example.py", "module_path": "examples.pc_umap_visualization_example", "type": "example", "lines": 212, "functions": 5, "classes": 0, "complexity": 10, "docstrings": 6, "color": "#95a5a6", "size": 59.12043955712207, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "examples_ranking_methods_example", "label": "ranking_methods_example.py", "path": "examples/ranking_methods_example.py", "module_path": "examples.ranking_methods_example", "type": "example", "lines": 63, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 1, "color": "#95a5a6", "size": 45.874507866387546, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "examples_simple_example", "label": "simple_example.py", "path": "examples/simple_example.py", "module_path": "examples.simple_example", "type": "example", "lines": 55, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 1, "color": "#95a5a6", "size": 44.832396974191326, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "examples_wordcloud_example", "label": "wordcloud_example.py", "path": "examples/wordcloud_example.py", "module_path": "examples.wordcloud_example", "type": "example", "lines": 216, "functions": 6, "classes": 0, "complexity": 6, "docstrings": 7, "color": "#95a5a6", "size": 59.39387691339814, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "examples_wordcloud_validity_example", "label": "wordcloud_validity_example.py", "path": "examples/wordcloud_validity_example.py", "module_path": "examples.wordcloud_validity_example", "type": "example", "lines": 186, "functions": 0, "classes": 0, "complexity": 11, "docstrings": 1, "color": "#95a5a6", "size": 57.27636339397171, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "haam___init__", "label": "__init__.py", "path": "haam/__init__.py", "module_path": "haam", "type": "package", "lines": 11, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 1, "color": "#9b59b6", "size": 36.633249580710796, "in_degree": 9, "out_degree": 6, "total_degree": 15}}, {"data": {"id": "haam_haam_bws", "label": "haam_bws.py", "path": "haam/haam_bws.py", "module_path": "haam.haam_bws", "type": "module", "lines": 352, "functions": 11, "classes": 1, "complexity": 26, "docstrings": 12, "color": "#3498db", "size": 67.52332607858744, "in_degree": 1, "out_degree": 0, "total_degree": 1}}, {"data": {"id": "haam_haam_init", "label": "haam_init.py", "path": "haam/haam_init.py", "module_path": "haam.haam_init", "type": "module", "lines": 1040, "functions": 20, "classes": 1, "complexity": 57, "docstrings": 22, "color": "#3498db", "size": 94.4980619863884, "in_degree": 1, "out_degree": 4, "total_degree": 5}}, {"data": {"id": "haam_haam_package", "label": "haam_package.py", "path": "haam/haam_package.py", "module_path": "haam.haam_package", "type": "module", "lines": 1738, "functions": 23, "classes": 1, "complexity": 169, "docstrings": 25, "color": "#3498db", "size": 100, "in_degree": 5, "out_degree": 0, "total_degree": 5}}, {"data": {"id": "haam_haam_topics", "label": "haam_topics.py", "path": "haam/haam_topics.py", "module_path": "haam.haam_topics", "type": "module", "lines": 351, "functions": 6, "classes": 1, "complexity": 14, "docstrings": 8, "color": "#3498db", "size": 67.4699879903904, "in_degree": 2, "out_degree": 0, "total_degree": 2}}, {"data": {"id": "haam_haam_visualizations", "label": "haam_visualizations.py", "path": "haam/haam_visualizations.py", "module_path": "haam.haam_visualizations", "type": "module", "lines": 2404, "functions": 16, "classes": 2, "complexity": 203, "docstrings": 18, "color": "#3498db", "size": 100, "in_degree": 2, "out_degree": 0, "total_degree": 2}}, {"data": {"id": "haam_haam_wordcloud", "label": "haam_wordcloud.py", "path": "haam/haam_wordcloud.py", "module_path": "haam.haam_wordcloud", "type": "module", "lines": 819, "functions": 11, "classes": 1, "complexity": 104, "docstrings": 9, "color": "#3498db", "size": 87.23635208501673, "in_degree": 2, "out_degree": 0, "total_degree": 2}}, {"data": {"id": "setup", "label": "setup.py", "path": "setup.py", "module_path": "setup", "type": "setup", "lines": 64, "functions": 0, "classes": 0, "complexity": 2, "docstrings": 1, "color": "#e74c3c", "size": 46.0, "in_degree": 0, "out_degree": 0, "total_degree": 0}}, {"data": {"id": "test_aligned_validity", "label": "test_aligned_validity.py", "path": "test_aligned_validity.py", "module_path": "test_aligned_validity", "type": "test", "lines": 184, "functions": 1, "classes": 0, "complexity": 14, "docstrings": 2, "color": "#f39c12", "size": 57.129319932501076, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "test_display", "label": "test_display.py", "path": "test_display.py", "module_path": "test_display", "type": "test", "lines": 24, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 0, "color": "#f39c12", "size": 39.797958971132715, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "test_display_direct", "label": "test_display_direct.py", "path": "test_display_direct.py", "module_path": "test_display_direct", "type": "test", "lines": 39, "functions": 0, "classes": 0, "complexity": 1, "docstrings": 0, "color": "#f39c12", "size": 42.48999599679679, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "test_final_verification", "label": "test_final_verification.py", "path": "test_final_verification.py", "module_path": "test_final_verification", "type": "test", "lines": 43, "functions": 0, "classes": 0, "complexity": 2, "docstrings": 0, "color": "#f39c12", "size": 43.114877048604, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "test_model_outputs", "label": "test_model_outputs.py", "path": "test_model_outputs.py", "module_path": "test_model_outputs", "type": "test", "lines": 72, "functions": 0, "classes": 0, "complexity": 2, "docstrings": 0, "color": "#f39c12", "size": 46.970562748477136, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "test_validity_coloring", "label": "test_validity_coloring.py", "path": "test_validity_coloring.py", "module_path": "test_validity_coloring", "type": "test", "lines": 88, "functions": 0, "classes": 0, "complexity": 6, "docstrings": 1, "color": "#f39c12", "size": 48.76166303929372, "in_degree": 0, "out_degree": 1, "total_degree": 1}}, {"data": {"id": "unified_analyzer", "label": "unified_analyzer.py", "path": "unified_analyzer.py", "module_path": "unified_analyzer", "type": "script", "lines": 1151, "functions": 17, "classes": 1, "complexity": 92, "docstrings": 17, "color": "#2ecc71", "size": 97.85278181474949, "in_degree": 0, "out_degree": 0, "total_degree": 0}}, {"data": {"id": "unified_analyzer_clean", "label": "unified_analyzer_clean.py", "path": "unified_analyzer_clean.py", "module_path": "unified_analyzer_clean", "type": "script", "lines": 1152, "functions": 17, "classes": 1, "complexity": 92, "docstrings": 17, "color": "#2ecc71", "size": 97.88225099390856, "in_degree": 0, "out_degree": 0, "total_degree": 0}}], "edges": [{"data": {"id": "examples_3d_pca_arrow_example_to_haam___init___from_import", "source": "examples_3d_pca_arrow_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "examples_pc_umap_visualization_example_to_haam___init___from_import", "source": "examples_pc_umap_visualization_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "examples_ranking_methods_example_to_haam___init___from_import", "source": "examples_ranking_methods_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "examples_simple_example_to_haam___init___from_import", "source": "examples_simple_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "examples_wordcloud_example_to_haam___init___from_import", "source": "examples_wordcloud_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "examples_wordcloud_validity_example_to_haam___init___from_import", "source": "examples_wordcloud_validity_example", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "haam___init___to_haam_haam_init_relative_import", "source": "haam___init__", "target": "haam_haam_init", "type": "relative_import"}}, {"data": {"id": "haam___init___to_haam_haam_package_relative_import", "source": "haam___init__", "target": "haam_haam_package", "type": "relative_import"}}, {"data": {"id": "haam___init___to_haam_haam_topics_relative_import", "source": "haam___init__", "target": "haam_haam_topics", "type": "relative_import"}}, {"data": {"id": "haam___init___to_haam_haam_visualizations_relative_import", "source": "haam___init__", "target": "haam_haam_visualizations", "type": "relative_import"}}, {"data": {"id": "haam___init___to_haam_haam_wordcloud_relative_import", "source": "haam___init__", "target": "haam_haam_wordcloud", "type": "relative_import"}}, {"data": {"id": "haam___init___to_haam_haam_bws_relative_import", "source": "haam___init__", "target": "haam_haam_bws", "type": "relative_import"}}, {"data": {"id": "haam_haam_init_to_haam_haam_package_relative_import", "source": "haam_haam_init", "target": "haam_haam_package", "type": "relative_import"}}, {"data": {"id": "haam_haam_init_to_haam_haam_topics_relative_import", "source": "haam_haam_init", "target": "haam_haam_topics", "type": "relative_import"}}, {"data": {"id": "haam_haam_init_to_haam_haam_visualizations_relative_import", "source": "haam_haam_init", "target": "haam_haam_visualizations", "type": "relative_import"}}, {"data": {"id": "haam_haam_init_to_haam_haam_wordcloud_relative_import", "source": "haam_haam_init", "target": "haam_haam_wordcloud", "type": "relative_import"}}, {"data": {"id": "test_aligned_validity_to_haam___init___from_import", "source": "test_aligned_validity", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "test_display_to_haam___init___from_import", "source": "test_display", "target": "haam___init__", "type": "from_import"}}, {"data": {"id": "test_display_direct_to_haam_haam_package_from_import", "source": "test_display_direct", "target": "haam_haam_package", "type": "from_import"}}, {"data": {"id": "test_final_verification_to_haam_haam_package_from_import", "source": "test_final_verification", "target": "haam_haam_package", "type": "from_import"}}, {"data": {"id": "test_model_outputs_to_haam_haam_package_from_import", "source": "test_model_outputs", "target": "haam_haam_package", "type": "from_import"}}, {"data": {"id": "test_validity_coloring_to_haam___init___from_import", "source": "test_validity_coloring", "target": "haam___init__", "type": "from_import"}}], "stats": {"excluded_files": 10, "total_lines": 10625, "total_functions": 141, "total_classes": 9, "total_complexity": 822, "documentation_count": 1, "example_count": 6, "package_count": 1, "module_count": 6, "setup_count": 1, "test_count": 6, "script_count": 2, "from_imports": 12, "relative_imports": 10, "total_nodes": 23, "total_edges": 22, "orphan_nodes": 4, "hub_nodes": 3, "leaf_nodes": 5, "avg_degree": 1.9130434782608696, "max_degree": 15, "avg_complexity": 35.73913043478261}};
+        
+        console.log('Initializing graph with', graphData.nodes.length, 'nodes and', graphData.edges.length, 'edges');
+        
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: {
+                nodes: graphData.nodes,
+                edges: graphData.edges
+            },
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'background-color': 'data(color)',
+                        'width': 'data(size)',
+                        'height': 'data(size)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-size': '11px',
+                        'font-weight': '500',
+                        'text-outline-width': 2,
+                        'text-outline-color': '#ffffff',
+                        'border-width': 2,
+                        'border-color': '#ffffff',
+                        'shadow-blur': 10,
+                        'shadow-color': '#000000',
+                        'shadow-opacity': 0.1,
+                        'shadow-offset-x': 2,
+                        'shadow-offset-y': 2
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#cbd5e0',
+                        'target-arrow-color': '#94a3b8',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'opacity': 0.6,
+                        'arrow-scale': 1
+                    }
+                },
+                {
+                    selector: '.highlighted',
+                    style: {
+                        'background-color': '#ff6b6b',
+                        'line-color': '#ff6b6b',
+                        'target-arrow-color': '#ff6b6b',
+                        'z-index': 999,
+                        'width': 3
+                    }
+                },
+                {
+                    selector: '.dimmed',
+                    style: {
+                        'opacity': 0.15
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'background-color': '#667eea',
+                        'border-color': '#5a67d8',
+                        'border-width': 3
+                    }
+                }
+            ],
+            layout: {
+                name: 'cose',
+                animate: false,
+                animationDuration: 1000,
+                nodeRepulsion: 8000,
+                idealEdgeLength: 100,
+                edgeElasticity: 100,
+                nestingFactor: 5,
+                gravity: 80,
+                numIter: 1000,
+                initialTemp: 200,
+                coolingFactor: 0.95,
+                minTemp: 1.0
+            }
+        });
+        
+        // Remove loading and show container
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('container').style.opacity = '1';
+            document.getElementById('container').style.transition = 'opacity 0.5s ease';
+        }, 100);
+        
+        // Track active layout button
+        let activeLayoutButton = document.querySelector('button.active');
+        
+        // Node click handler
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const data = node.data();
+            
+            const imports = cy.edges(`[source = "${data.id}"]`).length;
+            const importedBy = cy.edges(`[target = "${data.id}"]`).length;
+            
+            document.getElementById('node-info').innerHTML = `
+                <h3>📋 Node Details</h3>
+                <div class="info-row">
+                    <span class="info-label">Name</span>
+                    <span class="info-value">${data.label}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Type</span>
+                    <span class="info-value">${data.type}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Path</span>
+                    <span class="info-value" style="font-size: 11px;">${data.path}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Lines of Code</span>
+                    <span class="info-value">${data.lines || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Functions</span>
+                    <span class="info-value">${data.functions || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Classes</span>
+                    <span class="info-value">${data.classes || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Complexity</span>
+                    <span class="info-value">${data.complexity || 0}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Imports</span>
+                    <span class="info-value">${imports} modules</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Imported by</span>
+                    <span class="info-value">${importedBy} modules</span>
+                </div>
+            `;
+        });
+        
+        // Search functionality with debouncing
+        let searchTimeout;
+        document.getElementById('search-box').addEventListener('input', function(e) {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                cy.elements().removeClass('highlighted dimmed');
+                
+                if (searchTerm) {
+                    cy.elements().addClass('dimmed');
+                    cy.nodes().forEach(node => {
+                        if (node.data('label').toLowerCase().includes(searchTerm) ||
+                            node.data('path').toLowerCase().includes(searchTerm) ||
+                            node.data('module_path').toLowerCase().includes(searchTerm)) {
+                            node.removeClass('dimmed').addClass('highlighted');
+                            node.connectedEdges().removeClass('dimmed');
+                        }
+                    });
+                }
+            }, 300);
+        });
+        
+        // Layout functions
+        function applyLayout(layoutName) {
+            // Update active button
+            if (activeLayoutButton) {
+                activeLayoutButton.classList.remove('active');
+            }
+            event.target.classList.add('active');
+            activeLayoutButton = event.target;
+            
+            const layouts = {
+                'cose': {
+                    name: 'cose',
+                    animate: true,
+                    animationDuration: 1000,
+                    nodeRepulsion: 8000,
+                    idealEdgeLength: 100,
+                    gravity: 80
+                },
+                'breadthfirst': {
+                    name: 'breadthfirst',
+                    directed: true,
+                    spacingFactor: 1.5,
+                    animate: true,
+                    animationDuration: 1000
+                },
+                'circle': {
+                    name: 'circle',
+                    animate: true,
+                    animationDuration: 1000,
+                    radius: 300
+                },
+                'grid': {
+                    name: 'grid',
+                    animate: true,
+                    animationDuration: 1000,
+                    padding: 30,
+                    position: function(node) { return { row: node.data('row'), col: node.data('col') }; }
+                },
+                'concentric': {
+                    name: 'concentric',
+                    animate: true,
+                    animationDuration: 1000,
+                    levelWidth: function(nodes) { return 100; },
+                    concentric: function(node) { return node.degree(); }
+                }
+            };
+            
+            cy.layout(layouts[layoutName]).run();
+        }
+        
+        // Highlight functions
+        function highlightType(type) {
+            cy.elements().removeClass('highlighted dimmed');
+            cy.elements().addClass('dimmed');
+            cy.nodes(`[type = "${type}"]`).removeClass('dimmed').addClass('highlighted');
+            cy.nodes(`[type = "${type}"]`).connectedEdges().removeClass('dimmed');
+        }
+        
+        function highlightOrphans() {
+            cy.elements().removeClass('highlighted dimmed');
+            cy.elements().addClass('dimmed');
+            cy.nodes().filter(n => n.degree() === 0).removeClass('dimmed').addClass('highlighted');
+        }
+        
+        function highlightHubs() {
+            cy.elements().removeClass('highlighted dimmed');
+            cy.elements().addClass('dimmed');
+            cy.nodes().filter(n => n.degree() >= 5).removeClass('dimmed').addClass('highlighted');
+            cy.nodes().filter(n => n.degree() >= 5).connectedEdges().removeClass('dimmed');
+        }
+        
+        function highlightLeaves() {
+            cy.elements().removeClass('highlighted dimmed');
+            cy.elements().addClass('dimmed');
+            cy.nodes().filter(n => n.data('out_degree') === 0 && n.data('in_degree') > 0)
+                .removeClass('dimmed').addClass('highlighted');
+            cy.nodes().filter(n => n.data('out_degree') === 0 && n.data('in_degree') > 0)
+                .connectedEdges().removeClass('dimmed');
+        }
+        
+        function resetHighlight() {
+            cy.elements().removeClass('highlighted dimmed');
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                resetHighlight();
+                document.getElementById('search-box').value = '';
+            }
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'f') {
+                    e.preventDefault();
+                    document.getElementById('search-box').focus();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

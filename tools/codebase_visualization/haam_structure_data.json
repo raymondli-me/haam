@@ -1,0 +1,842 @@
+{
+  "nodes": [
+    {
+      "data": {
+        "id": "analyze_codebase_better",
+        "label": "analyze_codebase_better.py",
+        "path": "analyze_codebase_better.py",
+        "type": "script",
+        "lines": 895,
+        "functions": 19,
+        "classes": 1,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "analyze_codebase_final",
+        "label": "analyze_codebase_final.py",
+        "path": "analyze_codebase_final.py",
+        "type": "script",
+        "lines": 516,
+        "functions": 14,
+        "classes": 1,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "codebase_analyzer_complete",
+        "label": "codebase_analyzer_complete.py",
+        "path": "codebase_analyzer_complete.py",
+        "type": "script",
+        "lines": 810,
+        "functions": 16,
+        "classes": 1,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "colab_cell_criterion_ranking",
+        "label": "colab_cell_criterion_ranking.py",
+        "path": "colab_cell_criterion_ranking.py",
+        "type": "script",
+        "lines": 32,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "docs__build_html__downloads_38e3beb89e3ed9562e313548c891e85b_wordcloud_validity_example",
+        "label": "wordcloud_validity_example.py",
+        "path": "docs/_build/html/_downloads/38e3beb89e3ed9562e313548c891e85b/wordcloud_validity_example.py",
+        "type": "script",
+        "lines": 186,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "docs_conf",
+        "label": "conf.py",
+        "path": "docs/conf.py",
+        "type": "script",
+        "lines": 90,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples_3d_pca_arrow_example",
+        "label": "3d_pca_arrow_example.py",
+        "path": "examples/3d_pca_arrow_example.py",
+        "type": "example",
+        "lines": 273,
+        "functions": 8,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_pc_umap_visualization_example",
+        "label": "pc_umap_visualization_example.py",
+        "path": "examples/pc_umap_visualization_example.py",
+        "type": "example",
+        "lines": 212,
+        "functions": 5,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_ranking_methods_example",
+        "label": "ranking_methods_example.py",
+        "path": "examples/ranking_methods_example.py",
+        "type": "example",
+        "lines": 63,
+        "functions": 0,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_simple_example",
+        "label": "simple_example.py",
+        "path": "examples/simple_example.py",
+        "type": "example",
+        "lines": 55,
+        "functions": 0,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_example",
+        "label": "wordcloud_example.py",
+        "path": "examples/wordcloud_example.py",
+        "type": "example",
+        "lines": 216,
+        "functions": 6,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_validity_example",
+        "label": "wordcloud_validity_example.py",
+        "path": "examples/wordcloud_validity_example.py",
+        "type": "example",
+        "lines": 186,
+        "functions": 0,
+        "classes": 0,
+        "color": "#95a5a6",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "generate_codebase_viz",
+        "label": "generate_codebase_viz.py",
+        "path": "generate_codebase_viz.py",
+        "type": "script",
+        "lines": 606,
+        "functions": 9,
+        "classes": 1,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_nvembed",
+        "label": "generate_wordclouds_nvembed.py",
+        "path": "generate_wordclouds_nvembed.py",
+        "type": "script",
+        "lines": 285,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_nvembed_display",
+        "label": "generate_wordclouds_nvembed_display.py",
+        "path": "generate_wordclouds_nvembed_display.py",
+        "type": "script",
+        "lines": 321,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_aligned",
+        "label": "generate_wordclouds_validity_aligned.py",
+        "path": "generate_wordclouds_validity_aligned.py",
+        "type": "script",
+        "lines": 577,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_aligned_v2",
+        "label": "generate_wordclouds_validity_aligned_v2.py",
+        "path": "generate_wordclouds_validity_aligned_v2.py",
+        "type": "script",
+        "lines": 534,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_enhanced",
+        "label": "generate_wordclouds_validity_enhanced.py",
+        "path": "generate_wordclouds_validity_enhanced.py",
+        "type": "script",
+        "lines": 522,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_example",
+        "label": "generate_wordclouds_validity_example.py",
+        "path": "generate_wordclouds_validity_example.py",
+        "type": "script",
+        "lines": 232,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_final_aligned",
+        "label": "generate_wordclouds_validity_final_aligned.py",
+        "path": "generate_wordclouds_validity_final_aligned.py",
+        "type": "script",
+        "lines": 533,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_nvembed",
+        "label": "generate_wordclouds_validity_nvembed.py",
+        "path": "generate_wordclouds_validity_nvembed.py",
+        "type": "script",
+        "lines": 371,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_simple",
+        "label": "generate_wordclouds_validity_simple.py",
+        "path": "generate_wordclouds_validity_simple.py",
+        "type": "script",
+        "lines": 368,
+        "functions": 0,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init__",
+        "label": "__init__.py",
+        "path": "haam/__init__.py",
+        "type": "package",
+        "lines": 11,
+        "functions": 0,
+        "classes": 0,
+        "color": "#9b59b6",
+        "in_degree": 9,
+        "out_degree": 6,
+        "total_degree": 15
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_bws",
+        "label": "haam_bws.py",
+        "path": "haam/haam_bws.py",
+        "type": "core",
+        "lines": 352,
+        "functions": 11,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 1,
+        "out_degree": 0,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init",
+        "label": "haam_init.py",
+        "path": "haam/haam_init.py",
+        "type": "core",
+        "lines": 1040,
+        "functions": 20,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 1,
+        "out_degree": 4,
+        "total_degree": 5
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_package",
+        "label": "haam_package.py",
+        "path": "haam/haam_package.py",
+        "type": "core",
+        "lines": 1738,
+        "functions": 23,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 5,
+        "out_degree": 0,
+        "total_degree": 5
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_setup",
+        "label": "haam_setup.py",
+        "path": "haam/haam_setup.py",
+        "type": "core",
+        "lines": 232,
+        "functions": 0,
+        "classes": 0,
+        "color": "#3498db",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_topics",
+        "label": "haam_topics.py",
+        "path": "haam/haam_topics.py",
+        "type": "core",
+        "lines": 351,
+        "functions": 6,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_usage_guide",
+        "label": "haam_usage_guide.py",
+        "path": "haam/haam_usage_guide.py",
+        "type": "core",
+        "lines": 387,
+        "functions": 0,
+        "classes": 0,
+        "color": "#3498db",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_visualizations",
+        "label": "haam_visualizations.py",
+        "path": "haam/haam_visualizations.py",
+        "type": "core",
+        "lines": 2404,
+        "functions": 16,
+        "classes": 2,
+        "color": "#3498db",
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_visualizations_backup",
+        "label": "haam_visualizations_backup.py",
+        "path": "haam/haam_visualizations_backup.py",
+        "type": "core",
+        "lines": 2212,
+        "functions": 16,
+        "classes": 2,
+        "color": "#3498db",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_wordcloud",
+        "label": "haam_wordcloud.py",
+        "path": "haam/haam_wordcloud.py",
+        "type": "core",
+        "lines": 819,
+        "functions": 11,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_wordcloud_backup",
+        "label": "haam_wordcloud_backup.py",
+        "path": "haam/haam_wordcloud_backup.py",
+        "type": "core",
+        "lines": 658,
+        "functions": 10,
+        "classes": 1,
+        "color": "#3498db",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam_wordcloud_aligned_patch",
+        "label": "haam_wordcloud_aligned_patch.py",
+        "path": "haam_wordcloud_aligned_patch.py",
+        "type": "script",
+        "lines": 398,
+        "functions": 2,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "setup",
+        "label": "setup.py",
+        "path": "setup.py",
+        "type": "setup",
+        "lines": 64,
+        "functions": 0,
+        "classes": 0,
+        "color": "#e74c3c",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_display",
+        "label": "test_display.py",
+        "path": "test_display.py",
+        "type": "test",
+        "lines": 24,
+        "functions": 0,
+        "classes": 0,
+        "color": "#f39c12",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_direct",
+        "label": "test_display_direct.py",
+        "path": "test_display_direct.py",
+        "type": "test",
+        "lines": 39,
+        "functions": 0,
+        "classes": 0,
+        "color": "#f39c12",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_final_verification",
+        "label": "test_final_verification.py",
+        "path": "test_final_verification.py",
+        "type": "test",
+        "lines": 43,
+        "functions": 0,
+        "classes": 0,
+        "color": "#f39c12",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_model_outputs",
+        "label": "test_model_outputs.py",
+        "path": "test_model_outputs.py",
+        "type": "test",
+        "lines": 72,
+        "functions": 0,
+        "classes": 0,
+        "color": "#f39c12",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_validity_coloring",
+        "label": "test_validity_coloring.py",
+        "path": "test_validity_coloring.py",
+        "type": "test",
+        "lines": 88,
+        "functions": 0,
+        "classes": 0,
+        "color": "#f39c12",
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "visualize_codebase",
+        "label": "visualize_codebase.py",
+        "path": "visualize_codebase.py",
+        "type": "script",
+        "lines": 684,
+        "functions": 12,
+        "classes": 1,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "visualize_codebase_clean",
+        "label": "visualize_codebase_clean.py",
+        "path": "visualize_codebase_clean.py",
+        "type": "script",
+        "lines": 445,
+        "functions": 3,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "visualize_codebase_simple",
+        "label": "visualize_codebase_simple.py",
+        "path": "visualize_codebase_simple.py",
+        "type": "script",
+        "lines": 318,
+        "functions": 2,
+        "classes": 0,
+        "color": "#2ecc71",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "id": "docs__build_html__downloads_38e3beb89e3ed9562e313548c891e85b_wordcloud_validity_example_to_haam___init__",
+        "source": "docs__build_html__downloads_38e3beb89e3ed9562e313548c891e85b_wordcloud_validity_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_3d_pca_arrow_example_to_haam___init__",
+        "source": "examples_3d_pca_arrow_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_pc_umap_visualization_example_to_haam___init__",
+        "source": "examples_pc_umap_visualization_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_ranking_methods_example_to_haam___init__",
+        "source": "examples_ranking_methods_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_simple_example_to_haam___init__",
+        "source": "examples_simple_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_example_to_haam___init__",
+        "source": "examples_wordcloud_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_validity_example_to_haam___init__",
+        "source": "examples_wordcloud_validity_example",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_init",
+        "source": "haam___init__",
+        "target": "haam_haam_init",
+        "label": "from .haam_init import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_package",
+        "source": "haam___init__",
+        "target": "haam_haam_package",
+        "label": "from .haam_package import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_topics",
+        "source": "haam___init__",
+        "target": "haam_haam_topics",
+        "label": "from .haam_topics import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_visualizations",
+        "source": "haam___init__",
+        "target": "haam_haam_visualizations",
+        "label": "from .haam_visualizations import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_wordcloud",
+        "source": "haam___init__",
+        "target": "haam_haam_wordcloud",
+        "label": "from .haam_wordcloud import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_bws",
+        "source": "haam___init__",
+        "target": "haam_haam_bws",
+        "label": "from .haam_bws import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_package",
+        "source": "haam_haam_init",
+        "target": "haam_haam_package",
+        "label": "from .haam_package import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_topics",
+        "source": "haam_haam_init",
+        "target": "haam_haam_topics",
+        "label": "from .haam_topics import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_visualizations",
+        "source": "haam_haam_init",
+        "target": "haam_haam_visualizations",
+        "label": "from .haam_visualizations import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_wordcloud",
+        "source": "haam_haam_init",
+        "target": "haam_haam_wordcloud",
+        "label": "from .haam_wordcloud import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_to_haam___init__",
+        "source": "test_display",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_direct_to_haam_haam_package",
+        "source": "test_display_direct",
+        "target": "haam_haam_package",
+        "label": "from haam.haam_package import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "test_final_verification_to_haam_haam_package",
+        "source": "test_final_verification",
+        "target": "haam_haam_package",
+        "label": "from haam.haam_package import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "test_model_outputs_to_haam_haam_package",
+        "source": "test_model_outputs",
+        "target": "haam_haam_package",
+        "label": "from haam.haam_package import ..."
+      }
+    },
+    {
+      "data": {
+        "id": "test_validity_coloring_to_haam___init__",
+        "source": "test_validity_coloring",
+        "target": "haam___init__",
+        "label": "from haam import ..."
+      }
+    }
+  ],
+  "stats": {
+    "skipped_colab": 7,
+    "total_lines": 20262,
+    "script_count": 20,
+    "example_count": 6,
+    "package_count": 1,
+    "core_count": 10,
+    "setup_count": 1,
+    "test_count": 5,
+    "total_imports": 22,
+    "total_nodes": 43,
+    "total_edges": 22,
+    "orphan_nodes": 24,
+    "hub_nodes": 3
+  }
+}

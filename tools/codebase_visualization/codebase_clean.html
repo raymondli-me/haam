@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HAAM Codebase Structure (Clean)</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #f5f5f5;
+        }
+        #main-container {
+            display: flex;
+            height: 100vh;
+        }
+        #cy {
+            flex: 1;
+            background: white;
+        }
+        #sidebar {
+            width: 300px;
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        h2, h3 {
+            margin-top: 0;
+        }
+        .stats {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            margin: 8px 0;
+            display: flex;
+            justify-content: space-between;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        #node-details {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        .legend {
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 3px;
+        }
+    </style>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-cola@2.5.1/cytoscape-cola.js"></script>
+    <script src="https://unpkg.com/webcola@3.4.0/WebCola/cola.min.js"></script>
+</head>
+<body>
+    <div id="main-container">
+        <div id="cy"></div>
+        <div id="sidebar">
+            <h2>HAAM Codebase</h2>
+            
+            <div class="stats">
+                <h3>Statistics</h3>
+                <div class="stat-item">
+                    <span>Total Files:</span>
+                    <span>20</span>
+                </div>
+                <div class="stat-item">
+                    <span>Skipped (Colab):</span>
+                    <span>24</span>
+                </div>
+                <div class="stat-item">
+                    <span>Total Lines:</span>
+                    <span>11,209</span>
+                </div>
+                <div class="stat-item">
+                    <span>Import Links:</span>
+                    <span>13</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h3>Layout</h3>
+                <button onclick="applyLayout('cola')">Force-Directed</button>
+                <button onclick="applyLayout('grid')">Grid</button>
+                <button onclick="applyLayout('circle')">Circle</button>
+                <button onclick="applyLayout('concentric')">Concentric</button>
+                <button onclick="cy.fit()">Fit to Screen</button>
+            </div>
+            
+            <div id="node-details">
+                <h3>Node Details</h3>
+                <p>Click on a node to see details</p>
+            </div>
+            
+            <div class="legend">
+                <h3>Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#3498db;"></div>
+                    <span>Core Package</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#e74c3c;"></div>
+                    <span>Scripts</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#2ecc71;"></div>
+                    <span>Modules</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#f39c12;"></div>
+                    <span>Tests</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#9b59b6;"></div>
+                    <span>Package Init</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Graph data
+        const elements = {
+            nodes: [{"data": {"id": "colab_cell_criterion_ranking", "label": "colab_cell_criterion_ranking.py", "path": "colab_cell_criterion_ranking.py", "lines": 32, "functions": 0, "classes": 0, "type": "module", "parent": null}, "style": {"background-color": "#2ecc71", "width": 30, "height": 30}}, {"data": {"id": "test_display_direct", "label": "test_display_direct.py", "path": "test_display_direct.py", "lines": 39, "functions": 0, "classes": 0, "type": "test", "parent": null}, "style": {"background-color": "#f39c12", "width": 30, "height": 30}}, {"data": {"id": "test_model_outputs", "label": "test_model_outputs.py", "path": "test_model_outputs.py", "lines": 72, "functions": 0, "classes": 0, "type": "test", "parent": null}, "style": {"background-color": "#f39c12", "width": 30, "height": 30}}, {"data": {"id": "test_display", "label": "test_display.py", "path": "test_display.py", "lines": 24, "functions": 0, "classes": 0, "type": "test", "parent": null}, "style": {"background-color": "#f39c12", "width": 30, "height": 30}}, {"data": {"id": "generate_wordclouds_validity_nvembed", "label": "generate_wordclouds_validity_nvembed.py (error)", "path": "generate_wordclouds_validity_nvembed.py", "type": "error"}, "style": {"background-color": "#e74c3c", "border-width": 3, "border-color": "#c0392b"}}, {"data": {"id": "haam_wordcloud_aligned_patch", "label": "haam_wordcloud_aligned_patch.py", "path": "haam_wordcloud_aligned_patch.py", "lines": 398, "functions": 2, "classes": 0, "type": "module", "parent": null}, "style": {"background-color": "#2ecc71", "width": 79.6, "height": 79.6}}, {"data": {"id": "setup", "label": "setup.py", "path": "setup.py", "lines": 64, "functions": 0, "classes": 0, "type": "module", "parent": null}, "style": {"background-color": "#2ecc71", "width": 30, "height": 30}}, {"data": {"id": "test_final_verification", "label": "test_final_verification.py", "path": "test_final_verification.py", "lines": 43, "functions": 0, "classes": 0, "type": "test", "parent": null}, "style": {"background-color": "#f39c12", "width": 30, "height": 30}}, {"data": {"id": "haam_haam_wordcloud_backup", "label": "haam_wordcloud_backup.py", "path": "haam/haam_wordcloud_backup.py", "lines": 658, "functions": 10, "classes": 1, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "haam_haam_wordcloud", "label": "haam_wordcloud.py", "path": "haam/haam_wordcloud.py", "lines": 819, "functions": 11, "classes": 1, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "haam_haam_package", "label": "haam_package.py", "path": "haam/haam_package.py", "lines": 1738, "functions": 23, "classes": 1, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "haam___init__", "label": "__init__.py", "path": "haam/__init__.py", "lines": 11, "functions": 0, "classes": 0, "type": "package", "parent": "haam"}, "style": {"background-color": "#9b59b6", "width": 30, "height": 30}}, {"data": {"id": "haam_haam_init", "label": "haam_init.py", "path": "haam/haam_init.py", "lines": 1040, "functions": 20, "classes": 1, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "haam_haam_topics", "label": "haam_topics.py", "path": "haam/haam_topics.py", "lines": 351, "functions": 6, "classes": 1, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 70.2, "height": 70.2}}, {"data": {"id": "haam_haam_setup", "label": "haam_setup.py", "path": "haam/haam_setup.py", "lines": 232, "functions": 0, "classes": 0, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 46.4, "height": 46.4}}, {"data": {"id": "haam_haam_visualizations_backup", "label": "haam_visualizations_backup.py", "path": "haam/haam_visualizations_backup.py", "lines": 2212, "functions": 16, "classes": 2, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "haam_haam_visualizations", "label": "haam_visualizations.py", "path": "haam/haam_visualizations.py", "lines": 2404, "functions": 16, "classes": 2, "type": "core", "parent": "haam"}, "style": {"background-color": "#3498db", "width": 100, "height": 100}}, {"data": {"id": "examples_wordcloud_example", "label": "wordcloud_example.py", "path": "examples/wordcloud_example.py", "lines": 216, "functions": 6, "classes": 0, "type": "module", "parent": "examples"}, "style": {"background-color": "#2ecc71", "width": 43.2, "height": 43.2}}, {"data": {"id": "examples_pc_umap_visualization_example", "label": "pc_umap_visualization_example.py", "path": "examples/pc_umap_visualization_example.py", "lines": 212, "functions": 5, "classes": 0, "type": "module", "parent": "examples"}, "style": {"background-color": "#2ecc71", "width": 42.4, "height": 42.4}}, {"data": {"id": "examples_3d_pca_arrow_example", "label": "3d_pca_arrow_example.py", "path": "examples/3d_pca_arrow_example.py", "lines": 273, "functions": 8, "classes": 0, "type": "module", "parent": "examples"}, "style": {"background-color": "#2ecc71", "width": 54.6, "height": 54.6}}],
+            edges: [{"data": {"source": "test_display_direct", "target": "haam_haam_package"}}, {"data": {"source": "test_model_outputs", "target": "haam_haam_package"}}, {"data": {"source": "test_final_verification", "target": "haam_haam_package"}}, {"data": {"source": "haam___init__", "target": "haam_init"}}, {"data": {"source": "haam___init__", "target": "haam_package"}}, {"data": {"source": "haam___init__", "target": "haam_topics"}}, {"data": {"source": "haam___init__", "target": "haam_visualizations"}}, {"data": {"source": "haam___init__", "target": "haam_wordcloud"}}, {"data": {"source": "haam___init__", "target": "haam_bws"}}, {"data": {"source": "haam_haam_init", "target": "haam_package"}}, {"data": {"source": "haam_haam_init", "target": "haam_topics"}}, {"data": {"source": "haam_haam_init", "target": "haam_visualizations"}}, {"data": {"source": "haam_haam_init", "target": "haam_wordcloud"}}]
+        };
+        
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'center',
+                        'text-halign': 'center',
+                        'font-size': '12px',
+                        'color': '#fff',
+                        'text-outline-width': 2,
+                        'text-outline-color': '#2c3e50',
+                        'border-width': 2,
+                        'border-color': '#2c3e50'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#95a5a6',
+                        'target-arrow-color': '#95a5a6',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier'
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'border-width': 4,
+                        'border-color': '#e74c3c'
+                    }
+                }
+            ],
+            layout: {
+                name: 'cola',
+                animate: true,
+                randomize: false,
+                avoidOverlap: true,
+                edgeLength: 100,
+                nodeSpacing: 20
+            }
+        });
+        
+        // Node click handler
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const data = node.data();
+            
+            const details = `
+                <h3>Node Details</h3>
+                <p><strong>${data.label}</strong></p>
+                <p>Type: ${data.type}</p>
+                <p>Path: ${data.path || 'N/A'}</p>
+                <p>Lines: ${data.lines || 'N/A'}</p>
+                <p>Functions: ${data.functions || 0}</p>
+                <p>Classes: ${data.classes || 0}</p>
+            `;
+            
+            document.getElementById('node-details').innerHTML = details;
+        });
+        
+        // Layout function
+        function applyLayout(name) {
+            const layouts = {
+                cola: {
+                    name: 'cola',
+                    animate: true,
+                    randomize: false,
+                    avoidOverlap: true,
+                    edgeLength: 100,
+                    nodeSpacing: 20
+                },
+                grid: {
+                    name: 'grid',
+                    animate: true,
+                    padding: 30
+                },
+                circle: {
+                    name: 'circle',
+                    animate: true,
+                    padding: 30
+                },
+                concentric: {
+                    name: 'concentric',
+                    animate: true,
+                    concentric: function(node) {
+                        return node.data('type') === 'core' ? 2 : 1;
+                    },
+                    levelWidth: function() { return 1; }
+                }
+            };
+            
+            cy.layout(layouts[name]).run();
+        }
+        
+        // Initial fit
+        cy.ready(function() {
+            cy.fit();
+        });
+    </script>
+</body>
+</html>

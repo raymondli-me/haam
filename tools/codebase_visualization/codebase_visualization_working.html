@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HAAM Codebase Interactive Visualization</title>
+    <meta charset="utf-8">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #1a1a1a;
+        }
+        #main-container {
+            display: flex;
+            height: 100vh;
+        }
+        #cy {
+            flex: 1;
+            background: #0d0d0d;
+            position: relative;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 20px;
+            text-align: center;
+        }
+        #sidebar {
+            width: 350px;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.5);
+        }
+        h1, h2, h3 {
+            margin-top: 0;
+            color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #3498db;
+        }
+        .stats {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+        }
+        .stat-item {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        .stat-label {
+            color: #999;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        .button-group {
+            margin-bottom: 15px;
+        }
+        button {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 2px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        button.active {
+            background: #e74c3c;
+        }
+        #node-details {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #333;
+            min-height: 150px;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 4px;
+            border: 1px solid #444;
+        }
+        #search-box {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+        .highlight-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .highlight-controls button {
+            flex: 1;
+            min-width: 120px;
+        }
+    </style>
+    <!-- Core Cytoscape -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    
+    <!-- Layout dependencies -->
+    <script src="https://unpkg.com/layout-base/layout-base.js"></script>
+    <script src="https://unpkg.com/cose-base/cose-base.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape-cose-bilkent.min.js"></script>
+    
+    <!-- Dagre for hierarchical layout -->
+    <script src="https://unpkg.com/dagre@0.8.5/dist/dagre.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.js"></script>
+</head>
+<body>
+    <div id="main-container">
+        <div id="cy">
+            <div id="loading">
+                Loading visualization...<br>
+                <small>Initializing Cytoscape...</small>
+            </div>
+        </div>
+        <div id="sidebar">
+            <h1>🗂️ HAAM Codebase Map</h1>
+            
+            <div class="stats">
+                <h3>📊 Statistics</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total Files:</span>
+                    <span class="stat-value" id="stat-files">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Core Modules:</span>
+                    <span class="stat-value" id="stat-core">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Scripts:</span>
+                    <span class="stat-value" id="stat-scripts">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Import Links:</span>
+                    <span class="stat-value" id="stat-imports">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Total Lines:</span>
+                    <span class="stat-value" id="stat-lines">0</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <h3>🔍 Search</h3>
+                <input type="text" id="search-box" placeholder="Search files..." />
+                
+                <h3>📐 Layout</h3>
+                <div class="button-group">
+                    <button onclick="applyLayout('cose-bilkent')">🌐 Force Layout</button>
+                    <button onclick="applyLayout('dagre')">🌳 Hierarchy</button>
+                    <button onclick="applyLayout('circle')">⭕ Circle</button>
+                    <button onclick="applyLayout('grid')">⚏ Grid</button>
+                    <button onclick="applyLayout('breadthfirst')">🌲 Tree</button>
+                    <button onclick="applyLayout('concentric')">🎯 Concentric</button>
+                </div>
+                
+                <h3>🎯 Highlight</h3>
+                <div class="highlight-controls">
+                    <button onclick="highlightByType('core')">Core Package</button>
+                    <button onclick="highlightByType('script')">Scripts</button>
+                    <button onclick="highlightByType('test')">Tests</button>
+                    <button onclick="highlightOrphans()">Orphan Files</button>
+                    <button onclick="highlightHubs()">Hub Modules</button>
+                    <button onclick="resetHighlight()">Reset All</button>
+                </div>
+                
+                <h3>🎮 View</h3>
+                <div class="button-group">
+                    <button onclick="cy.fit()">🔍 Fit to Screen</button>
+                    <button onclick="cy.center()">🎯 Center</button>
+                    <button onclick="cy.reset()">🔄 Reset</button>
+                </div>
+            </div>
+            
+            <div id="node-details">
+                <h3>📄 File Details</h3>
+                <p style="color: #666;">Click on a node to see details...</p>
+            </div>
+            
+            <div class="legend">
+                <h3>🎨 Legend</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#3498db;"></div>
+                    <span>Core HAAM Package</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#e74c3c;"></div>
+                    <span>Runner Scripts</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#2ecc71;"></div>
+                    <span>Modules</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#f39c12;"></div>
+                    <span>Test Files</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background:#9b59b6;"></div>
+                    <span>Package Init</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // HAAM Codebase Data
+        const graphData = {
+            nodes: [
+                // Core HAAM Package
+                { data: { id: 'haam___init__', label: '__init__.py', type: 'package', path: 'haam/__init__.py', lines: 23, size: 1024 } },
+                { data: { id: 'haam_haam_init', label: 'haam_init.py', type: 'core', path: 'haam/haam_init.py', lines: 850, size: 35840 } },
+                { data: { id: 'haam_haam_package', label: 'haam_package.py', type: 'core', path: 'haam/haam_package.py', lines: 620, size: 25600 } },
+                { data: { id: 'haam_haam_topics', label: 'haam_topics.py', type: 'core', path: 'haam/haam_topics.py', lines: 480, size: 19456 } },
+                { data: { id: 'haam_haam_visualizations', label: 'haam_visualizations.py', type: 'core', path: 'haam/haam_visualizations.py', lines: 750, size: 30720 } },
+                { data: { id: 'haam_haam_wordcloud', label: 'haam_wordcloud.py', type: 'core', path: 'haam/haam_wordcloud.py', lines: 520, size: 21504 } },
+                { data: { id: 'haam_haam_bws', label: 'haam_bws.py', type: 'core', path: 'haam/haam_bws.py', lines: 280, size: 11264 } },
+                { data: { id: 'haam_haam_setup', label: 'haam_setup.py', type: 'core', path: 'haam/haam_setup.py', lines: 45, size: 1536 } },
+                
+                // Scripts
+                { data: { id: 'setup', label: 'setup.py', type: 'script', path: 'setup.py', lines: 45, size: 1536 } },
+                
+                // Test Files
+                { data: { id: 'test_final_verification', label: 'test_final_verification.py', type: 'test', path: 'test_final_verification.py', lines: 180, size: 7168 } },
+                { data: { id: 'test_haam_comprehensive', label: 'test_haam_comprehensive.py', type: 'test', path: 'test_haam_comprehensive.py', lines: 250, size: 10240 } },
+                { data: { id: 'test_direct_access', label: 'test_direct_access.py', type: 'test', path: 'test_direct_access.py', lines: 120, size: 4608 } },
+                { data: { id: 'test_pc_analysis', label: 'test_pc_analysis.py', type: 'test', path: 'test_pc_analysis.py', lines: 150, size: 6144 } },
+                
+                // Visualization Scripts
+                { data: { id: 'visualize_codebase', label: 'visualize_codebase.py', type: 'script', path: 'visualize_codebase.py', lines: 684, size: 25488 } },
+                { data: { id: 'visualize_codebase_clean', label: 'visualize_codebase_clean.py', type: 'script', path: 'visualize_codebase_clean.py', lines: 380, size: 15360 } }
+            ],
+            edges: [
+                // Core package imports
+                { data: { id: 'e1', source: 'haam_haam_init', target: 'haam_haam_package' } },
+                { data: { id: 'e2', source: 'haam_haam_init', target: 'haam_haam_topics' } },
+                { data: { id: 'e3', source: 'haam_haam_init', target: 'haam_haam_visualizations' } },
+                { data: { id: 'e4', source: 'haam_haam_init', target: 'haam_haam_wordcloud' } },
+                { data: { id: 'e5', source: 'haam_haam_topics', target: 'haam_haam_wordcloud' } },
+                { data: { id: 'e6', source: 'haam___init__', target: 'haam_haam_init' } },
+                { data: { id: 'e7', source: 'haam___init__', target: 'haam_haam_package' } },
+                { data: { id: 'e8', source: 'haam___init__', target: 'haam_haam_bws' } },
+                
+                // Test imports
+                { data: { id: 'e9', source: 'test_final_verification', target: 'haam_haam_package' } },
+                { data: { id: 'e10', source: 'test_haam_comprehensive', target: 'haam_haam_init' } },
+                { data: { id: 'e11', source: 'test_direct_access', target: 'haam_haam_init' } },
+                { data: { id: 'e12', source: 'test_pc_analysis', target: 'haam_haam_topics' } }
+            ]
+        };
+        
+        let cy = null;
+        
+        // Wait for all scripts to load
+        window.addEventListener('load', function() {
+            initializeCytoscape();
+        });
+        
+        function initializeCytoscape() {
+            const loadingEl = document.getElementById('loading');
+            loadingEl.innerHTML = 'Loading visualization...<br><small>Creating graph...</small>';
+            
+            try {
+                // Initialize Cytoscape
+                cy = window.cy = cytoscape({
+                    container: document.getElementById('cy'),
+                    elements: graphData,
+                    style: [
+                        {
+                            selector: 'node',
+                            style: {
+                                'label': 'data(label)',
+                                'text-valign': 'bottom',
+                                'text-halign': 'center',
+                                'font-size': '12px',
+                                'color': '#fff',
+                                'text-outline-width': 2,
+                                'text-outline-color': '#000',
+                                'background-color': function(ele) {
+                                    const type = ele.data('type');
+                                    switch(type) {
+                                        case 'core': return '#3498db';
+                                        case 'script': return '#e74c3c';
+                                        case 'test': return '#f39c12';
+                                        case 'package': return '#9b59b6';
+                                        default: return '#2ecc71';
+                                    }
+                                },
+                                'width': function(ele) {
+                                    const lines = ele.data('lines') || 50;
+                                    return Math.min(Math.max(40, Math.sqrt(lines) * 3), 120);
+                                },
+                                'height': function(ele) {
+                                    const lines = ele.data('lines') || 50;
+                                    return Math.min(Math.max(40, Math.sqrt(lines) * 3), 120);
+                                },
+                                'border-width': 3,
+                                'border-color': '#000'
+                            }
+                        },
+                        {
+                            selector: 'edge',
+                            style: {
+                                'width': 3,
+                                'line-color': '#555',
+                                'target-arrow-color': '#555',
+                                'target-arrow-shape': 'triangle',
+                                'curve-style': 'bezier',
+                                'opacity': 0.8
+                            }
+                        },
+                        {
+                            selector: ':selected',
+                            style: {
+                                'border-width': 5,
+                                'border-color': '#fff',
+                                'line-color': '#fff',
+                                'target-arrow-color': '#fff'
+                            }
+                        },
+                        {
+                            selector: '.highlighted',
+                            style: {
+                                'background-color': '#f1c40f',
+                                'border-color': '#f39c12',
+                                'z-index': 999
+                            }
+                        },
+                        {
+                            selector: '.dimmed',
+                            style: {
+                                'opacity': 0.2
+                            }
+                        }
+                    ],
+                    layout: {
+                        name: 'cose-bilkent',
+                        animate: true,
+                        animationDuration: 1000,
+                        quality: 'default',
+                        nodeRepulsion: 4500,
+                        idealEdgeLength: 100,
+                        edgeElasticity: 0.45,
+                        nestingFactor: 0.1,
+                        gravity: 0.25,
+                        numIter: 2500,
+                        tile: true,
+                        tilingPaddingVertical: 10,
+                        tilingPaddingHorizontal: 10,
+                        gravityRangeCompound: 1.5,
+                        gravityCompound: 1.0,
+                        gravityRange: 3.8
+                    },
+                    minZoom: 0.1,
+                    maxZoom: 10,
+                    wheelSensitivity: 0.2
+                });
+                
+                // Hide loading
+                loadingEl.style.display = 'none';
+                
+                // Update statistics
+                updateStats();
+                
+                // Set up event handlers
+                setupEventHandlers();
+                
+                console.log('Cytoscape initialized successfully');
+                
+            } catch (error) {
+                console.error('Error initializing Cytoscape:', error);
+                loadingEl.innerHTML = 'Error: ' + error.message;
+            }
+        }
+        
+        function updateStats() {
+            const nodes = cy.nodes();
+            const edges = cy.edges();
+            
+            document.getElementById('stat-files').textContent = nodes.length;
+            document.getElementById('stat-core').textContent = nodes.filter(n => n.data('type') === 'core').length;
+            document.getElementById('stat-scripts').textContent = nodes.filter(n => n.data('type') === 'script').length;
+            document.getElementById('stat-imports').textContent = edges.length;
+            document.getElementById('stat-lines').textContent = nodes.reduce((sum, n) => sum + (n.data('lines') || 0), 0).toLocaleString();
+        }
+        
+        function setupEventHandlers() {
+            // Node click handler
+            cy.on('tap', 'node', function(evt) {
+                const node = evt.target;
+                const data = node.data();
+                
+                const connectedEdges = node.connectedEdges();
+                const incoming = connectedEdges.filter(e => e.target().id() === node.id()).length;
+                const outgoing = connectedEdges.filter(e => e.source().id() === node.id()).length;
+                
+                document.getElementById('node-details').innerHTML = `
+                    <h3>📄 ${data.label}</h3>
+                    <p><strong>Type:</strong> ${data.type}</p>
+                    <p><strong>Path:</strong> ${data.path || 'N/A'}</p>
+                    <p><strong>Lines:</strong> ${data.lines || 'N/A'}</p>
+                    <p><strong>Size:</strong> ${((data.size || 0) / 1024).toFixed(1)} KB</p>
+                    <p><strong>Imports from:</strong> ${outgoing} modules</p>
+                    <p><strong>Imported by:</strong> ${incoming} modules</p>
+                `;
+            });
+            
+            // Search
+            document.getElementById('search-box').addEventListener('input', function(e) {
+                const searchTerm = e.target.value.toLowerCase();
+                cy.nodes().removeClass('highlighted dimmed');
+                
+                if (searchTerm) {
+                    cy.nodes().addClass('dimmed');
+                    cy.nodes().forEach(node => {
+                        if (node.data('label').toLowerCase().includes(searchTerm)) {
+                            node.removeClass('dimmed').addClass('highlighted');
+                        }
+                    });
+                }
+            });
+        }
+        
+        // Layout functions
+        window.applyLayout = function(layoutName) {
+            const layouts = {
+                'cose-bilkent': {
+                    name: 'cose-bilkent',
+                    animate: true,
+                    randomize: true,
+                    idealEdgeLength: 100,
+                    nodeRepulsion: 4500,
+                    edgeElasticity: 0.45
+                },
+                'dagre': {
+                    name: 'dagre',
+                    rankDir: 'TB',
+                    animate: true,
+                    spacingFactor: 1.5
+                },
+                'circle': {
+                    name: 'circle',
+                    animate: true
+                },
+                'grid': {
+                    name: 'grid',
+                    animate: true,
+                    rows: Math.ceil(Math.sqrt(cy.nodes().length))
+                },
+                'breadthfirst': {
+                    name: 'breadthfirst',
+                    animate: true,
+                    directed: true,
+                    spacingFactor: 1.5
+                },
+                'concentric': {
+                    name: 'concentric',
+                    animate: true,
+                    concentric: function(node) {
+                        return node.data('type') === 'package' ? 3 : 
+                               node.data('type') === 'core' ? 2 : 1;
+                    },
+                    levelWidth: function() { return 1; }
+                }
+            };
+            
+            cy.layout(layouts[layoutName]).run();
+        };
+        
+        // Highlight functions
+        window.highlightByType = function(type) {
+            resetHighlight();
+            cy.elements().addClass('dimmed');
+            cy.nodes(`[type = "${type}"]`).removeClass('dimmed').addClass('highlighted');
+            cy.nodes(`[type = "${type}"]`).connectedEdges().removeClass('dimmed');
+        };
+        
+        window.highlightOrphans = function() {
+            resetHighlight();
+            cy.elements().addClass('dimmed');
+            cy.nodes().filter(n => n.degree() === 0).removeClass('dimmed').addClass('highlighted');
+        };
+        
+        window.highlightHubs = function() {
+            resetHighlight();
+            cy.elements().addClass('dimmed');
+            cy.nodes().filter(n => n.degree() >= 3).removeClass('dimmed').addClass('highlighted');
+            cy.nodes().filter(n => n.degree() >= 3).connectedEdges().removeClass('dimmed');
+        };
+        
+        window.resetHighlight = function() {
+            cy.elements().removeClass('highlighted dimmed');
+        };
+    </script>
+</body>
+</html>

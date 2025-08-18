@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HAAM Codebase Structure</title>
+    <script src="https://unpkg.com/cytoscape@3.26.0/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/cytoscape-fcose@2.1.0/cytoscape-fcose.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+        #cy {
+            width: 100vw;
+            height: 100vh;
+            background-color: #f5f5f5;
+        }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            max-width: 300px;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        button {
+            margin: 2px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .stats {
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        .legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 12px;
+        }
+        .legend-item {
+            display: inline-block;
+            margin: 0 10px;
+        }
+        .legend-color {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cy"></div>
+    
+    <div id="info">
+        <h3>HAAM Codebase Map</h3>
+        <div class="stats">
+            <strong>Files:</strong> <span id="file-count">0</span><br>
+            <strong>Imports:</strong> <span id="import-count">0</span><br>
+            <strong>Selected:</strong> <span id="selected">Click a node</span>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="runLayout('fcose')">Force Layout</button>
+        <button onclick="runLayout('grid')">Grid Layout</button>
+        <button onclick="runLayout('circle')">Circle Layout</button>
+        <button onclick="cy.fit()">Fit</button>
+    </div>
+    
+    <div class="legend">
+        <span class="legend-item"><span class="legend-color" style="background:#e74c3c;"></span>Scripts</span>
+        <span class="legend-item"><span class="legend-color" style="background:#3498db;"></span>Core</span>
+        <span class="legend-item"><span class="legend-color" style="background:#2ecc71;"></span>Modules</span>
+        <span class="legend-item"><span class="legend-color" style="background:#f39c12;"></span>Tests</span>
+    </div>
+    
+    <script>
+        const graphData = {"elements": {"nodes": [{"data": {"id": "generate_wordclouds_nvembed", "label": "generate_wordclouds_nvembed.py", "path": "generate_wordclouds_nvembed.py", "size": 10075, "lines": 285, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_example", "label": "generate_wordclouds_validity_example.py", "path": "generate_wordclouds_validity_example.py", "size": 7552, "lines": 232, "type": "script", "parent": null}}, {"data": {"id": "visualize_codebase", "label": "visualize_codebase.py", "path": "visualize_codebase.py", "size": 24954, "lines": 676, "type": "module", "parent": null}}, {"data": {"id": "colab_cell_criterion_ranking", "label": "colab_cell_criterion_ranking.py", "path": "colab_cell_criterion_ranking.py", "size": 1239, "lines": 32, "type": "module", "parent": null}}, {"data": {"id": "test_display_direct", "label": "test_display_direct.py", "path": "test_display_direct.py", "size": 1162, "lines": 39, "type": "test", "parent": null}}, {"data": {"id": "run_haam_analysis", "label": "run_haam_analysis.py", "path": "run_haam_analysis.py", "size": 15790, "lines": 414, "type": "script", "parent": null}}, {"data": {"id": "run_haam_analysis_v1.2", "label": "run_haam_analysis_v1.2.py", "path": "run_haam_analysis_v1.2.py", "size": 20396, "lines": 507, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_final_aligned_v2", "label": "generate_wordclouds_validity_final_aligned_v2.py", "path": "generate_wordclouds_validity_final_aligned_v2.py", "size": 23785, "lines": 596, "type": "script", "parent": null}}, {"data": {"id": "test_model_outputs", "label": "test_model_outputs.py", "path": "test_model_outputs.py", "size": 2177, "lines": 72, "type": "test", "parent": null}}, {"data": {"id": "test_display", "label": "test_display.py", "path": "test_display.py", "size": 692, "lines": 24, "type": "test", "parent": null}}, {"data": {"id": "run_this_colab", "label": "run_this_colab.py", "path": "run_this_colab.py", "size": 22373, "lines": 589, "type": "script", "parent": null}}, {"data": {"id": "run_haam_analysis_v1.3", "label": "run_haam_analysis_v1.3.py", "path": "run_haam_analysis_v1.3.py", "size": 19151, "lines": 487, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_nvembed", "label": "generate_wordclouds_validity_nvembed.py", "path": "generate_wordclouds_validity_nvembed.py", "size": 13851, "lines": 371, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_final_aligned", "label": "generate_wordclouds_validity_final_aligned.py", "path": "generate_wordclouds_validity_final_aligned.py", "size": 20650, "lines": 533, "type": "script", "parent": null}}, {"data": {"id": "haam_wordcloud_aligned_patch", "label": "haam_wordcloud_aligned_patch.py", "path": "haam_wordcloud_aligned_patch.py", "size": 14398, "lines": 398, "type": "module", "parent": null}}, {"data": {"id": "setup", "label": "setup.py", "path": "setup.py", "size": 1964, "lines": 64, "type": "module", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_final", "label": "generate_wordclouds_validity_final.py", "path": "generate_wordclouds_validity_final.py", "size": 19494, "lines": 509, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_enhanced", "label": "generate_wordclouds_validity_enhanced.py", "path": "generate_wordclouds_validity_enhanced.py", "size": 20532, "lines": 522, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_simple", "label": "generate_wordclouds_validity_simple.py", "path": "generate_wordclouds_validity_simple.py", "size": 13019, "lines": 368, "type": "script", "parent": null}}, {"data": {"id": "test_final_verification", "label": "test_final_verification.py", "path": "test_final_verification.py", "size": 1491, "lines": 43, "type": "test", "parent": null}}, {"data": {"id": "test_aligned_validity", "label": "test_aligned_validity.py", "path": "test_aligned_validity.py", "size": 6685, "lines": 184, "type": "test", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_aligned_v2", "label": "generate_wordclouds_validity_aligned_v2.py", "path": "generate_wordclouds_validity_aligned_v2.py", "size": 20410, "lines": 534, "type": "script", "parent": null}}, {"data": {"id": "visualize_codebase_simple", "label": "visualize_codebase_simple.py", "path": "visualize_codebase_simple.py", "size": 10514, "lines": 318, "type": "module", "parent": null}}, {"data": {"id": "generate_wordclouds_validity_aligned", "label": "generate_wordclouds_validity_aligned.py", "path": "generate_wordclouds_validity_aligned.py", "size": 22010, "lines": 577, "type": "script", "parent": null}}, {"data": {"id": "generate_wordclouds_nvembed_display", "label": "generate_wordclouds_nvembed_display.py", "path": "generate_wordclouds_nvembed_display.py", "size": 11902, "lines": 321, "type": "script", "parent": null}}, {"data": {"id": "test_validity_coloring", "label": "test_validity_coloring.py", "path": "test_validity_coloring.py", "size": 2883, "lines": 88, "type": "test", "parent": null}}, {"data": {"id": "haam_haam_wordcloud_backup", "label": "haam_wordcloud_backup.py", "path": "haam/haam_wordcloud_backup.py", "size": 27920, "lines": 658, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_wordcloud", "label": "haam_wordcloud.py", "path": "haam/haam_wordcloud.py", "size": 35849, "lines": 819, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_package", "label": "haam_package.py", "path": "haam/haam_package.py", "size": 76293, "lines": 1738, "type": "core", "parent": "haam"}}, {"data": {"id": "haam___init__", "label": "__init__.py", "path": "haam/__init__.py", "size": 415, "lines": 11, "type": "package", "parent": "haam"}}, {"data": {"id": "haam_haam_usage_guide", "label": "haam_usage_guide.py", "path": "haam/haam_usage_guide.py", "size": 12142, "lines": 387, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_init", "label": "haam_init.py", "path": "haam/haam_init.py", "size": 39502, "lines": 1040, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_bws", "label": "haam_bws.py", "path": "haam/haam_bws.py", "size": 13815, "lines": 352, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_topics", "label": "haam_topics.py", "path": "haam/haam_topics.py", "size": 13382, "lines": 351, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_setup", "label": "haam_setup.py", "path": "haam/haam_setup.py", "size": 5629, "lines": 232, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_visualizations_backup", "label": "haam_visualizations_backup.py", "path": "haam/haam_visualizations_backup.py", "size": 96599, "lines": 2212, "type": "core", "parent": "haam"}}, {"data": {"id": "haam_haam_visualizations", "label": "haam_visualizations.py", "path": "haam/haam_visualizations.py", "size": 108032, "lines": 2404, "type": "core", "parent": "haam"}}, {"data": {"id": "examples_ranking_methods_example", "label": "ranking_methods_example.py", "path": "examples/ranking_methods_example.py", "size": 1868, "lines": 63, "type": "module", "parent": "examples"}}, {"data": {"id": "examples_wordcloud_example", "label": "wordcloud_example.py", "path": "examples/wordcloud_example.py", "size": 7251, "lines": 216, "type": "module", "parent": "examples"}}, {"data": {"id": "examples_pc_umap_visualization_example", "label": "pc_umap_visualization_example.py", "path": "examples/pc_umap_visualization_example.py", "size": 7049, "lines": 212, "type": "module", "parent": "examples"}}, {"data": {"id": "examples_simple_example", "label": "simple_example.py", "path": "examples/simple_example.py", "size": 1638, "lines": 55, "type": "module", "parent": "examples"}}, {"data": {"id": "examples_wordcloud_validity_example", "label": "wordcloud_validity_example.py", "path": "examples/wordcloud_validity_example.py", "size": 6290, "lines": 186, "type": "module", "parent": "examples"}}, {"data": {"id": "examples_3d_pca_arrow_example", "label": "3d_pca_arrow_example.py", "path": "examples/3d_pca_arrow_example.py", "size": 9774, "lines": 273, "type": "module", "parent": "examples"}}], "edges": [{"data": {"source": "generate_wordclouds_nvembed", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "test_display_direct", "target": "haam_haam_package", "type": "import"}}, {"data": {"source": "run_haam_analysis", "target": "haam___init__", "type": "import"}}, {"data": {"source": "run_haam_analysis_v1.2", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_final_aligned_v2", "target": "haam___init__", "type": "import"}}, {"data": {"source": "test_model_outputs", "target": "haam_haam_package", "type": "import"}}, {"data": {"source": "test_display", "target": "haam___init__", "type": "import"}}, {"data": {"source": "run_this_colab", "target": "haam___init__", "type": "import"}}, {"data": {"source": "run_haam_analysis_v1.3", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_nvembed", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_final_aligned", "target": "haam___init__", "type": "import"}}, {"data": {"source": "haam_wordcloud_aligned_patch", "target": "haam_haam_wordcloud", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_final", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_enhanced", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_enhanced", "target": "haam_haam_wordcloud", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_enhanced", "target": "haam_haam_wordcloud", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_simple", "target": "haam___init__", "type": "import"}}, {"data": {"source": "test_final_verification", "target": "haam_haam_package", "type": "import"}}, {"data": {"source": "test_aligned_validity", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_aligned_v2", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_validity_aligned", "target": "haam___init__", "type": "import"}}, {"data": {"source": "generate_wordclouds_nvembed_display", "target": "haam___init__", "type": "import"}}, {"data": {"source": "test_validity_coloring", "target": "haam___init__", "type": "import"}}, {"data": {"source": "haam_haam_setup", "target": "haam___init__", "type": "import"}}, {"data": {"source": "haam_haam_setup", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_ranking_methods_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_wordcloud_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_pc_umap_visualization_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_simple_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_wordcloud_validity_example", "target": "haam___init__", "type": "import"}}, {"data": {"source": "examples_3d_pca_arrow_example", "target": "haam___init__", "type": "import"}}]}};
+        
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: graphData.elements,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'font-size': '10px',
+                        'text-valign': 'bottom',
+                        'text-halign': 'center',
+                        'width': ele => Math.max(30, Math.min(100, ele.data('lines') / 10)),
+                        'height': ele => Math.max(30, Math.min(100, ele.data('lines') / 10)),
+                        'background-color': ele => {
+                            switch(ele.data('type')) {
+                                case 'script': return '#e74c3c';
+                                case 'core': return '#3498db';
+                                case 'test': return '#f39c12';
+                                case 'package': return '#9b59b6';
+                                default: return '#2ecc71';
+                            }
+                        }
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#95a5a6',
+                        'target-arrow-color': '#95a5a6',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier'
+                    }
+                },
+                {
+                    selector: ':selected',
+                    style: {
+                        'border-width': 3,
+                        'border-color': '#e74c3c'
+                    }
+                }
+            ],
+            layout: {
+                name: 'fcose',
+                animate: true,
+                animationDuration: 1000
+            }
+        });
+        
+        // Update stats
+        document.getElementById('file-count').textContent = graphData.elements.nodes.length;
+        document.getElementById('import-count').textContent = graphData.elements.edges.length;
+        
+        // Node click handler
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const data = node.data();
+            document.getElementById('selected').innerHTML = 
+                `<strong>${data.label}</strong><br>
+                 Path: ${data.path}<br>
+                 Lines: ${data.lines}<br>
+                 Size: ${(data.size / 1024).toFixed(1)} KB`;
+        });
+        
+        // Layout function
+        function runLayout(name) {
+            cy.layout({ name: name, animate: true }).run();
+        }
+        
+        // Group by directory
+        const groups = {};
+        cy.nodes().forEach(node => {
+            const parent = node.data('parent');
+            if (parent) {
+                if (!groups[parent]) groups[parent] = [];
+                groups[parent].push(node);
+            }
+        });
+        
+        // Log structure
+        console.log('Codebase structure:', groups);
+        console.log('Total nodes:', cy.nodes().length);
+        console.log('Total edges:', cy.edges().length);
+    </script>
+</body>
+</html>

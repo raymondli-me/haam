@@ -1,0 +1,643 @@
+{
+  "nodes": [
+    {
+      "data": {
+        "id": "docs_conf",
+        "label": "conf.py",
+        "path": "docs/conf.py",
+        "module_path": "docs.conf",
+        "type": "documentation",
+        "lines": 88,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 0,
+        "color": "#8e44ad",
+        "size": 48.76166303929372,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples_3d_pca_arrow_example",
+        "label": "3d_pca_arrow_example.py",
+        "path": "examples/3d_pca_arrow_example.py",
+        "module_path": "examples.3d_pca_arrow_example",
+        "type": "example",
+        "lines": 273,
+        "functions": 8,
+        "classes": 0,
+        "complexity": 6,
+        "docstrings": 9,
+        "color": "#95a5a6",
+        "size": 63.04542328371661,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_pc_umap_visualization_example",
+        "label": "pc_umap_visualization_example.py",
+        "path": "examples/pc_umap_visualization_example.py",
+        "module_path": "examples.pc_umap_visualization_example",
+        "type": "example",
+        "lines": 212,
+        "functions": 5,
+        "classes": 0,
+        "complexity": 10,
+        "docstrings": 6,
+        "color": "#95a5a6",
+        "size": 59.12043955712207,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_ranking_methods_example",
+        "label": "ranking_methods_example.py",
+        "path": "examples/ranking_methods_example.py",
+        "module_path": "examples.ranking_methods_example",
+        "type": "example",
+        "lines": 63,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 1,
+        "color": "#95a5a6",
+        "size": 45.874507866387546,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_simple_example",
+        "label": "simple_example.py",
+        "path": "examples/simple_example.py",
+        "module_path": "examples.simple_example",
+        "type": "example",
+        "lines": 55,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 1,
+        "color": "#95a5a6",
+        "size": 44.832396974191326,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_example",
+        "label": "wordcloud_example.py",
+        "path": "examples/wordcloud_example.py",
+        "module_path": "examples.wordcloud_example",
+        "type": "example",
+        "lines": 216,
+        "functions": 6,
+        "classes": 0,
+        "complexity": 6,
+        "docstrings": 7,
+        "color": "#95a5a6",
+        "size": 59.39387691339814,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_validity_example",
+        "label": "wordcloud_validity_example.py",
+        "path": "examples/wordcloud_validity_example.py",
+        "module_path": "examples.wordcloud_validity_example",
+        "type": "example",
+        "lines": 186,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 11,
+        "docstrings": 1,
+        "color": "#95a5a6",
+        "size": 57.27636339397171,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init__",
+        "label": "__init__.py",
+        "path": "haam/__init__.py",
+        "module_path": "haam",
+        "type": "package",
+        "lines": 11,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 1,
+        "color": "#9b59b6",
+        "size": 36.633249580710796,
+        "in_degree": 9,
+        "out_degree": 6,
+        "total_degree": 15
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_bws",
+        "label": "haam_bws.py",
+        "path": "haam/haam_bws.py",
+        "module_path": "haam.haam_bws",
+        "type": "module",
+        "lines": 352,
+        "functions": 11,
+        "classes": 1,
+        "complexity": 26,
+        "docstrings": 12,
+        "color": "#3498db",
+        "size": 67.52332607858744,
+        "in_degree": 1,
+        "out_degree": 0,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init",
+        "label": "haam_init.py",
+        "path": "haam/haam_init.py",
+        "module_path": "haam.haam_init",
+        "type": "module",
+        "lines": 1040,
+        "functions": 20,
+        "classes": 1,
+        "complexity": 57,
+        "docstrings": 22,
+        "color": "#3498db",
+        "size": 94.4980619863884,
+        "in_degree": 1,
+        "out_degree": 4,
+        "total_degree": 5
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_package",
+        "label": "haam_package.py",
+        "path": "haam/haam_package.py",
+        "module_path": "haam.haam_package",
+        "type": "module",
+        "lines": 1738,
+        "functions": 23,
+        "classes": 1,
+        "complexity": 169,
+        "docstrings": 25,
+        "color": "#3498db",
+        "size": 100,
+        "in_degree": 5,
+        "out_degree": 0,
+        "total_degree": 5
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_topics",
+        "label": "haam_topics.py",
+        "path": "haam/haam_topics.py",
+        "module_path": "haam.haam_topics",
+        "type": "module",
+        "lines": 351,
+        "functions": 6,
+        "classes": 1,
+        "complexity": 14,
+        "docstrings": 8,
+        "color": "#3498db",
+        "size": 67.4699879903904,
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_visualizations",
+        "label": "haam_visualizations.py",
+        "path": "haam/haam_visualizations.py",
+        "module_path": "haam.haam_visualizations",
+        "type": "module",
+        "lines": 2404,
+        "functions": 16,
+        "classes": 2,
+        "complexity": 203,
+        "docstrings": 18,
+        "color": "#3498db",
+        "size": 100,
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_wordcloud",
+        "label": "haam_wordcloud.py",
+        "path": "haam/haam_wordcloud.py",
+        "module_path": "haam.haam_wordcloud",
+        "type": "module",
+        "lines": 819,
+        "functions": 11,
+        "classes": 1,
+        "complexity": 104,
+        "docstrings": 9,
+        "color": "#3498db",
+        "size": 87.23635208501673,
+        "in_degree": 2,
+        "out_degree": 0,
+        "total_degree": 2
+      }
+    },
+    {
+      "data": {
+        "id": "setup",
+        "label": "setup.py",
+        "path": "setup.py",
+        "module_path": "setup",
+        "type": "setup",
+        "lines": 64,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "docstrings": 1,
+        "color": "#e74c3c",
+        "size": 46.0,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_aligned_validity",
+        "label": "test_aligned_validity.py",
+        "path": "test_aligned_validity.py",
+        "module_path": "test_aligned_validity",
+        "type": "test",
+        "lines": 184,
+        "functions": 1,
+        "classes": 0,
+        "complexity": 14,
+        "docstrings": 2,
+        "color": "#f39c12",
+        "size": 57.129319932501076,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_display",
+        "label": "test_display.py",
+        "path": "test_display.py",
+        "module_path": "test_display",
+        "type": "test",
+        "lines": 24,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 0,
+        "color": "#f39c12",
+        "size": 39.797958971132715,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_direct",
+        "label": "test_display_direct.py",
+        "path": "test_display_direct.py",
+        "module_path": "test_display_direct",
+        "type": "test",
+        "lines": 39,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "docstrings": 0,
+        "color": "#f39c12",
+        "size": 42.48999599679679,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_final_verification",
+        "label": "test_final_verification.py",
+        "path": "test_final_verification.py",
+        "module_path": "test_final_verification",
+        "type": "test",
+        "lines": 43,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "docstrings": 0,
+        "color": "#f39c12",
+        "size": 43.114877048604,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_model_outputs",
+        "label": "test_model_outputs.py",
+        "path": "test_model_outputs.py",
+        "module_path": "test_model_outputs",
+        "type": "test",
+        "lines": 72,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "docstrings": 0,
+        "color": "#f39c12",
+        "size": 46.970562748477136,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_validity_coloring",
+        "label": "test_validity_coloring.py",
+        "path": "test_validity_coloring.py",
+        "module_path": "test_validity_coloring",
+        "type": "test",
+        "lines": 88,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 6,
+        "docstrings": 1,
+        "color": "#f39c12",
+        "size": 48.76166303929372,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "unified_analyzer",
+        "label": "unified_analyzer.py",
+        "path": "unified_analyzer.py",
+        "module_path": "unified_analyzer",
+        "type": "script",
+        "lines": 1151,
+        "functions": 17,
+        "classes": 1,
+        "complexity": 92,
+        "docstrings": 17,
+        "color": "#2ecc71",
+        "size": 97.85278181474949,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "unified_analyzer_clean",
+        "label": "unified_analyzer_clean.py",
+        "path": "unified_analyzer_clean.py",
+        "module_path": "unified_analyzer_clean",
+        "type": "script",
+        "lines": 1152,
+        "functions": 17,
+        "classes": 1,
+        "complexity": 92,
+        "docstrings": 17,
+        "color": "#2ecc71",
+        "size": 97.88225099390856,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "id": "examples_3d_pca_arrow_example_to_haam___init___from_import",
+        "source": "examples_3d_pca_arrow_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "examples_pc_umap_visualization_example_to_haam___init___from_import",
+        "source": "examples_pc_umap_visualization_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "examples_ranking_methods_example_to_haam___init___from_import",
+        "source": "examples_ranking_methods_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "examples_simple_example_to_haam___init___from_import",
+        "source": "examples_simple_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_example_to_haam___init___from_import",
+        "source": "examples_wordcloud_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "examples_wordcloud_validity_example_to_haam___init___from_import",
+        "source": "examples_wordcloud_validity_example",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_init_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_init",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_package_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_package",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_topics_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_topics",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_visualizations_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_visualizations",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_wordcloud_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_wordcloud",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam___init___to_haam_haam_bws_relative_import",
+        "source": "haam___init__",
+        "target": "haam_haam_bws",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_package_relative_import",
+        "source": "haam_haam_init",
+        "target": "haam_haam_package",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_topics_relative_import",
+        "source": "haam_haam_init",
+        "target": "haam_haam_topics",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_visualizations_relative_import",
+        "source": "haam_haam_init",
+        "target": "haam_haam_visualizations",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "haam_haam_init_to_haam_haam_wordcloud_relative_import",
+        "source": "haam_haam_init",
+        "target": "haam_haam_wordcloud",
+        "type": "relative_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_aligned_validity_to_haam___init___from_import",
+        "source": "test_aligned_validity",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_to_haam___init___from_import",
+        "source": "test_display",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_direct_to_haam_haam_package_from_import",
+        "source": "test_display_direct",
+        "target": "haam_haam_package",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_final_verification_to_haam_haam_package_from_import",
+        "source": "test_final_verification",
+        "target": "haam_haam_package",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_model_outputs_to_haam_haam_package_from_import",
+        "source": "test_model_outputs",
+        "target": "haam_haam_package",
+        "type": "from_import"
+      }
+    },
+    {
+      "data": {
+        "id": "test_validity_coloring_to_haam___init___from_import",
+        "source": "test_validity_coloring",
+        "target": "haam___init__",
+        "type": "from_import"
+      }
+    }
+  ],
+  "stats": {
+    "excluded_files": 10,
+    "total_lines": 10625,
+    "total_functions": 141,
+    "total_classes": 9,
+    "total_complexity": 822,
+    "documentation_count": 1,
+    "example_count": 6,
+    "package_count": 1,
+    "module_count": 6,
+    "setup_count": 1,
+    "test_count": 6,
+    "script_count": 2,
+    "from_imports": 12,
+    "relative_imports": 10,
+    "total_nodes": 23,
+    "total_edges": 22,
+    "orphan_nodes": 4,
+    "hub_nodes": 3,
+    "leaf_nodes": 5,
+    "avg_degree": 1.9130434782608696,
+    "max_degree": 15,
+    "avg_complexity": 35.73913043478261
+  }
+}

@@ -1,0 +1,1099 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HAAM Codebase Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.26.0/cytoscape.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-dagre@2.5.0/cytoscape-dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/cytoscape-cola@2.5.1/cytoscape-cola.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webcola@3.4.0/WebCola/cola.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        #cy {
+            flex: 1;
+            background-color: #f0f0f0;
+        }
+        #sidebar {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+        }
+        #controls {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ddd;
+        }
+        .control-group {
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 2px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .metric {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+        .metric-label {
+            font-weight: bold;
+            color: #666;
+        }
+        #node-info {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        .legend {
+            margin-top: 20px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border-radius: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div id="cy"></div>
+    <div id="sidebar">
+        <h2>HAAM Codebase Explorer</h2>
+        
+        <div id="controls">
+            <h3>Layout</h3>
+            <div class="control-group">
+                <button onclick="runLayout('dagre')">Hierarchical</button>
+                <button onclick="runLayout('cose')">Force-Directed</button>
+                <button onclick="runLayout('circle')">Circle</button>
+                <button onclick="runLayout('grid')">Grid</button>
+            </div>
+            
+            <h3>Analysis</h3>
+            <div class="control-group">
+                <button onclick="findCycles()">Find Circular Dependencies</button>
+                <button onclick="highlightComplex()">Show Complex Files</button>
+                <button onclick="highlightUnused()">Show Potentially Unused</button>
+                <button onclick="resetHighlight()">Reset</button>
+            </div>
+            
+            <h3>View</h3>
+            <div class="control-group">
+                <button onclick="cy.fit()">Fit to Screen</button>
+                <button onclick="toggleEdgeLabels()">Toggle Edge Labels</button>
+            </div>
+        </div>
+        
+        <div id="stats">
+            <h3>Statistics</h3>
+            <div class="metric">
+                <span class="metric-label">Total Files:</span> 
+                <span id="total-files">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Total Lines:</span> 
+                <span id="total-lines">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Total Imports:</span> 
+                <span id="total-imports">0</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Avg Complexity:</span> 
+                <span id="avg-complexity">0</span>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <h3>Node Types</h3>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3498db;"></div>
+                <span>Module</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #e74c3c;"></div>
+                <span>Script</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #2ecc71;"></div>
+                <span>Package</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f39c12;"></div>
+                <span>Test</span>
+            </div>
+        </div>
+        
+        <div id="node-info">
+            <h3>Node Details</h3>
+            <p>Click on a node to see details</p>
+        </div>
+    </div>
+    
+    <script>
+        const graphData = {
+  "nodes": [
+    {
+      "data": {
+        "id": "generate_wordclouds_nvembed",
+        "label": "generate_wordclouds_nvembed.py",
+        "path": "generate_wordclouds_nvembed.py",
+        "size": 10075,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_example",
+        "label": "generate_wordclouds_validity_example.py",
+        "path": "generate_wordclouds_validity_example.py",
+        "size": 7552,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "visualize_codebase",
+        "label": "visualize_codebase.py",
+        "path": "visualize_codebase.py",
+        "size": 24954,
+        "lines": 676,
+        "functions": 12,
+        "classes": 1,
+        "complexity": 32,
+        "type": "module",
+        "imports_count": 7,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "colab_cell_criterion_ranking",
+        "label": "colab_cell_criterion_ranking.py",
+        "path": "colab_cell_criterion_ranking.py",
+        "size": 1239,
+        "lines": 32,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "module",
+        "imports_count": 0,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_display_direct",
+        "label": "test_display_direct.py",
+        "path": "test_display_direct.py",
+        "size": 1162,
+        "lines": 39,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "test",
+        "imports_count": 2,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "run_haam_analysis",
+        "label": "run_haam_analysis.py",
+        "path": "run_haam_analysis.py",
+        "size": 15790,
+        "lines": 414,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 37,
+        "type": "script",
+        "imports_count": 8,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "run_haam_analysis_v1.2",
+        "label": "run_haam_analysis_v1.2.py",
+        "path": "run_haam_analysis_v1.2.py",
+        "size": 20396,
+        "lines": 507,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 58,
+        "type": "script",
+        "imports_count": 7,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_final_aligned_v2",
+        "label": "generate_wordclouds_validity_final_aligned_v2.py",
+        "path": "generate_wordclouds_validity_final_aligned_v2.py",
+        "size": 23785,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 10)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_model_outputs",
+        "label": "test_model_outputs.py",
+        "path": "test_model_outputs.py",
+        "size": 2177,
+        "lines": 72,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "type": "test",
+        "imports_count": 4,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_display",
+        "label": "test_display.py",
+        "path": "test_display.py",
+        "size": 692,
+        "lines": 24,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "test",
+        "imports_count": 2,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "run_this_colab",
+        "label": "run_this_colab.py",
+        "path": "run_this_colab.py",
+        "size": 22373,
+        "lines": 0,
+        "error": "unexpected indent (<unknown>, line 2)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "run_haam_analysis_v1.3",
+        "label": "run_haam_analysis_v1.3.py",
+        "path": "run_haam_analysis_v1.3.py",
+        "size": 19151,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 10)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_nvembed",
+        "label": "generate_wordclouds_validity_nvembed.py",
+        "path": "generate_wordclouds_validity_nvembed.py",
+        "size": 13851,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 19)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_final_aligned",
+        "label": "generate_wordclouds_validity_final_aligned.py",
+        "path": "generate_wordclouds_validity_final_aligned.py",
+        "size": 20650,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam_wordcloud_aligned_patch",
+        "label": "haam_wordcloud_aligned_patch.py",
+        "path": "haam_wordcloud_aligned_patch.py",
+        "size": 14398,
+        "lines": 398,
+        "functions": 2,
+        "classes": 0,
+        "complexity": 44,
+        "type": "module",
+        "imports_count": 0,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "setup",
+        "label": "setup.py",
+        "path": "setup.py",
+        "size": 1964,
+        "lines": 64,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "type": "module",
+        "imports_count": 2,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_final",
+        "label": "generate_wordclouds_validity_final.py",
+        "path": "generate_wordclouds_validity_final.py",
+        "size": 19494,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 10)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_enhanced",
+        "label": "generate_wordclouds_validity_enhanced.py",
+        "path": "generate_wordclouds_validity_enhanced.py",
+        "size": 20532,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 13)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_simple",
+        "label": "generate_wordclouds_validity_simple.py",
+        "path": "generate_wordclouds_validity_simple.py",
+        "size": 13019,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_final_verification",
+        "label": "test_final_verification.py",
+        "path": "test_final_verification.py",
+        "size": 1491,
+        "lines": 43,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 2,
+        "type": "test",
+        "imports_count": 2,
+        "in_degree": 0,
+        "out_degree": 1,
+        "total_degree": 1
+      }
+    },
+    {
+      "data": {
+        "id": "test_aligned_validity",
+        "label": "test_aligned_validity.py",
+        "path": "test_aligned_validity.py",
+        "size": 6685,
+        "lines": 184,
+        "functions": 1,
+        "classes": 0,
+        "complexity": 14,
+        "type": "test",
+        "imports_count": 4,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_aligned_v2",
+        "label": "generate_wordclouds_validity_aligned_v2.py",
+        "path": "generate_wordclouds_validity_aligned_v2.py",
+        "size": 20410,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_validity_aligned",
+        "label": "generate_wordclouds_validity_aligned.py",
+        "path": "generate_wordclouds_validity_aligned.py",
+        "size": 22010,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 11)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "generate_wordclouds_nvembed_display",
+        "label": "generate_wordclouds_nvembed_display.py",
+        "path": "generate_wordclouds_nvembed_display.py",
+        "size": 11902,
+        "lines": 0,
+        "error": "invalid syntax (<unknown>, line 12)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "test_validity_coloring",
+        "label": "test_validity_coloring.py",
+        "path": "test_validity_coloring.py",
+        "size": 2883,
+        "lines": 88,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 6,
+        "type": "test",
+        "imports_count": 3,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_wordcloud_backup",
+        "label": "haam_wordcloud_backup.py",
+        "path": "haam/haam_wordcloud_backup.py",
+        "size": 27920,
+        "lines": 658,
+        "functions": 10,
+        "classes": 1,
+        "complexity": 58,
+        "type": "module",
+        "imports_count": 11,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_wordcloud",
+        "label": "haam_wordcloud.py",
+        "path": "haam/haam_wordcloud.py",
+        "size": 35849,
+        "lines": 819,
+        "functions": 11,
+        "classes": 1,
+        "complexity": 104,
+        "type": "module",
+        "imports_count": 11,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_package",
+        "label": "haam_package.py",
+        "path": "haam/haam_package.py",
+        "size": 76293,
+        "lines": 1738,
+        "functions": 23,
+        "classes": 1,
+        "complexity": 169,
+        "type": "module",
+        "imports_count": 24,
+        "in_degree": 3,
+        "out_degree": 0,
+        "total_degree": 3
+      }
+    },
+    {
+      "data": {
+        "id": "haam.__init__",
+        "label": "__init__.py",
+        "path": "haam/__init__.py",
+        "size": 415,
+        "lines": 11,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "package",
+        "imports_count": 6,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_usage_guide",
+        "label": "haam_usage_guide.py",
+        "path": "haam/haam_usage_guide.py",
+        "size": 12142,
+        "lines": 0,
+        "error": "invalid decimal literal (<unknown>, line 256)",
+        "type": "error",
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_init",
+        "label": "haam_init.py",
+        "path": "haam/haam_init.py",
+        "size": 39502,
+        "lines": 1040,
+        "functions": 20,
+        "classes": 1,
+        "complexity": 57,
+        "type": "module",
+        "imports_count": 9,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_bws",
+        "label": "haam_bws.py",
+        "path": "haam/haam_bws.py",
+        "size": 13815,
+        "lines": 352,
+        "functions": 11,
+        "classes": 1,
+        "complexity": 26,
+        "type": "module",
+        "imports_count": 12,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_topics",
+        "label": "haam_topics.py",
+        "path": "haam/haam_topics.py",
+        "size": 13382,
+        "lines": 351,
+        "functions": 6,
+        "classes": 1,
+        "complexity": 14,
+        "type": "module",
+        "imports_count": 10,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_setup",
+        "label": "haam_setup.py",
+        "path": "haam/haam_setup.py",
+        "size": 5629,
+        "lines": 232,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "module",
+        "imports_count": 1,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_visualizations_backup",
+        "label": "haam_visualizations_backup.py",
+        "path": "haam/haam_visualizations_backup.py",
+        "size": 96599,
+        "lines": 2212,
+        "functions": 16,
+        "classes": 2,
+        "complexity": 147,
+        "type": "module",
+        "imports_count": 22,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "haam.haam_visualizations",
+        "label": "haam_visualizations.py",
+        "path": "haam/haam_visualizations.py",
+        "size": 108032,
+        "lines": 2404,
+        "functions": 16,
+        "classes": 2,
+        "complexity": 203,
+        "type": "module",
+        "imports_count": 22,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.ranking_methods_example",
+        "label": "ranking_methods_example.py",
+        "path": "examples/ranking_methods_example.py",
+        "size": 1868,
+        "lines": 63,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "module",
+        "imports_count": 1,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.wordcloud_example",
+        "label": "wordcloud_example.py",
+        "path": "examples/wordcloud_example.py",
+        "size": 7251,
+        "lines": 216,
+        "functions": 6,
+        "classes": 0,
+        "complexity": 6,
+        "type": "module",
+        "imports_count": 3,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.pc_umap_visualization_example",
+        "label": "pc_umap_visualization_example.py",
+        "path": "examples/pc_umap_visualization_example.py",
+        "size": 7049,
+        "lines": 212,
+        "functions": 5,
+        "classes": 0,
+        "complexity": 10,
+        "type": "module",
+        "imports_count": 4,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.simple_example",
+        "label": "simple_example.py",
+        "path": "examples/simple_example.py",
+        "size": 1638,
+        "lines": 55,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 1,
+        "type": "module",
+        "imports_count": 3,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.wordcloud_validity_example",
+        "label": "wordcloud_validity_example.py",
+        "path": "examples/wordcloud_validity_example.py",
+        "size": 6290,
+        "lines": 186,
+        "functions": 0,
+        "classes": 0,
+        "complexity": 11,
+        "type": "module",
+        "imports_count": 4,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    },
+    {
+      "data": {
+        "id": "examples.3d_pca_arrow_example",
+        "label": "3d_pca_arrow_example.py",
+        "path": "examples/3d_pca_arrow_example.py",
+        "size": 9774,
+        "lines": 273,
+        "functions": 8,
+        "classes": 0,
+        "complexity": 6,
+        "type": "module",
+        "imports_count": 3,
+        "in_degree": 0,
+        "out_degree": 0,
+        "total_degree": 0
+      }
+    }
+  ],
+  "edges": [
+    {
+      "data": {
+        "source": "test_display_direct",
+        "target": "haam.haam_package",
+        "type": "import",
+        "label": "HAAMAnalysis"
+      }
+    },
+    {
+      "data": {
+        "source": "test_model_outputs",
+        "target": "haam.haam_package",
+        "type": "import",
+        "label": "HAAMAnalysis"
+      }
+    },
+    {
+      "data": {
+        "source": "test_final_verification",
+        "target": "haam.haam_package",
+        "type": "import",
+        "label": "HAAMAnalysis"
+      }
+    }
+  ],
+  "metadata": {
+    "total_files": 42,
+    "total_imports": 3,
+    "total_lines": 13363,
+    "avg_complexity": 24.166666666666668
+  }
+};
+        
+        // Initialize Cytoscape
+        const cy = cytoscape({
+            container: document.getElementById('cy'),
+            elements: graphData,
+            style: [
+                {
+                    selector: 'node',
+                    style: {
+                        'label': 'data(label)',
+                        'text-valign': 'bottom',
+                        'text-halign': 'center',
+                        'font-size': '10px',
+                        'width': 'mapData(lines, 0, 1000, 20, 80)',
+                        'height': 'mapData(lines, 0, 1000, 20, 80)',
+                        'background-color': function(ele) {
+                            const type = ele.data('type');
+                            switch(type) {
+                                case 'module': return '#3498db';
+                                case 'script': return '#e74c3c';
+                                case 'package': return '#2ecc71';
+                                case 'test': return '#f39c12';
+                                case 'error': return '#95a5a6';
+                                default: return '#34495e';
+                            }
+                        },
+                        'border-width': 2,
+                        'border-color': '#2c3e50'
+                    }
+                },
+                {
+                    selector: 'node:selected',
+                    style: {
+                        'border-width': 4,
+                        'border-color': '#e74c3c'
+                    }
+                },
+                {
+                    selector: 'edge',
+                    style: {
+                        'width': 2,
+                        'line-color': '#95a5a6',
+                        'target-arrow-color': '#95a5a6',
+                        'target-arrow-shape': 'triangle',
+                        'curve-style': 'bezier',
+                        'label': '',
+                        'font-size': '8px',
+                        'text-rotation': 'autorotate'
+                    }
+                },
+                {
+                    selector: '.highlighted',
+                    style: {
+                        'background-color': '#e74c3c',
+                        'line-color': '#e74c3c',
+                        'target-arrow-color': '#e74c3c'
+                    }
+                },
+                {
+                    selector: '.dimmed',
+                    style: {
+                        'opacity': 0.2
+                    }
+                }
+            ],
+            layout: {
+                name: 'dagre',
+                rankDir: 'TB',
+                animate: true,
+                animationDuration: 1000
+            }
+        });
+        
+        // Update statistics
+        document.getElementById('total-files').textContent = graphData.metadata.total_files;
+        document.getElementById('total-lines').textContent = graphData.metadata.total_lines.toLocaleString();
+        document.getElementById('total-imports').textContent = graphData.metadata.total_imports;
+        document.getElementById('avg-complexity').textContent = graphData.metadata.avg_complexity.toFixed(1);
+        
+        // Node click handler
+        cy.on('tap', 'node', function(evt) {
+            const node = evt.target;
+            const data = node.data();
+            
+            let html = `
+                <h3>${data.label}</h3>
+                <div class="metric"><span class="metric-label">Path:</span> ${data.path}</div>
+                <div class="metric"><span class="metric-label">Type:</span> ${data.type}</div>
+                <div class="metric"><span class="metric-label">Lines:</span> ${data.lines}</div>
+                <div class="metric"><span class="metric-label">Size:</span> ${(data.size / 1024).toFixed(1)} KB</div>
+                <div class="metric"><span class="metric-label">Functions:</span> ${data.functions || 0}</div>
+                <div class="metric"><span class="metric-label">Classes:</span> ${data.classes || 0}</div>
+                <div class="metric"><span class="metric-label">Complexity:</span> ${data.complexity || 0}</div>
+                <div class="metric"><span class="metric-label">Imports:</span> ${data.out_degree || 0}</div>
+                <div class="metric"><span class="metric-label">Imported by:</span> ${data.in_degree || 0}</div>
+            `;
+            
+            if (data.error) {
+                html += `<div class="metric" style="color: red;"><span class="metric-label">Error:</span> ${data.error}</div>`;
+            }
+            
+            document.getElementById('node-info').innerHTML = html;
+        });
+        
+        // Layout functions
+        function runLayout(name) {
+            let options = { name: name, animate: true, animationDuration: 1000 };
+            
+            if (name === 'dagre') {
+                options.rankDir = 'TB';
+                options.spacingFactor = 1.5;
+            } else if (name === 'cose') {
+                options.nodeRepulsion = 4000;
+                options.idealEdgeLength = 100;
+            }
+            
+            cy.layout(options).run();
+        }
+        
+        // Analysis functions
+        function findCycles() {
+            // Simple cycle detection (not comprehensive)
+            resetHighlight();
+            
+            const visited = new Set();
+            const recursionStack = new Set();
+            const cycleNodes = new Set();
+            
+            function hasCycle(nodeId) {
+                visited.add(nodeId);
+                recursionStack.add(nodeId);
+                
+                const node = cy.getElementById(nodeId);
+                const outgoers = node.outgoers('node');
+                
+                for (let i = 0; i < outgoers.length; i++) {
+                    const neighbor = outgoers[i];
+                    const neighborId = neighbor.id();
+                    
+                    if (!visited.has(neighborId)) {
+                        if (hasCycle(neighborId)) {
+                            cycleNodes.add(nodeId);
+                            return true;
+                        }
+                    } else if (recursionStack.has(neighborId)) {
+                        cycleNodes.add(nodeId);
+                        cycleNodes.add(neighborId);
+                        return true;
+                    }
+                }
+                
+                recursionStack.delete(nodeId);
+                return false;
+            }
+            
+            cy.nodes().forEach(node => {
+                if (!visited.has(node.id())) {
+                    hasCycle(node.id());
+                }
+            });
+            
+            if (cycleNodes.size > 0) {
+                cy.elements().addClass('dimmed');
+                cycleNodes.forEach(nodeId => {
+                    cy.getElementById(nodeId).removeClass('dimmed').addClass('highlighted');
+                });
+                alert(`Found potential circular dependencies involving ${cycleNodes.size} files`);
+            } else {
+                alert('No circular dependencies found');
+            }
+        }
+        
+        function highlightComplex() {
+            resetHighlight();
+            
+            const threshold = 20; // Complexity threshold
+            let complexNodes = 0;
+            
+            cy.nodes().forEach(node => {
+                if (node.data('complexity') > threshold) {
+                    node.addClass('highlighted');
+                    complexNodes++;
+                }
+            });
+            
+            if (complexNodes > 0) {
+                cy.elements().addClass('dimmed');
+                cy.elements('.highlighted').removeClass('dimmed');
+                alert(`Found ${complexNodes} files with high complexity (> ${threshold})`);
+            } else {
+                alert('No highly complex files found');
+            }
+        }
+        
+        function highlightUnused() {
+            resetHighlight();
+            
+            let unusedNodes = 0;
+            
+            cy.nodes().forEach(node => {
+                if (node.data('in_degree') === 0 && node.data('type') !== 'script' && node.data('type') !== 'test') {
+                    node.addClass('highlighted');
+                    unusedNodes++;
+                }
+            });
+            
+            if (unusedNodes > 0) {
+                cy.elements().addClass('dimmed');
+                cy.elements('.highlighted').removeClass('dimmed');
+                alert(`Found ${unusedNodes} potentially unused modules (no imports)`);
+            } else {
+                alert('No potentially unused modules found');
+            }
+        }
+        
+        function resetHighlight() {
+            cy.elements().removeClass('highlighted dimmed');
+        }
+        
+        let showEdgeLabels = false;
+        function toggleEdgeLabels() {
+            showEdgeLabels = !showEdgeLabels;
+            cy.style()
+                .selector('edge')
+                .style('label', showEdgeLabels ? 'data(label)' : '')
+                .update();
+        }
+        
+        // Initial fit
+        cy.ready(() => {
+            cy.fit();
+        });
+    </script>
+</body>
+</html>
