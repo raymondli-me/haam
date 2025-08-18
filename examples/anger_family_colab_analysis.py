@@ -4,6 +4,7 @@ Anger Family Analysis - Colab Tutorial Version
 ==============================================
 End-to-end analysis with word cloud generation for anger_family.csv
 Using 5% sample for faster tutorial execution
+Uses X (angry word count) as criterion, HU (human ratings), AI (GPT ratings)
 """
 
 # Install required packages
@@ -105,13 +106,13 @@ print(f"  % with 0 angry words: {(df_filtered['angry_word_count']==0).sum()/len(
 
 # Prepare data for HAAM
 texts = df_filtered['text'].values.tolist()
-criterion = df_filtered['angry_word_count'].values.astype(float)  # Y: angry word count
+criterion = df_filtered['angry_word_count'].values.astype(float)  # X: angry word count
 human_judgment = df_filtered['human_sum_score'].values.astype(float)  # HU: human ratings
 ai_judgment = df_filtered['gpt_sum_score'].values.astype(float)  # AI: GPT ratings
 
 # Print data availability
 print(f"\nData availability:")
-print(f"  Y (angry words): {(~np.isnan(criterion)).sum():,} ({(~np.isnan(criterion)).sum()/len(criterion)*100:.1f}%)")
+print(f"  X (angry words): {(~np.isnan(criterion)).sum():,} ({(~np.isnan(criterion)).sum()/len(criterion)*100:.1f}%)")
 print(f"  HU (human sum): {(~np.isnan(human_judgment)).sum():,} ({(~np.isnan(human_judgment)).sum()/len(human_judgment)*100:.1f}%)")
 print(f"  AI (GPT score): {(~np.isnan(ai_judgment)).sum():,} ({(~np.isnan(ai_judgment)).sum()/len(ai_judgment)*100:.1f}%)")
 
@@ -141,7 +142,7 @@ print("✓ HAAM analysis complete!")
 print("✓ Word cloud coloring now uses direct Y/HU/AI measurement!")
 
 # Display main results
-haam.display()
+haam.analysis.display()
 
 # ==============================================================================
 # HELPER FUNCTIONS (UPDATED TO USE AVAILABLE DATA)
@@ -153,26 +154,26 @@ def get_topic_quartile_positions_sparse(haam_instance, topic_ids):
     Handles sparse data by using nanmean and showing actual values when available.
     """
     if not topic_ids:
-        return {'Y': '?', 'HU': '?', 'AI': '?'}
+        return {'X': '?', 'HU': '?', 'AI': '?'}
 
     # Get the cluster labels
     cluster_labels = haam_instance.topic_analyzer.cluster_labels
 
     # Calculate means for the specified topics using available data
-    topic_means = {'Y': [], 'HU': [], 'AI': []}
-    topic_counts = {'Y': 0, 'HU': 0, 'AI': 0}
+    topic_means = {'X': [], 'HU': [], 'AI': []}
+    topic_counts = {'X': 0, 'HU': 0, 'AI': 0}
 
     for topic_id in topic_ids:
         # Get documents in this topic
         topic_mask = cluster_labels == topic_id
 
         if np.any(topic_mask):
-            # For Y (criterion)
-            y_values = haam_instance.criterion[topic_mask]
-            y_valid = y_values[~np.isnan(y_values)]
-            if len(y_valid) > 0:
-                topic_means['Y'].append(np.mean(y_valid))
-                topic_counts['Y'] += len(y_valid)
+            # For X (criterion)
+            x_values = haam_instance.criterion[topic_mask]
+            x_valid = x_values[~np.isnan(x_values)]
+            if len(x_valid) > 0:
+                topic_means['X'].append(np.mean(x_valid))
+                topic_counts['X'] += len(x_valid)
 
             # For HU (human judgment) - use whatever data is available
             hu_values = haam_instance.human_judgment[topic_mask]
@@ -190,7 +191,7 @@ def get_topic_quartile_positions_sparse(haam_instance, topic_ids):
 
     # Calculate average across topics (only for topics with data)
     avg_means = {}
-    for measure in ['Y', 'HU', 'AI']:
+    for measure in ['X', 'HU', 'AI']:
         if topic_means[measure]:
             avg_means[measure] = np.mean(topic_means[measure])
         else:
@@ -198,7 +199,7 @@ def get_topic_quartile_positions_sparse(haam_instance, topic_ids):
 
     # Calculate global quartiles using only non-NaN values
     quartiles = {}
-    for measure, values in [('Y', haam_instance.criterion),
+    for measure, values in [('X', haam_instance.criterion),
                            ('HU', haam_instance.human_judgment),
                            ('AI', haam_instance.ai_judgment)]:
         # Get non-NaN values for quartile calculation
@@ -227,13 +228,15 @@ def get_topic_quartile_positions_sparse(haam_instance, topic_ids):
     return quartiles
 
 def get_pc_associations(haam_instance, pc_idx):
-    """Get Y/HU/AI associations for a PC based on coefficients."""
+    """Get X/HU/AI associations for a PC based on coefficients."""
     associations = {}
     try:
-        for outcome in ['SC', 'AI', 'HU']:
-            if outcome in haam_instance.analysis.results['debiased_lasso']:
-                coef = haam_instance.analysis.results['debiased_lasso'][outcome]['coefs_std'][pc_idx]
-                associations[outcome] = 'H' if coef > 0 else 'L'
+        # Map internal SC to X for display
+        outcome_map = {'SC': 'X', 'AI': 'AI', 'HU': 'HU'}
+        for internal_name, display_name in outcome_map.items():
+            if internal_name in haam_instance.analysis.results['debiased_lasso']:
+                coef = haam_instance.analysis.results['debiased_lasso'][internal_name]['coefs_std'][pc_idx]
+                associations[display_name] = 'H' if coef > 0 else 'L'
     except:
         pass
     return associations
@@ -331,7 +334,7 @@ def create_aligned_word_cloud_with_info(haam_instance, pc_idx, k=3, max_words=15
     high_quartiles = get_topic_quartile_positions_sparse(haam, high_topic_ids)
 
     info_text_high = (
-        f"Y: {high_quartiles['Y']} | "
+        f"X: {high_quartiles['X']} | "
         f"HU: {high_quartiles['HU']} | "
         f"AI: {high_quartiles['AI']}\n"
         f"Sample size: {high_sample_size:,} documents"
@@ -356,7 +359,7 @@ def create_aligned_word_cloud_with_info(haam_instance, pc_idx, k=3, max_words=15
     low_quartiles = get_topic_quartile_positions_sparse(haam, low_topic_ids)
 
     info_text_low = (
-        f"Y: {low_quartiles['Y']} | "
+        f"X: {low_quartiles['X']} | "
         f"HU: {low_quartiles['HU']} | "
         f"AI: {low_quartiles['AI']}\n"
         f"Sample size: {low_sample_size:,} documents"
@@ -458,7 +461,7 @@ for i in range(n_pcs_to_show):
 
     label_text = f'PC{i + 1}\n\n'
     label_text += f"PC coefficients:\n"
-    label_text += f"Y: {pc_assoc.get('SC', '?')} | "
+    label_text += f"X: {pc_assoc.get('X', '?')} | "
     label_text += f"HU: {pc_assoc.get('HU', '?')} | "
     label_text += f"AI: {pc_assoc.get('AI', '?')}"
 
@@ -494,7 +497,7 @@ for i in range(n_pcs_to_show):
             high_quartiles = get_topic_quartile_positions_sparse(haam, high_topic_ids)
 
             title = f'High ({n_high} topics, n={high_samples:,})\n'
-            title += f"Y:{high_quartiles['Y']} HU:{high_quartiles['HU']} AI:{high_quartiles['AI']}"
+            title += f"X:{high_quartiles['X']} HU:{high_quartiles['HU']} AI:{high_quartiles['AI']}"
 
             ax_high.set_title(title, fontsize=12, color='darkred')
         else:
@@ -534,7 +537,7 @@ for i in range(n_pcs_to_show):
             low_quartiles = get_topic_quartile_positions_sparse(haam, low_topic_ids)
 
             title = f'Low ({n_low} topics, n={low_samples:,})\n'
-            title += f"Y:{low_quartiles['Y']} HU:{low_quartiles['HU']} AI:{low_quartiles['AI']}"
+            title += f"X:{low_quartiles['X']} HU:{low_quartiles['HU']} AI:{low_quartiles['AI']}"
 
             ax_low.set_title(title, fontsize=12, color='darkblue')
         else:
