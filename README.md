@@ -180,9 +180,7 @@ analysis.export_all_results('./output/')
 
 ## Theoretical Background
 
-HAAM implements the framework described in:
-
-> [Your Paper Title] (2024). *Journal Name*.
+HAAM implements the framework that is described in an upcoming research paper, the High-Dimensional Perception with the Double Machine Learning Lens Model Equation. 
 
 The method combines:
 1. **Brunswik's Lens Model** - Perceptual cues mediate between environment and judgment
@@ -192,22 +190,12 @@ The method combines:
 ## Citation
 
 ```bibtex
-@article{haam2024,
-  title={The Human-AI Accuracy Model: A Double Machine Learning 
-         Lens Model Equation for Understanding How Humans and AI 
-         Achieve Perceptual Accuracy},
-  author={[Your name]},
-  journal={[Journal]},
-  year={2024},
-  doi={10.xxxx/xxxxx}
-}
-
 @software{haam_package,
-  title={HAAM: Human-AI Accuracy Model Python Package},
-  author={[Your name]},
-  year={2024},
+  title={HAAM: Human-AI Accuracy Model},
+  author={[Raymond Li]},
+  year={2025},
   version={1.0},
-  url={https://github.com/yourusername/haam}
+  url={https://github.com/raymondli-me/haam}
 }
 ```
 
