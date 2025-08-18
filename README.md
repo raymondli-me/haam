@@ -39,143 +39,74 @@ cd haam
 pip install -e .
 ```
 
-## Quick Start
+## Mini-Example: Human-GPT Perception of Anger in Reddit Comments
 
 ```python
-from haam import HAAMAnalysis
+import subprocess
+import sys
+subprocess.check_call([sys.executable, "-m", "pip", "install", "wordcloud", "-q"])
+!pip install git+https://github.com/raymondli-me/haam.git
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+from matplotlib.patches import Patch
+import os
+import re
+from haam import HAAM
+import warnings
+warnings.filterwarnings('ignore')
 
-# Prepare your data
-criterion = [...]           # Ground truth labels (environmental criterion)
-human_judgment = [...]      # Human predictions/ratings  
-ai_judgment = [...]         # AI model outputs
-perceptual_cues = [...]     # High-dimensional features (or raw text)
 
-# Run analysis
-analysis = HAAMAnalysis(
-    criterion=criterion,
-    human_judgment=human_judgment,
-    ai_judgment=ai_judgment,
-    perceptual_cues=perceptual_cues
-)
+github_url_processed = 'https://raw.githubusercontent.com/raymondli-me/haam/main/data/anger_family_with_angry_word_count.csv'
 
-# Calculate Percentage of Mediated Accuracy
-results = analysis.calculate_poma()
-print(f"Human PoMA: {results['human_poma']:.1%}")  # e.g., 73%
-print(f"AI PoMA: {results['ai_poma']:.1%}")        # e.g., 91%
+try:
+    df_loaded_github = pd.read_csv(github_url_processed)
+    df_filtered_github = df_loaded_github.copy() # Use a consistent variable name
+    print(f"✓ Loaded data from GitHub CSV: {df_filtered_github.shape[0]} rows, {df_filtered_github.shape[1]} columns")
+except Exception as e:
+    print(f"Error loading data from GitHub: {e}")
+    print(f"Please ensure the URL is correct: {github_url_processed}")
+    df_filtered_github = None # Set to None to prevent further execution if file not found
 
-# Generate comprehensive report
-analysis.display()
-```
+if df_filtered_github is not None:
+    # Prepare data for HAAM using the loaded data
+    # Ensure column names match those in your CSV
+    if 'angry_word_count' in df_filtered_github.columns and \
+       'human_sum_score' in df_filtered_github.columns and \
+       'gpt_sum_score' in df_filtered_github.columns and \
+       'text' in df_filtered_github.columns:
 
-## Understanding the Output
+        texts_github = df_filtered_github['text'].values.tolist()
+        criterion_github = df_filtered_github['angry_word_count'].values.astype(float)  # X: angry word count
+        human_judgment_github = df_filtered_github['human_sum_score'].values.astype(float)  # HU: human ratings
+        ai_judgment_github = df_filtered_github['gpt_sum_score'].values.astype(float)  # AI: GPT ratings
 
-HAAM reveals how perceivers achieve accuracy:
+        haam_github = HAAM(
+            criterion=criterion_github,        # X: The ground truth variable (angry word count in this case)
+            ai_judgment=ai_judgment_github,    # AI: AI system's predictions/ratings
+            human_judgment=human_judgment_github, # HU: Human ratings/judgments
+            texts=texts_github,                # Raw text data for topic modeling
+            n_components=200,                  # Number of principal components to extract
+            min_cluster_size=10,               # HDBSCAN parameter for topic clustering
+            min_samples=2,                     # HDBSCAN parameter for core points
+            umap_n_components=3,               # 3D UMAP for topic embedding
+            standardize=True,                  # Standardize variables for DML
+            sample_split_post_lasso=False,     # Use full sample for max power
+            auto_run=True                      # Run analysis immediately
+        )
 
-- **High PoMA (>80%)**: Perceiver heavily relies on measured cue space
-- **Moderate PoMA (40-80%)**: Balanced use of measured and unmeasured information  
-- **Low PoMA (<40%)**: Perceiver uses information beyond measured cues
-
-Typically, AI shows higher PoMA (more cue-dependent) while humans show lower PoMA (more contextual processing).
-
-## Core Methods
-
-### The DML-LME Framework
-
-```python
-# Initialize with theoretical grounding
-analysis = HAAMAnalysis(
-    criterion=environmental_truth,      # Y_e: What is being judged
-    human_judgment=human_predictions,   # Y_h: Human ratings
-    ai_judgment=ai_outputs,            # Y_ai: AI predictions
-    perceptual_cues=feature_matrix,    # X: High-dimensional mediators
-    
-    # Advanced options
-    ml_method='random_forest',         # Nuisance function estimator
-    n_folds=5,                        # Cross-fitting folds
-    n_bootstrap=1000,                 # Bootstrap iterations
-    confidence_level=0.95             # CI coverage
-)
-
-# Get detailed decomposition
-decomposition = analysis.get_accuracy_decomposition()
-print(f"Total Effect: {decomposition['total_effect']:.3f}")
-print(f"Direct Effect: {decomposition['direct_effect']:.3f}")  
-print(f"Indirect Effect: {decomposition['indirect_effect']:.3f}")
-```
-
-### Visualization Suite
-
-```python
-# 3D UMAP with PC arrows showing perceptual dimensions
-analysis.create_3d_umap_with_pc_arrows(top_pcs=5)
-
-# Word clouds for each principal component
-analysis.create_pc_wordclouds(pc_indices=[0, 1, 2, 3, 4])
-
-# Framework diagram showing mediation pathways
-analysis.create_main_visualization()
-
-# Comprehensive grid of all 200 PCs
-analysis.create_mini_grid()
-```
-
-### Statistical Analysis
-
-```python
-# Full statistical report
-stats = analysis.get_statistical_summary()
-
-# Includes:
-# - Correlations (achievement accuracy)
-# - Cross-validated R² for all models
-# - Post-lasso regression coefficients
-# - PoMA (Percentage of Mediated Accuracy)
-# - Lens model statistics (G, C, RX, RY)
-```
-
-## Advanced Usage
-
-### Working with Text Data
-
-```python
-# HAAM automatically extracts features from text
-analysis = HAAMAnalysis(
-    criterion=labels,
-    human_judgment=human_ratings,
-    ai_judgment=gpt_outputs,
-    texts=documents,  # Raw text input
-    embedding_model='sentence-transformers/all-MiniLM-L6-v2'
-)
-
-# Access extracted topics
-topics = analysis.get_topic_labels()
-```
-
-### Custom Principal Component Analysis
-
-```python
-# Name your PCs for better interpretability
-pc_names = {
-    0: "Formality",
-    1: "Complexity",  
-    2: "Emotional Tone",
-    3: "Technicality"
-}
-
-analysis.create_main_visualization(pc_names=pc_names)
-```
-
-### Exporting Results
-
-```python
-# Export comprehensive results
-analysis.export_all_results('./output/')
-
-# Creates:
-# - coefficients.csv (PC loadings)
-# - metrics_summary.json (all statistics)
-# - visualizations/ (all plots)
-# - topic_analysis/ (word clouds, topic labels)
+        results_github = haam_github.create_comprehensive_pc_analysis(
+            #pc_indices=specific_pcs,          # Which PCs to analyze (commented = use first 15)
+            k_topics=3,                        # Number of topics per pole in word clouds
+            max_words=100,                     # Maximum words per word cloud
+            generate_wordclouds=True,          # Create word cloud table (like your Colab script)
+            generate_3d_umap=True,             # Create 3D UMAP with PC arrows
+            umap_arrow_k=1,                    # Single topic endpoints for arrows (clean visualization)
+            show_data_counts=True,             # Show "HU: n=3" warnings for sparse data
+            output_dir='haam_wordclouds_final_aligned_sparse_github', # Output directory
+            display=True                       # Show plots in notebook/colab
+            )
 ```
 
 ## Theoretical Background
