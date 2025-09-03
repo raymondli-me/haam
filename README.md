@@ -1,17 +1,23 @@
-# HAAM: Human-AI Accuracy Model
+# HAAM: Human-AI Alignment Model
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://raymondli-me.github.io/haam/)
 
-Implementation of the Double Machine Learning Lens Model Equation (DML-LME) for analyzing perceptual accuracy in high-dimensional settings. HAAM quantifies how humans and AI systems achieve accuracy when making judgments, decomposing their decision-making processes into interpretable components.
+
+> **🔄 From Accuracy to Alignment**  
+> *Formerly the Human-AI Accuracy Model, HAAM has evolved to better reflect its true purpose: measuring perceptual **alignment** between humans and AI. While accuracy tells us if humans and AI reach the same conclusions, alignment reveals whether they're seeing the world through the same lens—a critical distinction for trustworthy AI.*
+
+
+
+Implementation of the Double Machine Learning Lens Model Equation (DML-LME) for analyzing perceptual Alignment in high-dimensional settings. HAAM quantifies how humans and AI systems achieve Alignment when making judgments, decomposing their decision-making processes into interpretable components.
 
 ## What is HAAM?
 
-The **Human-AI Accuracy Model** addresses a fundamental question: When humans and AI achieve similar accuracy levels, are they using the same perceptual cues and cognitive strategies? 
+The **Human-AI Alignment Model** addresses a fundamental question: When humans and AI achieve similar Alignment levels, are they using the same perceptual cues and cognitive strategies? 
 
 HAAM provides a rigorous statistical framework to:
-- Decompose judgment accuracy into direct and mediated pathways
+- Decompose judgment Alignment into direct and mediated pathways
 - Quantify the **Percentage of Mediated Accuracy (PoMA)** for any perceiver
 - Compare how humans vs AI utilize high-dimensional perceptual features
 - Handle thousands of features using debiased machine learning
@@ -19,7 +25,7 @@ HAAM provides a rigorous statistical framework to:
 ## Key Features
 
 - **🎯 DML-LME Implementation**: Double Machine Learning Lens Model Equation for high-dimensional perception
-- **📊 PoMA Calculation**: Quantify what percentage of accuracy flows through measured perceptual cues
+- **📊 PoMA Calculation**: Quantify what percentage of Alignment flows through measured perceptual cues
 - **🧠 Human-AI Comparison**: Statistical framework for comparing perceptual strategies
 - **📈 Rich Visualizations**: 3D UMAP projections, PCA analysis, word clouds
 - **🔍 Topic Modeling**: Automatic discovery and labeling of content themes via BERTopic
@@ -111,7 +117,7 @@ if df_filtered_github is not None:
 
 ## Theoretical Background
 
-HAAM implements the framework that is described in an upcoming research paper, _High-Dimensional Perception with the Double Machine Learning Lens Model Equation (DML-LME)._ 
+HAAM implements the framework that is described in an upcoming research paper, _High-Dimensional Perception with the Double Machine Learning Lens Model Equation (DML-LME). 
 
 The method combines:
 1. **Brunswik's Lens Model** - Perceptual cues mediate between environment and judgment
@@ -122,7 +128,7 @@ The method combines:
 
 ```bibtex
 @software{haam_package,
-  title={HAAM: Human-AI Accuracy Model},
+  title={HAAM: Human-AI Alignment Model},
   author={[Raymond Li]},
   year={2025},
   version={1.0},
