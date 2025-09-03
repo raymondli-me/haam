@@ -129,7 +129,7 @@ The method combines:
 ```bibtex
 @software{haam_package,
   title={HAAM: Human-AI Alignment Model},
-  author={[Raymond Li]},
+  author={Raymond Li},
   year={2025},
   version={1.0},
   url={https://github.com/raymondli-me/haam}
