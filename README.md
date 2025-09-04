@@ -10,7 +10,7 @@
 
 
 
-Implementation of the Double Machine Learning Lens Model Equation (DML-LME) for analyzing perceptual Alignment in high-dimensional settings. HAAM quantifies how humans and AI systems achieve Alignment when making judgments, decomposing their decision-making processes into interpretable components.
+Implementation of the Double Machine Learning Lens Model (DML-LM) for analyzing perceptual Alignment in high-dimensional settings. HAAM quantifies how humans and AI systems achieve Alignment when making judgments, decomposing their decision-making processes into interpretable components.
 
 ## What is HAAM?
 
@@ -24,7 +24,7 @@ HAAM provides a rigorous statistical framework to:
 
 ## Key Features
 
-- **🎯 DML-LME Implementation**: Double Machine Learning Lens Model Equation for high-dimensional perception
+- **🎯 DML-LM Implementation**: Double Machine Learning Lens Model for high-dimensional perception
 - **📊 PoMA Calculation**: Quantify what percentage of Alignment flows through measured perceptual cues
 - **🧠 Human-AI Comparison**: Statistical framework for comparing perceptual strategies
 - **📈 Rich Visualizations**: 3D UMAP projections, PCA analysis, word clouds
@@ -117,7 +117,7 @@ if df_filtered_github is not None:
 
 ## Theoretical Background
 
-HAAM implements the framework that is described in an upcoming research paper, _High-Dimensional Perception with the Double Machine Learning Lens Model Equation (DML-LME). 
+HAAM implements the framework that is described in an upcoming research paper, _High-Dimensional Perception with the Double Machine Learning Lens Model (DML-LM). 
 
 The method combines:
 1. **Brunswik's Lens Model** - Perceptual cues mediate between environment and judgment
