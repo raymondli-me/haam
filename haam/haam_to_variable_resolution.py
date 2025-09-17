@@ -423,8 +423,8 @@ class HAAMToVariableResolution:
         # Get clustering info
         clusters = None
         if hasattr(self.haam, 'topic_analyzer') and self.haam.topic_analyzer:
-            if hasattr(self.haam.topic_analyzer, 'clusters'):
-                clusters = self.haam.topic_analyzer.clusters
+            if hasattr(self.haam.topic_analyzer, 'cluster_labels'):
+                clusters = self.haam.topic_analyzer.cluster_labels
                 
         # Get positions
         positions = None
@@ -455,16 +455,23 @@ class HAAMToVariableResolution:
             # Add cluster info
             if clusters is not None and i in clusters:
                 cluster_id = clusters[i]
+                # Use c-TF-IDF keywords for cluster label if available
+                cluster_label = f"Topic {cluster_id}" if cluster_id != -1 else "Outlier"
+                if hasattr(self.haam, 'topic_analyzer') and self.haam.topic_analyzer and hasattr(self.haam.topic_analyzer, 'topic_keywords') and cluster_id in self.haam.topic_analyzer.topic_keywords:
+                    cluster_label = self.haam.topic_analyzer.topic_keywords[cluster_id]
+                
                 item["cluster"] = {
                     "id": int(cluster_id) if cluster_id != -1 else -1,
-                    "label": f"Topic {cluster_id}" if cluster_id != -1 else "Outlier"
+                    "label": cluster_label
                 }
                 
-                # Add topic label if available
+                # Add topic label if available (fallback for representative docs)
                 if hasattr(self.haam, 'topic_summaries') and cluster_id in self.haam.topic_summaries:
                     summary = self.haam.topic_summaries[cluster_id]
                     if 'representative_docs' in summary and i in summary['representative_docs']:
-                        item["cluster"]["label"] = summary.get('label', f"Topic {cluster_id}")
+                        # Only override if we don't have c-TF-IDF keywords
+                        if cluster_label.startswith("Topic "):
+                            item["cluster"]["label"] = summary.get('label', cluster_label)
                         item["cluster"]["confidence"] = 0.9  # High confidence for representative docs
             
             # Add position
