@@ -135,21 +135,24 @@ def main():
     positions = None
     
     if hasattr(haam, 'topic_analyzer') and haam.topic_analyzer:
-        if hasattr(haam.topic_analyzer, 'clusters'):
+        if hasattr(haam.topic_analyzer, 'cluster_labels'):
             # Create cluster dictionary
-            cluster_ids = haam.topic_analyzer.clusters
+            cluster_ids = haam.topic_analyzer.cluster_labels
             unique_clusters = np.unique(cluster_ids)
             
-            # Get topic labels from topic summaries
+            # Get topic labels from topic keywords
             cluster_labels = {}
-            if hasattr(haam, 'topic_summaries'):
+            if hasattr(haam.topic_analyzer, 'topic_keywords'):
                 for cluster_id in unique_clusters:
-                    if cluster_id in haam.topic_summaries:
-                        # Use first few keywords as label
-                        keywords = haam.topic_summaries[cluster_id].get('keywords', [])[:3]
-                        cluster_labels[cluster_id] = ' '.join(keywords) if keywords else f"Topic {cluster_id}"
+                    if cluster_id in haam.topic_analyzer.topic_keywords:
+                        # Use the keyword string from TopicAnalyzer
+                        cluster_labels[cluster_id] = haam.topic_analyzer.topic_keywords[cluster_id]
                     else:
                         cluster_labels[cluster_id] = f"Topic {cluster_id}" if cluster_id != -1 else "Outlier"
+            else:
+                # Fallback if no topic_keywords available
+                for cluster_id in unique_clusters:
+                    cluster_labels[cluster_id] = f"Topic {cluster_id}" if cluster_id != -1 else "Outlier"
             
             clusters = {
                 "ids": cluster_ids,
