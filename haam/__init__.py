@@ -6,6 +6,8 @@ from .haam_topics import TopicAnalyzer
 from .haam_visualizations import HAAMVisualizer
 from .haam_wordcloud import PCWordCloudGenerator
 from .haam_bws import HAAMwithBWS
+from .haam_to_variable_resolution import HAAMToVariableResolution, haam_to_variable_resolution
 
 __version__ = "1.2.0"
-__all__ = ["HAAM", "HAAMwithBWS", "HAAMAnalysis", "TopicAnalyzer", "HAAMVisualizer", "PCWordCloudGenerator"]
+__all__ = ["HAAM", "HAAMwithBWS", "HAAMAnalysis", "TopicAnalyzer", "HAAMVisualizer", 
+           "PCWordCloudGenerator", "HAAMToVariableResolution", "haam_to_variable_resolution"]
