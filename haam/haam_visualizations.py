@@ -2173,7 +2173,6 @@ class HAAMVisualizer:
                     <text x="0" y="25" font-size="11" fill="#334155">X model: <tspan font-weight="600">%%N_SELECTED_X%%</tspan> PCs</text>
                     <text x="0" y="45" font-size="11" fill="#334155">AI model: <tspan font-weight="600" fill="#be123c">%%N_SELECTED_AI%%</tspan> PCs</text>
                     <text x="0" y="65" font-size="11" fill="#334155">HU model: <tspan font-weight="600" fill="#d97706">%%N_SELECTED_HU%%</tspan> PCs</text>
-                    <text x="0" y="85" font-size="10" fill="#64748b" font-style="italic">(out of 200 total)</text>
                 </g>
                 
                 <!-- Footnote removed - users can add their own -->
