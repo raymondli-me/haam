@@ -4,7 +4,7 @@
 
 ## What's Included
 
-- `data.csv` - Example dataset (German hierarchy self-descriptions)
+- `data.csv` - Example dataset (German hierarchy self-descriptions from Körner et al., 2024)
 - `01_basic_example.py` - Minimal HAAM workflow (~60 lines)
 - `02_full_analysis.py` - Complete 3-construct analysis (~150 lines)
 - `03_with_visualizations.py` - Full analysis + wordclouds + UMAP + topic clustering
@@ -224,9 +224,19 @@ Settings match the paper:
 
 ## Citation
 
+### HAAM Package & Method
+
 If you use HAAM, please cite:
-- Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://osf.io/preprints/psyarxiv/ubwgk
-- GitHub: https://github.com/raymondli-me/haam
+
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://doi.org/10.31234/osf.io/ubwgk
+
+GitHub: https://github.com/raymondli-me/haam
+
+### Example Dataset
+
+The tutorial data (`data.csv`) is from:
+
+> Körner, R., Overbeck, J. R., Körner, E. K., & Schütz, A. (2024). The language of power: Interpersonal perceptions of sense of power, dominance, and prestige based on word usage. *European Journal of Personality*, *38*(5), 812–838. https://doi.org/10.1177/08902070231221346
 
 ## Questions?
 

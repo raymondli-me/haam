@@ -114,14 +114,17 @@ The tutorial includes:
 - **01_basic_example.py** - Minimal HAAM workflow (~60 lines)
 - **02_full_analysis.py** - Complete 3-construct analysis with tables
 - **03_with_visualizations.py** - Full analysis with wordclouds, UMAP, and mediation diagrams
-- **data.csv** - Example dataset from the Brunswik Newsletter analysis
+- **data.csv** - Example dataset (German hierarchy self-descriptions from Körner et al., 2024)
 
 See `tutorials/README.md` for detailed documentation.
 
-### Tutorial Reference
+### Tutorial References
 
-Based on:
-> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://osf.io/preprints/psyarxiv/ubwgk
+The tutorials demonstrate the DML-LM method described in:
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://doi.org/10.31234/osf.io/ubwgk
+
+Example data from:
+> Körner, R., Overbeck, J. R., Körner, E. K., & Schütz, A. (2024). The language of power: Interpersonal perceptions of sense of power, dominance, and prestige based on word usage. *European Journal of Personality*, *38*(5), 812–838. https://doi.org/10.1177/08902070231221346
 
 ## Mini-Example: Human-GPT Perception of Anger in Reddit Comments
 
@@ -204,10 +207,26 @@ The method combines:
 
 ## Citation
 
+If you use HAAM in your research, please cite:
+
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://doi.org/10.31234/osf.io/ubwgk
+
+```bibtex
+@misc{li2025highdimensional,
+  title={High-Dimensional Perception with the Double Machine Learning Lens Model},
+  author={Li, Raymond and Biesanz, Jeremy C.},
+  year={2025},
+  publisher={PsyArXiv},
+  doi={10.31234/osf.io/ubwgk},
+  url={https://doi.org/10.31234/osf.io/ubwgk}
+}
+```
+
+Software citation:
 ```bibtex
 @software{haam_package,
   title={HAAM: Human-AI Alignment Model},
-  author={Raymond Li},
+  author={Li, Raymond},
   year={2025},
   version={1.0},
   url={https://github.com/raymondli-me/haam}
