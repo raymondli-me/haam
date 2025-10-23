@@ -12,31 +12,109 @@
 
 ## Quick Start
 
-**Requirements:** Python 3.10 - 3.13 (Python 3.14+ not yet supported)
+### Requirements
+
+⚠️ **Python 3.10 - 3.13 ONLY** (Python 3.14+ not supported due to numba)
+
+### Setup Instructions
+
+**IMPORTANT:** You MUST use a virtual environment on macOS Sonoma+ to avoid `externally-managed-environment` errors.
 
 ```bash
-# Clone repository (if you haven't already)
+# 1. Clone repository (if you haven't already)
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Create and activate virtual environment
-python3.13 -m venv venv  # Or python3, python3.12, python3.11, python3.10
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+# 2. Check your Python version (must be 3.10-3.13)
+python3 --version
 
-# Install HAAM and dependencies
+# 3. Create virtual environment
+#    If you have Python 3.14, use python3.13 instead (see below)
+python3 -m venv venv
+
+# 4. Activate virtual environment
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+#    You should see (venv) prefix in your terminal
+
+# 5. Install HAAM and dependencies (use pip OR pip3, both work in venv)
 pip install -e . sentence-transformers
 
-# Run tutorials
+# 6. Run tutorials
 cd tutorials/ && ./run_tutorial.sh
 ```
 
-> **Note:** If you have Python 3.14, install Python 3.13 first: `brew install python@3.13`
+### If You Have Python 3.14
 
-Or run individually:
+HAAM doesn't work with Python 3.14 yet. Install Python 3.13:
+
 ```bash
-python3 01_basic_example.py       # Basic example
-python3 02_full_analysis.py        # Full analysis
-python3 03_with_visualizations.py  # With wordclouds, UMAP, topics
+# macOS
+brew install python@3.13
+
+# Then use python3.13 instead of python3
+python3.13 -m venv venv
+source venv/bin/activate
+pip install -e . sentence-transformers
+cd tutorials/ && ./run_tutorial.sh
 ```
+
+### Running Individual Scripts
+
+After setup, run tutorials individually:
+```bash
+# Make sure venv is activated first! (you should see (venv) prefix)
+python3 01_basic_example.py       # Basic example (Prestige only)
+python3 02_full_analysis.py        # Full analysis (all 3 constructs)
+python3 03_with_visualizations.py  # With wordclouds, UMAP, mediation diagrams
+```
+
+### Troubleshooting
+
+<details>
+<summary><b>❌ "Cannot install on Python version 3.14"</b></summary>
+
+HAAM requires Python 3.10-3.13 due to the numba dependency. Install Python 3.13:
+```bash
+brew install python@3.13
+python3.13 -m venv venv
+source venv/bin/activate
+pip install -e . sentence-transformers
+```
+</details>
+
+<details>
+<summary><b>❌ "externally-managed-environment"</b></summary>
+
+This means you're trying to install without a virtual environment. macOS Sonoma+ requires venv:
+```bash
+# Create venv
+python3 -m venv venv
+
+# Activate it (you'll see (venv) prefix appear)
+source venv/bin/activate
+
+# Now install
+pip install -e . sentence-transformers
+```
+</details>
+
+<details>
+<summary><b>❌ "command not found: pip"</b></summary>
+
+Two possible causes:
+1. **You haven't activated the venv** - Run `source venv/bin/activate` first
+2. **Use pip3 instead** - Some systems only have `pip3`, not `pip`
+
+After activating venv, both `pip` and `pip3` work.
+</details>
+
+<details>
+<summary><b>❌ "ModuleNotFoundError: No module named 'haam'"</b></summary>
+
+Make sure you:
+1. Ran `pip install -e .` from the main haam directory (not tutorials/)
+2. Activated the venv before running scripts
+3. Are using the same Python that created the venv
+</details>
 
 ## Data Format
 

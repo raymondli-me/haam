@@ -47,30 +47,68 @@ pip install -e .
 
 ## 🚀 Quick Start Tutorial
 
-**Requirements:** Python 3.10 - 3.13 (Python 3.14+ not yet supported due to numba)
+### Requirements
 
-Get started in just a few commands:
+⚠️ **Python 3.10 - 3.13 ONLY** (Python 3.14+ not yet supported due to numba dependency)
+
+### Installation
+
+Get started in 4 simple steps:
 
 ```bash
-# Clone and enter repository
+# 1. Clone and enter repository
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Create and activate virtual environment (use python3.13 if you have multiple versions)
-python3.13 -m venv venv  # Or python3, python3.12, python3.11, python3.10
+# 2. Create and activate virtual environment
+#    IMPORTANT: Use the python3 command that matches versions 3.10-3.13
+#    Check your version first: python3 --version
+python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install HAAM and dependencies
+# 3. Install HAAM and dependencies
 pip install -e . sentence-transformers
 
-# Run the tutorial
+# 4. Run the tutorial
 cd tutorials/ && ./run_tutorial.sh
 ```
 
-> **Note for macOS users with Python 3.14:** If you have Python 3.14, you'll need to install Python 3.13:
-> ```bash
-> brew install python@3.13
-> python3.13 -m venv venv
-> ```
+### Common Setup Issues
+
+<details>
+<summary><b>❌ "Cannot install on Python version 3.14"</b></summary>
+
+HAAM requires Python 3.10-3.13. If you have Python 3.14, install an older version:
+
+```bash
+# macOS (using Homebrew)
+brew install python@3.13
+python3.13 -m venv venv
+source venv/bin/activate
+
+# Then proceed with step 3 above
+```
+</details>
+
+<details>
+<summary><b>❌ "externally-managed-environment" error</b></summary>
+
+macOS Sonoma+ requires virtual environments (venv). Make sure you:
+1. Created a venv: `python3 -m venv venv`
+2. Activated it: `source venv/bin/activate`
+3. See `(venv)` prefix in your terminal prompt
+4. Then run: `pip install -e . sentence-transformers`
+</details>
+
+<details>
+<summary><b>❌ "command not found: pip"</b></summary>
+
+Use `pip3` instead (after activating venv):
+```bash
+pip3 install -e . sentence-transformers
+```
+
+Note: Inside an activated venv, `pip` and `pip3` both work. If you see this error, you likely forgot to activate the venv.
+</details>
 
 The tutorial includes:
 - **01_basic_example.py** - Minimal HAAM workflow (~60 lines)
