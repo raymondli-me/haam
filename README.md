@@ -50,16 +50,14 @@ pip install -e .
 Get started in 3 commands:
 
 ```bash
-# Clone the repository
-git clone https://github.com/raymondli-me/haam.git
-cd haam
+# Clone and enter repository
+git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Install HAAM and dependencies
-pip install git+https://github.com/raymondli-me/haam.git sentence-transformers
+# Install dependencies
+pip3 install sentence-transformers
 
 # Run the tutorial
-cd tutorials/
-./run_tutorial.sh
+cd tutorials/ && ./run_tutorial.sh
 ```
 
 The tutorial includes:

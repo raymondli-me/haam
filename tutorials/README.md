@@ -13,13 +13,17 @@
 ## Quick Start
 
 ```bash
-# Install HAAM from GitHub
-pip install git+https://github.com/raymondli-me/haam.git sentence-transformers
+# Clone repository (if you haven't already)
+git clone https://github.com/raymondli-me/haam.git && cd haam
+
+# Install dependencies
+pip3 install sentence-transformers
 
 # Run tutorials
-cd tutorials/
-./run_tutorial.sh
+cd tutorials/ && ./run_tutorial.sh
 ```
+
+The tutorial runner will automatically install HAAM from the local repository.
 
 Or run individually:
 ```bash

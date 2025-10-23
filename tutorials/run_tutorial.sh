@@ -18,8 +18,8 @@ fi
 
 # Check if HAAM is installed
 if ! python3 -c "import haam" &> /dev/null; then
-    echo "HAAM not found. Installing from GitHub..."
-    pip install git+https://github.com/raymondli-me/haam.git sentence-transformers
+    echo "HAAM not found. Installing from local repository..."
+    pip3 install -e .. sentence-transformers
     echo ""
 fi
 
