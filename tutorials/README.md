@@ -16,14 +16,16 @@
 # Clone repository (if you haven't already)
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Install dependencies
-pip3 install sentence-transformers
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install HAAM and dependencies
+pip install -e . sentence-transformers
 
 # Run tutorials
 cd tutorials/ && ./run_tutorial.sh
 ```
-
-The tutorial runner will automatically install HAAM from the local repository.
 
 Or run individually:
 ```bash

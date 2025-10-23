@@ -19,7 +19,11 @@ fi
 # Check if HAAM is installed
 if ! python3 -c "import haam" &> /dev/null; then
     echo "HAAM not found. Installing from local repository..."
-    pip3 install -e .. sentence-transformers
+    echo "Note: If this fails with 'externally-managed-environment', please run:"
+    echo "  python3 -m venv venv && source venv/bin/activate"
+    echo "  pip install -e .. sentence-transformers"
+    echo ""
+    pip install -e .. sentence-transformers 2>/dev/null || pip3 install -e .. sentence-transformers
     echo ""
 fi
 

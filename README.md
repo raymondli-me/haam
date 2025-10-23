@@ -47,14 +47,18 @@ pip install -e .
 
 ## 🚀 Quick Start Tutorial
 
-Get started in 3 commands:
+Get started in just a few commands:
 
 ```bash
 # Clone and enter repository
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Install dependencies
-pip3 install sentence-transformers
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install HAAM and dependencies
+pip install -e . sentence-transformers
 
 # Run the tutorial
 cd tutorials/ && ./run_tutorial.sh
