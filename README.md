@@ -45,6 +45,36 @@ cd haam
 pip install -e .
 ```
 
+## 🚀 Quick Start Tutorial
+
+Get started in 3 commands:
+
+```bash
+# Clone the repository
+git clone https://github.com/raymondli-me/haam.git
+cd haam
+
+# Install HAAM and dependencies
+pip install git+https://github.com/raymondli-me/haam.git sentence-transformers
+
+# Run the tutorial
+cd tutorials/
+./run_tutorial.sh
+```
+
+The tutorial includes:
+- **01_basic_example.py** - Minimal HAAM workflow (~60 lines)
+- **02_full_analysis.py** - Complete 3-construct analysis with tables
+- **03_with_visualizations.py** - Full analysis with wordclouds, UMAP, and mediation diagrams
+- **data.csv** - Example dataset from the Brunswik Newsletter analysis
+
+See `tutorials/README.md` for detailed documentation.
+
+### Tutorial Reference
+
+Based on:
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://osf.io/preprints/psyarxiv/ubwgk
+
 ## Mini-Example: Human-GPT Perception of Anger in Reddit Comments
 
 ```python
