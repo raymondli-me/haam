@@ -16,15 +16,16 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Check if HAAM is installed
+# Check if we need to install HAAM
 if ! python3 -c "import haam" &> /dev/null; then
-    echo "HAAM not found. Installing from local repository..."
-    echo "Note: If this fails with 'externally-managed-environment', please run:"
-    echo "  python3 -m venv venv && source venv/bin/activate"
-    echo "  pip install -e .. sentence-transformers"
+    echo "ERROR: HAAM not found."
     echo ""
-    pip install -e .. sentence-transformers 2>/dev/null || pip3 install -e .. sentence-transformers
+    echo "Please install HAAM first:"
+    echo "  cd .."
+    echo "  pip install -e . sentence-transformers"
     echo ""
+    echo "Then run this script again."
+    exit 1
 fi
 
 # Navigate to tutorial directory
