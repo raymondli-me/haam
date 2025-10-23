@@ -8,6 +8,7 @@ Uses HAAM (Human AI Accuracy Model) to reproduce results from the Brunswik Newsl
 
 import pandas as pd
 import numpy as np
+import random
 from sentence_transformers import SentenceTransformer
 from haam import HAAM
 import os
@@ -16,6 +17,7 @@ from datetime import datetime
 # Set seed for reproducibility
 RANDOM_SEED = 42
 np.random.seed(RANDOM_SEED)
+random.seed(RANDOM_SEED)
 
 print("="*80)
 print("HAAM FULL ANALYSIS - THREE HIERARCHY CONSTRUCTS")
@@ -53,6 +55,14 @@ for construct_name, self_col, judge_col, ai_col in constructs:
     Y_HU = df[judge_col].values
     Y_AI = df[ai_col].values
 
+    # Remove any NaN values
+    valid_mask = ~(np.isnan(X) | np.isnan(Y_HU) | np.isnan(Y_AI))
+    X = X[valid_mask]
+    Y_HU = Y_HU[valid_mask]
+    Y_AI = Y_AI[valid_mask]
+    embeddings_clean = embeddings[valid_mask]
+    texts_clean = [df['text'].tolist()[i] for i in range(len(df)) if valid_mask[i]]
+
     print(f"Sample size: {len(X)}")
 
     # Run HAAM
@@ -60,11 +70,13 @@ for construct_name, self_col, judge_col, ai_col in constructs:
         criterion=X,
         human_judgment=Y_HU,
         ai_judgment=Y_AI,
-        embeddings=embeddings,
-        texts=df['text'].tolist(),
+        embeddings=embeddings_clean,
+        texts=texts_clean,
         n_components=50,
         standardize=True,
         sample_split_post_lasso=False,
+        min_cluster_size=3,
+        min_samples=1,
         auto_run=True
     )
 
