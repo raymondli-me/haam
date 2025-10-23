@@ -12,12 +12,14 @@
 
 ## Quick Start
 
+**Requirements:** Python 3.10 - 3.13 (Python 3.14+ not yet supported)
+
 ```bash
 # Clone repository (if you haven't already)
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
 # Create and activate virtual environment
-python3 -m venv venv
+python3.13 -m venv venv  # Or python3, python3.12, python3.11, python3.10
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install HAAM and dependencies
@@ -26,6 +28,8 @@ pip install -e . sentence-transformers
 # Run tutorials
 cd tutorials/ && ./run_tutorial.sh
 ```
+
+> **Note:** If you have Python 3.14, install Python 3.13 first: `brew install python@3.13`
 
 Or run individually:
 ```bash

@@ -1,6 +1,6 @@
 # HAAM: Human-AI Alignment Model
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10-3.13](https://img.shields.io/badge/python-3.10--3.13-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://raymondli-me.github.io/haam/)
 
@@ -47,14 +47,16 @@ pip install -e .
 
 ## 🚀 Quick Start Tutorial
 
+**Requirements:** Python 3.10 - 3.13 (Python 3.14+ not yet supported due to numba)
+
 Get started in just a few commands:
 
 ```bash
 # Clone and enter repository
 git clone https://github.com/raymondli-me/haam.git && cd haam
 
-# Create and activate virtual environment
-python3 -m venv venv
+# Create and activate virtual environment (use python3.13 if you have multiple versions)
+python3.13 -m venv venv  # Or python3, python3.12, python3.11, python3.10
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install HAAM and dependencies
@@ -63,6 +65,12 @@ pip install -e . sentence-transformers
 # Run the tutorial
 cd tutorials/ && ./run_tutorial.sh
 ```
+
+> **Note for macOS users with Python 3.14:** If you have Python 3.14, you'll need to install Python 3.13:
+> ```bash
+> brew install python@3.13
+> python3.13 -m venv venv
+> ```
 
 The tutorial includes:
 - **01_basic_example.py** - Minimal HAAM workflow (~60 lines)
