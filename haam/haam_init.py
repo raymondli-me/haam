@@ -1401,7 +1401,278 @@ class HAAM:
             ax_subplot.set_title(f'{pole.capitalize()} (error)', fontsize=12, color=color)
         
         ax_subplot.axis('off')
-    
+
+    # ===============================================
+    # LaTeX Table Generation Methods
+    # ===============================================
+
+    def create_table_zero_order_correlations(self, trait_name: str = "Trait",
+                                             output_dir: str = "./",
+                                             display: bool = True) -> Dict[str, str]:
+        """
+        Generate Table 1: Zero-Order Correlations.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_zero_order_correlations(trait_name, output_dir, display)
+
+    def create_table_lasso_selection(self, trait_name: str = "Trait",
+                                     output_dir: str = "./",
+                                     display: bool = True) -> Dict[str, str]:
+        """
+        Generate Table 2: LASSO Feature Selection.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_lasso_selection(trait_name, output_dir, display)
+
+    def create_table_r2_and_poma(self, trait_name: str = "Trait",
+                                output_dir: str = "./",
+                                display: bool = True) -> Dict[str, str]:
+        """
+        Generate Table 3: R² and PoMA.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_r2_and_poma(trait_name, output_dir, display)
+
+    def create_table_dml_effects(self, trait_name: str = "Trait",
+                                output_dir: str = "./",
+                                display: bool = True) -> Dict[str, str]:
+        """
+        Generate Table 4: DML Effects with full regression statistics.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_dml_effects(trait_name, output_dir, display)
+
+    def create_table_g_and_c(self, trait_name: str = "Trait",
+                            output_dir: str = "./",
+                            display: bool = True) -> Dict[str, str]:
+        """
+        Generate Table 7: G and C Parameters.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_g_and_c(trait_name, output_dir, display)
+
+    def create_latex_diagram(self, trait_name: str = "Trait",
+                            n_pcs: int = 15,
+                            output_dir: str = "./",
+                            display: bool = True) -> Dict[str, str]:
+        """
+        Generate Figure 1: TikZ HAAM Diagram.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        n_pcs : int
+            Number of top PCs to show in diagram
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_latex_diagram(trait_name, n_pcs, output_dir, display)
+
+    def create_table_pc_coefficients_comprehensive(self, trait_name: str = "Trait",
+                                                   min_trisum: float = 0.0,
+                                                   output_dir: str = "./",
+                                                   display: bool = True) -> Dict[str, str]:
+        """
+        Generate comprehensive PC coefficients table (multi-page).
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        min_trisum : float
+            Minimum tri-sum threshold for including PCs
+        output_dir : str
+            Directory to save the LaTeX file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_pc_coefficients_comprehensive(
+            trait_name, min_trisum, output_dir, display
+        )
+
+    def create_all_latex_tables(self, trait_name: str = "Trait",
+                               n_pcs_diagram: int = 15,
+                               min_trisum: float = 0.0,
+                               output_dir: str = "./",
+                               display: bool = True) -> Dict[str, str]:
+        """
+        Generate all LaTeX tables and figures at once.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        n_pcs_diagram : int
+            Number of PCs to show in the TikZ diagram
+        min_trisum : float
+            Minimum tri-sum for comprehensive PC table
+        output_dir : str
+            Directory to save all LaTeX files
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with all file paths
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+
+        os.makedirs(output_dir, exist_ok=True)
+        results = {}
+
+        if display:
+            print(f"\nGenerating LaTeX tables for {trait_name}...")
+
+        # Table 1: Zero-Order Correlations
+        try:
+            results.update(self.create_table_zero_order_correlations(trait_name, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Table 1 skipped: {str(e)}")
+
+        # Table 2: LASSO Selection
+        try:
+            results.update(self.create_table_lasso_selection(trait_name, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Table 2 skipped: {str(e)}")
+
+        # Table 3: R² and PoMA
+        try:
+            results.update(self.create_table_r2_and_poma(trait_name, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Table 3 skipped: {str(e)}")
+
+        # Table 4: DML Effects
+        try:
+            results.update(self.create_table_dml_effects(trait_name, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Table 4 skipped: {str(e)}")
+
+        # Table 7: G and C
+        try:
+            results.update(self.create_table_g_and_c(trait_name, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Table 7 skipped: {str(e)}")
+
+        # Figure 1: TikZ Diagram
+        try:
+            results.update(self.create_latex_diagram(trait_name, n_pcs_diagram, output_dir, display))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ Diagram skipped: {str(e)}")
+
+        # Comprehensive PC Table
+        try:
+            results.update(self.create_table_pc_coefficients_comprehensive(
+                trait_name, min_trisum, output_dir, display
+            ))
+        except Exception as e:
+            if display:
+                print(f"  ⚠ PC table skipped: {str(e)}")
+
+        if display:
+            print(f"✓ LaTeX generation complete! Files saved to: {output_dir}")
+
+        return results
+
     def export_all_results(self, output_dir: Optional[str] = None) -> Dict[str, str]:
         """
         Export all results and create all visualizations.
