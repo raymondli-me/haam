@@ -2401,4 +2401,888 @@ class HAAMVisualizer:
         }
     </script>
 </body>
-</html>'''
+</html>'''"""
+LaTeX Diagram Generation Methods for HAAM
+==========================================
+
+Methods to add to HAAMVisualizer class in haam_visualizations.py
+"""
+
+def create_latex_diagram(
+    self,
+    trait_name: str = "Trait",
+    output_dir: str = "./",
+    n_pcs: int = 15,
+    coef_threshold: float = 0.05,
+    render_pdf: bool = False,
+    display: bool = True
+) -> Dict[str, str]:
+    """
+    Generate a publication-ready LaTeX/TikZ diagram of the HAAM model.
+
+    Parameters
+    ----------
+    trait_name : str
+        Name of the trait being analyzed (e.g., "Extraversion", "Power")
+    output_dir : str
+        Directory to save the .tex file
+    n_pcs : int
+        Number of top PCs to display in the diagram (default: 15)
+    coef_threshold : float
+        Threshold for showing coefficients (below this shows "--")
+    render_pdf : bool
+        Whether to attempt PDF rendering (requires pdflatex)
+    display : bool
+        Whether to print status messages
+
+    Returns
+    -------
+    Dict[str, str]
+        Dictionary with 'tex_path' and optionally 'pdf_path' keys
+    """
+
+    # Create output directory
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Extract metrics
+    metrics = self._calculate_visualization_metrics()
+
+    # Get PC coefficients and rank by tri-mode sum
+    pc_data = self._get_ranked_pcs_trisum(n_pcs=n_pcs, coef_threshold=coef_threshold)
+
+    # Get total number of components
+    n_components_total = self.results.get('pca_params', {}).get('n_components', 50)
+
+    # Generate LaTeX content
+    latex_content = self._generate_latex_tikz(
+        trait_name=trait_name,
+        metrics=metrics,
+        pc_data=pc_data,
+        n_components_total=n_components_total
+    )
+
+    # Save .tex file
+    tex_filename = f"haam_diagram_{trait_name.lower().replace(' ', '_')}.tex"
+    tex_path = os.path.join(output_dir, tex_filename)
+
+    with open(tex_path, 'w', encoding='utf-8') as f:
+        f.write(latex_content)
+
+    if display:
+        print(f"✓ LaTeX diagram saved to: {tex_path}")
+
+    result = {'tex_path': tex_path}
+
+    # Optional: Attempt PDF rendering
+    if render_pdf:
+        pdf_path = self._render_latex_to_pdf(tex_path, display=display)
+        if pdf_path:
+            result['pdf_path'] = pdf_path
+
+    return result
+
+
+def _get_ranked_pcs_trisum(
+    self,
+    n_pcs: int = 15,
+    coef_threshold: float = 0.05
+) -> List[Dict[str, Any]]:
+    """
+    Get top N PCs ranked by sum of absolute coefficients across X, AI, HU.
+
+    Parameters
+    ----------
+    n_pcs : int
+        Number of top PCs to return
+    coef_threshold : float
+        Threshold for displaying coefficients (below this shows "--")
+
+    Returns
+    -------
+    List[Dict[str, Any]]
+        List of dicts with 'pc_num', 'coef_x', 'coef_ai', 'coef_hu', 'tri_sum'
+    """
+
+    debiased = self.results.get('debiased_lasso', {})
+
+    # Get coefficients for each outcome
+    coefs_x = debiased.get('X', {}).get('coefs_std', np.array([]))
+    coefs_ai = debiased.get('AI', {}).get('coefs_std', np.array([]))
+    coefs_hu = debiased.get('HU', {}).get('coefs_std', np.array([]))
+
+    # Ensure arrays have same length
+    max_len = max(len(coefs_x), len(coefs_ai), len(coefs_hu))
+    if len(coefs_x) < max_len:
+        coefs_x = np.pad(coefs_x, (0, max_len - len(coefs_x)))
+    if len(coefs_ai) < max_len:
+        coefs_ai = np.pad(coefs_ai, (0, max_len - len(coefs_ai)))
+    if len(coefs_hu) < max_len:
+        coefs_hu = np.pad(coefs_hu, (0, max_len - len(coefs_hu)))
+
+    # Calculate tri-mode sum (sum of absolute values)
+    tri_sums = np.abs(coefs_x) + np.abs(coefs_ai) + np.abs(coefs_hu)
+
+    # Get indices of top N PCs
+    top_indices = np.argsort(tri_sums)[::-1][:n_pcs]
+
+    # Build result list
+    pc_list = []
+    for idx in top_indices:
+        pc_num = idx + 1  # PC numbering starts at 1
+
+        # Get coefficients
+        coef_x = coefs_x[idx]
+        coef_ai = coefs_ai[idx]
+        coef_hu = coefs_hu[idx]
+
+        pc_list.append({
+            'pc_num': pc_num,
+            'coef_x': coef_x,
+            'coef_ai': coef_ai,
+            'coef_hu': coef_hu,
+            'tri_sum': tri_sums[idx],
+            'coef_x_str': self._format_coef(coef_x, coef_threshold),
+            'coef_ai_str': self._format_coef(coef_ai, coef_threshold),
+            'coef_hu_str': self._format_coef(coef_hu, coef_threshold)
+        })
+
+    return pc_list
+
+
+def _format_coef(self, coef: float, threshold: float = 0.05) -> str:
+    """Format coefficient for display: .XX or --"""
+    if np.abs(coef) < threshold:
+        return "--"
+    else:
+        return f"{coef:.2f}"
+
+
+def _generate_latex_tikz(
+    self,
+    trait_name: str,
+    metrics: Dict[str, float],
+    pc_data: List[Dict[str, Any]],
+    n_components_total: int = 50
+) -> str:
+    """
+    Generate the complete LaTeX/TikZ code for the HAAM diagram.
+
+    Parameters
+    ----------
+    trait_name : str
+        Name of the trait
+    metrics : Dict[str, float]
+        Extracted metrics from _calculate_visualization_metrics()
+    pc_data : List[Dict]
+        Ranked PC data from _get_ranked_pcs_trisum()
+    n_components_total : int
+        Total number of PCs used in the analysis
+
+    Returns
+    -------
+    str
+        Complete LaTeX document
+    """
+
+    # Extract key metrics
+    r2_x = metrics.get('r2_x', 0.0)
+    r2_ai = metrics.get('r2_ai', 0.0)
+    r2_hu = metrics.get('r2_hu', 0.0)
+
+    # Total effects (these are the simple regression coefficients)
+    te_x_ai = metrics.get('total_effect_x_ai', 0.0)
+    te_x_hu = metrics.get('total_effect_x_hu', 0.0)
+    te_hu_ai = metrics.get('total_effect_hu_ai', 0.0)
+
+    # Residual correlations
+    c_x_ai = metrics.get('c_x_ai', 0.0)
+    c_x_hu = metrics.get('c_x_hu', 0.0)
+    c_hu_ai = metrics.get('c_ai_hu', 0.0)  # Note: AI_HU in results
+
+    # PoMA values
+    poma_ai = metrics.get('poma_ai', 0.0)
+    poma_hu = metrics.get('poma_hu', 0.0)
+    poma_hu_ai = metrics.get('poma_hu_ai', 0.0)
+
+    # Unmediated percentages (for arrows)
+    unmed_x_ai = 100.0 - poma_ai
+    unmed_x_hu = 100.0 - poma_hu
+    unmed_hu_ai = 100.0 - poma_hu_ai
+
+    # Generate PC entries for the perception space box
+    pc_entries = []
+    for i, pc in enumerate(pc_data):
+        pc_num = pc['pc_num']
+        c_x = pc['coef_x_str']
+        c_ai = pc['coef_ai_str']
+        c_hu = pc['coef_hu_str']
+
+        # Format: PCX on one line, coefficients on next line, then spacing
+        if i < len(pc_data) - 1:
+            pc_entry = f"\\textbf{{PC{pc_num}}}\\\\[0.5pt]\n({c_x} {c_ai} {c_hu})\\\\[0.5pt]"
+        else:
+            pc_entry = f"\\textbf{{PC{pc_num}}}\\\\[0.5pt]\n({c_x} {c_ai} {c_hu})\\\\[1pt]"
+
+        pc_entries.append(pc_entry)
+
+    pc_content = "\n".join(pc_entries)
+
+    # Determine significance stars for total effects
+    # For now, assume *** for all (p < .001)
+    sig_x_ai = "***"
+    sig_x_hu = "***"
+    sig_hu_ai = "***"
+
+    # Generate LaTeX document
+    latex_doc = f"""\\documentclass[11pt]{{article}}
+\\usepackage{{tikz}}
+\\usepackage{{amsmath}}
+\\usepackage{{amssymb}}
+\\usepackage{{setspace}}
+\\usepackage{{threeparttable}}
+\\usepackage{{float}}
+\\usepackage[margin=1in]{{geometry}}
+
+\\begin{{document}}
+
+\\begin{{figure}}[H]
+\\begin{{singlespace}}
+\\caption{{The HAAM Model Decomposing AI and Human Judgment: {trait_name}}}
+\\begin{{threeparttable}}
+\\label{{fig:{trait_name.lower().replace(' ', '_')}}}
+
+\\begin{{tikzpicture}}[
+  scale=1.2,
+  every node/.style={{font=\\normalsize}}
+]
+
+% X node - {trait_name}
+\\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (X)
+  at (-1.5,0.6) {{X}};
+
+% R-squared for PCs predicting X - below
+\\node[font=\\scriptsize] at (X.south) [below=0.1cm] {{$R^2_{{CV}}={r2_x:.3f}$}};
+
+% Y nodes - AI and HU
+\\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (Y1)
+  at (7.6,2.7) {{AI}};
+
+\\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (Y2)
+  at (7.6,-1.5) {{HU}};
+
+% R-squared annotations
+\\node[font=\\scriptsize] at (Y1.south) [below=0.1cm] {{$R^2_{{CV}}={r2_ai:.3f}$}};
+\\node[font=\\scriptsize] at (Y2.north) [above=0.1cm] {{$R^2_{{CV}}={r2_hu:.3f}$}};
+
+% m0(Z) centered vertically with perception space
+\\node[color=black] (m0) at (0.2,0.6) {{$\\hat{{m}}_0(Z)$}};
+
+% g0(Z) functions - vertically balanced
+\\node[color=black] (g01) at (5.9,2.7) {{$\\hat{{g}}_{{01}}(Z)$}};
+\\node[color=black] (g02) at (5.9,-1.5) {{$\\hat{{g}}_{{02}}(Z)$}};
+
+% Perception Space - large vertical rectangle
+\\node[draw, rectangle, minimum width=2.6cm, minimum height=9.1cm, line width=1pt] (PerceptionSpace)
+  at (3.05,0.6) {{}};
+
+% PC content centered in box
+\\node[align=center, font=\\tiny] at (3.05, 0.5) {{
+{pc_content}
+\\vdots\\\\[1pt]
+{n_components_total} Total PCs\\\\
+(X AI HU)
+}};
+
+% Residual circles - positioned relative to Y nodes
+\\node[draw, circle, minimum size=6mm] (ex)
+  at (-3.5,0.6) {{$\\epsilon_X$}};
+\\node[draw, circle, minimum size=6mm] (ey1)
+  at (7.6,4.8) {{$\\epsilon_{{AI}}$}};
+\\node[draw, circle, minimum size=6mm] (ey2)
+  at (7.6,-3.6) {{$\\epsilon_{{HU}}$}};
+
+% Residual correlation arrows with values and unmediated percentages
+% X -> AI residual path
+\\draw[->, line width=1pt] (ex) to[bend left=30]
+  node[above, pos=0.7, font=\\footnotesize] {{{c_x_ai:.3f} ({unmed_x_ai:.1f}\\%)}}
+  (ey1);
+
+% X -> HU residual path
+\\draw[->, line width=1pt] (ex) to[bend right=30]
+  node[below, pos=0.7, font=\\footnotesize] {{{c_x_hu:.3f} ({unmed_x_hu:.1f}\\%)}}
+  (ey2);
+
+% HU <-> AI residual correlation
+\\draw[<->, line width=1pt] (ey1) to[bend left=30]
+  node[left, pos=0.5, font=\\footnotesize] {{{c_hu_ai:.3f} ({unmed_hu_ai:.1f}\\%)}}
+  (ey2);
+
+% Perception Space -> m0(Z) - 4 lines
+\\draw[-, line width=1pt] (PerceptionSpace.west |- 0,2.1) -- (m0.east);
+\\draw[-, line width=1pt] (PerceptionSpace.west |- 0,1.1) -- (m0.east);
+\\draw[-, line width=1pt] (PerceptionSpace.west |- 0,0.1) -- (m0.east);
+\\draw[-, line width=1pt] (PerceptionSpace.west |- 0,-0.9) -- (m0.east);
+
+% Perception Space -> g01(Z) and g02(Z) - 4 lines each
+% To g01 (top)
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,3.0) -- (g01.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,2.3) -- (g01.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,1.6) -- (g01.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,0.9) -- (g01.west);
+
+% To g02 (bottom)
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,0.3) -- (g02.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-0.4) -- (g02.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-1.1) -- (g02.west);
+\\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-1.8) -- (g02.west);
+
+% m0(Z)->X
+\\draw[->, line width=1pt] (m0.west) -- (X.east);
+
+% g0(Z)->Y connections
+\\draw[->, line width=1pt] (g01.east) -- (Y1.west);
+\\draw[->, line width=1pt] (g02.east) -- (Y2.west);
+
+% ex->X (unidirectional)
+\\draw[->, line width=1pt] (ex) -- (X.west);
+
+% ey->Y connections (unidirectional)
+\\draw[->, line width=1pt] (ey1) -- (Y1);
+\\draw[->, line width=1pt] (ey2) -- (Y2);
+
+\\end{{tikzpicture}}
+
+\\small
+\\parbox{{\\linewidth}}{{
+\\textit{{Note.}} The model displays the results of the HAAM analysis for \\textbf{{{trait_name}}} using {n_components_total} Principal Components (PCs) as language cues ($Z$). The diagram shows the cross-validated $R^2$ for validity (X = {r2_x:.3f}), AI judgments ({r2_ai:.3f}), and Human judgments ({r2_hu:.3f}). The values on the residual paths represent residual correlations (C) after controlling for PCs, with percentages showing the unmediated proportion (100\\% - PoMA). Total effects: X$\\rightarrow$AI: $r={te_x_ai:.3f}{sig_x_ai}$; X$\\rightarrow$HU: $r={te_x_hu:.3f}{sig_x_hu}$; HU$\\rightarrow$AI: $r={te_hu_ai:.3f}{sig_hu_ai}$. PoMA values: X$\\rightarrow$AI = {poma_ai:.1f}\\%; X$\\rightarrow$HU = {poma_hu:.1f}\\%; HU$\\rightarrow$AI = {poma_hu_ai:.1f}\\%. The coefficients in parentheses are post-LASSO OLS estimates (X, AI, HU). {sig_x_ai} $p < .001$.
+}}
+
+\\end{{threeparttable}}
+\\end{{singlespace}}
+\\end{{figure}}
+
+\\end{{document}}
+"""
+
+    return latex_doc
+
+
+def _render_latex_to_pdf(
+    self,
+    tex_path: str,
+    display: bool = True
+) -> Optional[str]:
+    """
+    Attempt to render LaTeX file to PDF using pdflatex.
+
+    Parameters
+    ----------
+    tex_path : str
+        Path to the .tex file
+    display : bool
+        Whether to print status messages
+
+    Returns
+    -------
+    Optional[str]
+        Path to generated PDF if successful, None otherwise
+    """
+    import subprocess
+    import shutil
+
+    # Check if pdflatex is available
+    if shutil.which('pdflatex') is None:
+        if display:
+            print("⚠ pdflatex not found. Skipping PDF rendering.")
+            print("  To render PDFs, install LaTeX:")
+            print("  - macOS: brew install basictex")
+            print("  - Ubuntu: apt-get install texlive-latex-base texlive-latex-extra")
+            print("  - Windows: Download MiKTeX from miktex.org")
+        return None
+
+    try:
+        # Get directory and filename
+        tex_dir = os.path.dirname(tex_path)
+        tex_filename = os.path.basename(tex_path)
+
+        if display:
+            print(f"🔄 Rendering PDF with pdflatex...")
+
+        # Run pdflatex twice (for references)
+        for i in range(2):
+            result = subprocess.run(
+                ['pdflatex', '-interaction=nonstopmode', tex_filename],
+                cwd=tex_dir,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+        # Check if PDF was created
+        pdf_path = tex_path.replace('.tex', '.pdf')
+        if os.path.exists(pdf_path):
+            if display:
+                print(f"✓ PDF rendered successfully: {pdf_path}")
+
+            # Clean up auxiliary files
+            for ext in ['.aux', '.log', '.out']:
+                aux_file = tex_path.replace('.tex', ext)
+                if os.path.exists(aux_file):
+                    os.remove(aux_file)
+
+            return pdf_path
+        else:
+            if display:
+                print("⚠ PDF rendering failed. Check LaTeX installation.")
+                if result.stderr:
+                    print(f"  Error: {result.stderr[:200]}")
+            return None
+
+    except subprocess.TimeoutExpired:
+        if display:
+            print("⚠ PDF rendering timed out (>30s)")
+        return None
+    except Exception as e:
+        if display:
+            print(f"⚠ PDF rendering error: {str(e)}")
+        return None
+
+
+    def create_latex_diagram(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        n_pcs: int = 15,
+        coef_threshold: float = 0.05,
+        render_pdf: bool = False,
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate a publication-ready LaTeX/TikZ diagram of the HAAM model.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed (e.g., "Extraversion", "Power")
+        output_dir : str
+            Directory to save the .tex file
+        n_pcs : int
+            Number of top PCs to display in the diagram (default: 15)
+        coef_threshold : float
+            Threshold for showing coefficients (below this shows "--")
+        render_pdf : bool
+            Whether to attempt PDF rendering (requires pdflatex)
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' and optionally 'pdf_path' keys
+        """
+
+        # Create output directory
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract metrics
+        metrics = self._calculate_visualization_metrics()
+
+        # Get PC coefficients and rank by tri-mode sum
+        pc_data = self._get_ranked_pcs_trisum(n_pcs=n_pcs, coef_threshold=coef_threshold)
+
+        # Get total number of components
+        n_components_total = self.results.get('pca_params', {}).get('n_components', 50)
+
+        # Generate LaTeX content
+        latex_content = self._generate_latex_tikz(
+            trait_name=trait_name,
+            metrics=metrics,
+            pc_data=pc_data,
+            n_components_total=n_components_total
+        )
+
+        # Save .tex file
+        tex_filename = f"haam_diagram_{trait_name.lower().replace(' ', '_')}.tex"
+        tex_path = os.path.join(output_dir, tex_filename)
+
+        with open(tex_path, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ LaTeX diagram saved to: {tex_path}")
+
+        result = {'tex_path': tex_path}
+
+        # Optional: Attempt PDF rendering
+        if render_pdf:
+            pdf_path = self._render_latex_to_pdf(tex_path, display=display)
+            if pdf_path:
+                result['pdf_path'] = pdf_path
+
+        return result
+
+
+    def _get_ranked_pcs_trisum(
+        self,
+        n_pcs: int = 15,
+        coef_threshold: float = 0.05
+    ) -> List[Dict[str, Any]]:
+        """
+        Get top N PCs ranked by sum of absolute coefficients across X, AI, HU.
+
+        Parameters
+        ----------
+        n_pcs : int
+            Number of top PCs to return
+        coef_threshold : float
+            Threshold for displaying coefficients (below this shows "--")
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            List of dicts with 'pc_num', 'coef_x', 'coef_ai', 'coef_hu', 'tri_sum'
+        """
+
+        debiased = self.results.get('debiased_lasso', {})
+
+        # Get coefficients for each outcome
+        coefs_x = debiased.get('X', {}).get('coefs_std', np.array([]))
+        coefs_ai = debiased.get('AI', {}).get('coefs_std', np.array([]))
+        coefs_hu = debiased.get('HU', {}).get('coefs_std', np.array([]))
+
+        # Ensure arrays have same length
+        max_len = max(len(coefs_x), len(coefs_ai), len(coefs_hu))
+        if len(coefs_x) < max_len:
+            coefs_x = np.pad(coefs_x, (0, max_len - len(coefs_x)))
+        if len(coefs_ai) < max_len:
+            coefs_ai = np.pad(coefs_ai, (0, max_len - len(coefs_ai)))
+        if len(coefs_hu) < max_len:
+            coefs_hu = np.pad(coefs_hu, (0, max_len - len(coefs_hu)))
+
+        # Calculate tri-mode sum (sum of absolute values)
+        tri_sums = np.abs(coefs_x) + np.abs(coefs_ai) + np.abs(coefs_hu)
+
+        # Get indices of top N PCs
+        top_indices = np.argsort(tri_sums)[::-1][:n_pcs]
+
+        # Build result list
+        pc_list = []
+        for idx in top_indices:
+            pc_num = idx + 1  # PC numbering starts at 1
+
+            # Get coefficients
+            coef_x = coefs_x[idx]
+            coef_ai = coefs_ai[idx]
+            coef_hu = coefs_hu[idx]
+
+            pc_list.append({
+                'pc_num': pc_num,
+                'coef_x': coef_x,
+                'coef_ai': coef_ai,
+                'coef_hu': coef_hu,
+                'tri_sum': tri_sums[idx],
+                'coef_x_str': self._format_coef(coef_x, coef_threshold),
+                'coef_ai_str': self._format_coef(coef_ai, coef_threshold),
+                'coef_hu_str': self._format_coef(coef_hu, coef_threshold)
+            })
+
+        return pc_list
+
+
+    def _format_coef(self, coef: float, threshold: float = 0.05) -> str:
+        """Format coefficient for display: .XX or --"""
+        if np.abs(coef) < threshold:
+            return "--"
+        else:
+            return f"{coef:.2f}"
+
+
+    def _generate_latex_tikz(
+        self,
+        trait_name: str,
+        metrics: Dict[str, float],
+        pc_data: List[Dict[str, Any]],
+        n_components_total: int = 50
+    ) -> str:
+        """
+        Generate the complete LaTeX/TikZ code for the HAAM diagram.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        metrics : Dict[str, float]
+            Extracted metrics from _calculate_visualization_metrics()
+        pc_data : List[Dict]
+            Ranked PC data from _get_ranked_pcs_trisum()
+        n_components_total : int
+            Total number of PCs used in the analysis
+
+        Returns
+        -------
+        str
+            Complete LaTeX document
+        """
+
+        # Extract key metrics
+        r2_x = metrics.get('r2_x', 0.0)
+        r2_ai = metrics.get('r2_ai', 0.0)
+        r2_hu = metrics.get('r2_hu', 0.0)
+
+        # Total effects (these are the simple regression coefficients)
+        te_x_ai = metrics.get('total_effect_x_ai', 0.0)
+        te_x_hu = metrics.get('total_effect_x_hu', 0.0)
+        te_hu_ai = metrics.get('total_effect_hu_ai', 0.0)
+
+        # Residual correlations
+        c_x_ai = metrics.get('c_x_ai', 0.0)
+        c_x_hu = metrics.get('c_x_hu', 0.0)
+        c_hu_ai = metrics.get('c_ai_hu', 0.0)  # Note: AI_HU in results
+
+        # PoMA values
+        poma_ai = metrics.get('poma_ai', 0.0)
+        poma_hu = metrics.get('poma_hu', 0.0)
+        poma_hu_ai = metrics.get('poma_hu_ai', 0.0)
+
+        # Unmediated percentages (for arrows)
+        unmed_x_ai = 100.0 - poma_ai
+        unmed_x_hu = 100.0 - poma_hu
+        unmed_hu_ai = 100.0 - poma_hu_ai
+
+        # Generate PC entries for the perception space box
+        pc_entries = []
+        for i, pc in enumerate(pc_data):
+            pc_num = pc['pc_num']
+            c_x = pc['coef_x_str']
+            c_ai = pc['coef_ai_str']
+            c_hu = pc['coef_hu_str']
+
+            # Format: PCX on one line, coefficients on next line, then spacing
+            if i < len(pc_data) - 1:
+                pc_entry = f"\\textbf{{PC{pc_num}}}\\\\[0.5pt]\n({c_x} {c_ai} {c_hu})\\\\[0.5pt]"
+            else:
+                pc_entry = f"\\textbf{{PC{pc_num}}}\\\\[0.5pt]\n({c_x} {c_ai} {c_hu})\\\\[1pt]"
+
+            pc_entries.append(pc_entry)
+
+        pc_content = "\n".join(pc_entries)
+
+        # Determine significance stars for total effects
+        # For now, assume *** for all (p < .001)
+        sig_x_ai = "***"
+        sig_x_hu = "***"
+        sig_hu_ai = "***"
+
+        # Generate LaTeX document
+        latex_doc = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{tikz}}
+    \\usepackage{{amsmath}}
+    \\usepackage{{amssymb}}
+    \\usepackage{{setspace}}
+    \\usepackage{{threeparttable}}
+    \\usepackage{{float}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{figure}}[H]
+    \\begin{{singlespace}}
+    \\caption{{The HAAM Model Decomposing AI and Human Judgment: {trait_name}}}
+    \\begin{{threeparttable}}
+    \\label{{fig:{trait_name.lower().replace(' ', '_')}}}
+
+    \\begin{{tikzpicture}}[
+      scale=1.2,
+      every node/.style={{font=\\normalsize}}
+    ]
+
+    % X node - {trait_name}
+    \\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (X)
+      at (-1.5,0.6) {{X}};
+
+    % R-squared for PCs predicting X - below
+    \\node[font=\\scriptsize] at (X.south) [below=0.1cm] {{$R^2_{{CV}}={r2_x:.3f}$}};
+
+    % Y nodes - AI and HU
+    \\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (Y1)
+      at (7.6,2.7) {{AI}};
+
+    \\node[draw, rectangle, minimum width=1.0cm, minimum height=0.8cm] (Y2)
+      at (7.6,-1.5) {{HU}};
+
+    % R-squared annotations
+    \\node[font=\\scriptsize] at (Y1.south) [below=0.1cm] {{$R^2_{{CV}}={r2_ai:.3f}$}};
+    \\node[font=\\scriptsize] at (Y2.north) [above=0.1cm] {{$R^2_{{CV}}={r2_hu:.3f}$}};
+
+    % m0(Z) centered vertically with perception space
+    \\node[color=black] (m0) at (0.2,0.6) {{$\\hat{{m}}_0(Z)$}};
+
+    % g0(Z) functions - vertically balanced
+    \\node[color=black] (g01) at (5.9,2.7) {{$\\hat{{g}}_{{01}}(Z)$}};
+    \\node[color=black] (g02) at (5.9,-1.5) {{$\\hat{{g}}_{{02}}(Z)$}};
+
+    % Perception Space - large vertical rectangle
+    \\node[draw, rectangle, minimum width=2.6cm, minimum height=9.1cm, line width=1pt] (PerceptionSpace)
+      at (3.05,0.6) {{}};
+
+    % PC content centered in box
+    \\node[align=center, font=\\tiny] at (3.05, 0.5) {{
+    {pc_content}
+    \\vdots\\\\[1pt]
+    {n_components_total} Total PCs\\\\
+    (X AI HU)
+    }};
+
+    % Residual circles - positioned relative to Y nodes
+    \\node[draw, circle, minimum size=6mm] (ex)
+      at (-3.5,0.6) {{$\\epsilon_X$}};
+    \\node[draw, circle, minimum size=6mm] (ey1)
+      at (7.6,4.8) {{$\\epsilon_{{AI}}$}};
+    \\node[draw, circle, minimum size=6mm] (ey2)
+      at (7.6,-3.6) {{$\\epsilon_{{HU}}$}};
+
+    % Residual correlation arrows with values and unmediated percentages
+    % X -> AI residual path
+    \\draw[->, line width=1pt] (ex) to[bend left=30]
+      node[above, pos=0.7, font=\\footnotesize] {{{c_x_ai:.3f} ({unmed_x_ai:.1f}\\%)}}
+      (ey1);
+
+    % X -> HU residual path
+    \\draw[->, line width=1pt] (ex) to[bend right=30]
+      node[below, pos=0.7, font=\\footnotesize] {{{c_x_hu:.3f} ({unmed_x_hu:.1f}\\%)}}
+      (ey2);
+
+    % HU <-> AI residual correlation
+    \\draw[<->, line width=1pt] (ey1) to[bend left=30]
+      node[left, pos=0.5, font=\\footnotesize] {{{c_hu_ai:.3f} ({unmed_hu_ai:.1f}\\%)}}
+      (ey2);
+
+    % Perception Space -> m0(Z) - 4 lines
+    \\draw[-, line width=1pt] (PerceptionSpace.west |- 0,2.1) -- (m0.east);
+    \\draw[-, line width=1pt] (PerceptionSpace.west |- 0,1.1) -- (m0.east);
+    \\draw[-, line width=1pt] (PerceptionSpace.west |- 0,0.1) -- (m0.east);
+    \\draw[-, line width=1pt] (PerceptionSpace.west |- 0,-0.9) -- (m0.east);
+
+    % Perception Space -> g01(Z) and g02(Z) - 4 lines each
+    % To g01 (top)
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,3.0) -- (g01.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,2.3) -- (g01.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,1.6) -- (g01.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,0.9) -- (g01.west);
+
+    % To g02 (bottom)
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,0.3) -- (g02.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-0.4) -- (g02.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-1.1) -- (g02.west);
+    \\draw[-, line width=1pt] (PerceptionSpace.east |- 0,-1.8) -- (g02.west);
+
+    % m0(Z)->X
+    \\draw[->, line width=1pt] (m0.west) -- (X.east);
+
+    % g0(Z)->Y connections
+    \\draw[->, line width=1pt] (g01.east) -- (Y1.west);
+    \\draw[->, line width=1pt] (g02.east) -- (Y2.west);
+
+    % ex->X (unidirectional)
+    \\draw[->, line width=1pt] (ex) -- (X.west);
+
+    % ey->Y connections (unidirectional)
+    \\draw[->, line width=1pt] (ey1) -- (Y1);
+    \\draw[->, line width=1pt] (ey2) -- (Y2);
+
+    \\end{{tikzpicture}}
+
+    \\small
+    \\parbox{{\\linewidth}}{{
+    \\textit{{Note.}} The model displays the results of the HAAM analysis for \\textbf{{{trait_name}}} using {n_components_total} Principal Components (PCs) as language cues ($Z$). The diagram shows the cross-validated $R^2$ for validity (X = {r2_x:.3f}), AI judgments ({r2_ai:.3f}), and Human judgments ({r2_hu:.3f}). The values on the residual paths represent residual correlations (C) after controlling for PCs, with percentages showing the unmediated proportion (100\\% - PoMA). Total effects: X$\\rightarrow$AI: $r={te_x_ai:.3f}{sig_x_ai}$; X$\\rightarrow$HU: $r={te_x_hu:.3f}{sig_x_hu}$; HU$\\rightarrow$AI: $r={te_hu_ai:.3f}{sig_hu_ai}$. PoMA values: X$\\rightarrow$AI = {poma_ai:.1f}\\%; X$\\rightarrow$HU = {poma_hu:.1f}\\%; HU$\\rightarrow$AI = {poma_hu_ai:.1f}\\%. The coefficients in parentheses are post-LASSO OLS estimates (X, AI, HU). {sig_x_ai} $p < .001$.
+    }}
+
+    \\end{{threeparttable}}
+    \\end{{singlespace}}
+    \\end{{figure}}
+
+    \\end{{document}}
+    """
+
+        return latex_doc
+
+
+    def _render_latex_to_pdf(
+        self,
+        tex_path: str,
+        display: bool = True
+    ) -> Optional[str]:
+        """
+        Attempt to render LaTeX file to PDF using pdflatex.
+
+        Parameters
+        ----------
+        tex_path : str
+            Path to the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Optional[str]
+            Path to generated PDF if successful, None otherwise
+        """
+        import subprocess
+        import shutil
+
+        # Check if pdflatex is available
+        if shutil.which('pdflatex') is None:
+            if display:
+                print("⚠ pdflatex not found. Skipping PDF rendering.")
+                print("  To render PDFs, install LaTeX:")
+                print("  - macOS: brew install basictex")
+                print("  - Ubuntu: apt-get install texlive-latex-base texlive-latex-extra")
+                print("  - Windows: Download MiKTeX from miktex.org")
+            return None
+
+        try:
+            # Get directory and filename
+            tex_dir = os.path.dirname(tex_path)
+            tex_filename = os.path.basename(tex_path)
+
+            if display:
+                print(f"🔄 Rendering PDF with pdflatex...")
+
+            # Run pdflatex twice (for references)
+            for i in range(2):
+                result = subprocess.run(
+                    ['pdflatex', '-interaction=nonstopmode', tex_filename],
+                    cwd=tex_dir,
+                    capture_output=True,
+                    text=True,
+                    timeout=30
+                )
+
+            # Check if PDF was created
+            pdf_path = tex_path.replace('.tex', '.pdf')
+            if os.path.exists(pdf_path):
+                if display:
+                    print(f"✓ PDF rendered successfully: {pdf_path}")
+
+                # Clean up auxiliary files
+                for ext in ['.aux', '.log', '.out']:
+                    aux_file = tex_path.replace('.tex', ext)
+                    if os.path.exists(aux_file):
+                        os.remove(aux_file)
+
+                return pdf_path
+            else:
+                if display:
+                    print("⚠ PDF rendering failed. Check LaTeX installation.")
+                    if result.stderr:
+                        print(f"  Error: {result.stderr[:200]}")
+                return None
+
+        except subprocess.TimeoutExpired:
+            if display:
+                print("⚠ PDF rendering timed out (>30s)")
+            return None
+        except Exception as e:
+            if display:
+                print(f"⚠ PDF rendering error: {str(e)}")
+            return None
