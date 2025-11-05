@@ -2688,7 +2688,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     % PC content centered in box
     \\node[align=center, font=\\tiny] at (3.05, 0.5) {{
     {pc_content}
-    \\vdots\\\\[1pt]
+    \\dots\\\\[1pt]
     {n_components_total} Total PCs\\\\
     (X AI HU)
     }};
@@ -2754,7 +2754,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
 
     \\small
     \\parbox{{\\linewidth}}{{
-    \\textit{{Note.}} The model displays the results of the HAAM analysis for \\textbf{{{trait_name}}} using {n_components_total} Principal Components (PCs) as language cues ($Z$). The diagram shows the cross-validated $R^2$ for validity (X = {r2_x:.3f}), AI judgments ({r2_ai:.3f}), and Human judgments ({r2_hu:.3f}). The values on the residual paths represent residual correlations (C) after controlling for PCs, with percentages showing the unmediated proportion (100\\% - PoMA). Total effects: X$\\rightarrow$AI: $r={te_x_ai:.3f}{sig_x_ai}$; X$\\rightarrow$HU: $r={te_x_hu:.3f}{sig_x_hu}$; HU$\\rightarrow$AI: $r={te_hu_ai:.3f}{sig_hu_ai}$. PoMA values: X$\\rightarrow$AI = {poma_ai:.1f}\\%; X$\\rightarrow$HU = {poma_hu:.1f}\\%; HU$\\rightarrow$AI = {poma_hu_ai:.1f}\\%. The coefficients in parentheses are post-LASSO OLS estimates (X, AI, HU). {sig_x_ai} $p < .001$.
+    \\textit{{Note.}} The model displays the results of the HAAM analysis for \\textbf{{{trait_name}}} using {n_components_total} Principal Components (PCs) as language cues ($Z$). The diagram shows the cross-validated $R^2$ for validity (X = {r2_x:.3f}), AI judgments ({r2_ai:.3f}), and Human judgments ({r2_hu:.3f}). The values on the residual paths represent residual correlations (C) after controlling for PCs, with percentages showing the unmediated proportion (100\\% - PoMA). Total effects: X$\\rightarrow$AI: $r={te_x_ai:.3f}^{{{sig_x_ai}}}$; X$\\rightarrow$HU: $r={te_x_hu:.3f}^{{{sig_x_hu}}}$; HU$\\rightarrow$AI: $r={te_hu_ai:.3f}^{{{sig_hu_ai}}}$. PoMA values: X$\\rightarrow$AI = {poma_ai:.1f}\\%; X$\\rightarrow$HU = {poma_hu:.1f}\\%; HU$\\rightarrow$AI = {poma_hu_ai:.1f}\\%. The coefficients in parentheses are post-LASSO OLS estimates (X, AI, HU). *** $p < .001$.
     }}
 
     \\end{{threeparttable}}
