@@ -585,10 +585,73 @@ print(f"✓ Saved comprehensive table: {table_path}")
 plt.show()
 
 # ==============================================================================
+# GENERATE INDIVIDUAL WORD CLOUD FILES FOR LATEX TABLE
+# ==============================================================================
+
+print("\n6. GENERATING WORD CLOUD FILES FOR LATEX TABLE...")
+print("-"*60)
+
+# Create wordclouds subdirectory
+wordcloud_subdir = os.path.join(output_dir, 'wordclouds')
+os.makedirs(wordcloud_subdir, exist_ok=True)
+
+# Generate word cloud files for all PCs
+# This saves individual pc{N}_low_wordcloud.png and pc{N}_high_wordcloud.png files
+print(f"Generating word cloud files for PCs...")
+for i in range(min(10, haam.n_components)):
+    try:
+        fig, high_path, low_path = haam.create_pc_wordclouds(
+            pc_idx=i,
+            k=3,
+            max_words=150,
+            output_dir=wordcloud_subdir,
+            display=False,
+            color_mode='validity'  # Use validity coloring to match analysis
+        )
+        print(f"  ✓ PC{i + 1}: {os.path.basename(high_path) if high_path else 'N/A'}, {os.path.basename(low_path) if low_path else 'N/A'}")
+    except Exception as e:
+        print(f"  ✗ PC{i + 1} error: {str(e)}")
+
+# ==============================================================================
+# GENERATE LATEX TABLE WITH WORD CLOUDS
+# ==============================================================================
+
+print("\n7. GENERATING LATEX TABLE WITH WORD CLOUDS...")
+print("-"*60)
+
+try:
+    result = haam.create_table_pc_coefficients_with_wordclouds(
+        trait_name="Anger",
+        output_dir=output_dir,
+        wordcloud_dir=wordcloud_subdir,
+        min_trisum=0.0,
+        image_height="0.6in",
+        display=True
+    )
+
+    if result['tex_path']:
+        print(f"\n{'='*60}")
+        print("✓ LATEX TABLE GENERATED")
+        print(f"{'='*60}")
+        print(f"File: {result['tex_path']}")
+        print(f"\nTO USE IN OVERLEAF:")
+        print(f"  1. Upload: {os.path.basename(result['tex_path'])}")
+        print(f"  2. Upload the entire 'wordclouds/' folder")
+        print(f"  3. Click 'Recompile' in Overleaf")
+        print(f"\nThe LaTeX file references images as: wordclouds/pc1_low_wordcloud.png")
+        print(f"Overleaf will find them if both files are in the project root.")
+    else:
+        print("⚠ No LaTeX table generated (no PCs selected by LASSO)")
+
+except Exception as e:
+    print(f"⚠ LaTeX generation failed: {e}")
+    print("This doesn't affect the rest of the analysis.")
+
+# ==============================================================================
 # ANALYZE ANGRY WORD DETECTION ACCURACY
 # ==============================================================================
 
-print("\n6. ANALYZING ANGRY WORD DETECTION ACCURACY...")
+print("\n8. ANALYZING ANGRY WORD DETECTION ACCURACY...")
 print("-"*60)
 
 # Compare human and AI performance
@@ -634,7 +697,7 @@ plt.show()
 # CREATE 3D VISUALIZATION
 # ==============================================================================
 
-print("\n7. CREATING 3D UMAP VISUALIZATION...")
+print("\n9. CREATING 3D UMAP VISUALIZATION...")
 print("-"*60)
 
 try:
