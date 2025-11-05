@@ -2641,15 +2641,20 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\usepackage{{setspace}}
     \\usepackage{{threeparttable}}
     \\usepackage{{float}}
+    \\usepackage{{caption}}
     \\usepackage[margin=1in]{{geometry}}
+
+    % APA style: left-aligned caption with period separator
+    \\captionsetup{{labelsep=period, justification=raggedright, singlelinecheck=false}}
 
     \\begin{{document}}
 
     \\begin{{figure}}[H]
+    \\raggedright  % Left-align entire figure
     \\begin{{singlespace}}
     \\caption{{The HAAM Model Decomposing AI and Human Judgment: {trait_name}}}
-    \\begin{{threeparttable}}
     \\label{{fig:{trait_name.lower().replace(' ', '_')}}}
+    \\begin{{threeparttable}}
 
     \\begin{{tikzpicture}}[
       scale=1.2,
@@ -3509,22 +3514,20 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\usepackage{{caption}}
     \\usepackage[margin=0.75in]{{geometry}}
 
+    % APA style: left-aligned caption with period separator
+    \\captionsetup{{labelsep=period, justification=raggedright, singlelinecheck=false}}
+
     \\begin{{document}}
 
     \\begin{{ThreePartTable}}
-    \\begin{{TableNotes}}
-    \\scriptsize
-    \\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
-    \\end{{TableNotes}}
-
-    \\begin{{longtable}}{{llrrrr}}
+    \\begin{{longtable}}{{@{{}}llrrrr@{{}}}}
     \\caption{{Principal Component Predictors of {trait_name}: Validity and Judgment Coefficients}} \\\\
     \\toprule
     PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} \\\\
     \\midrule
     \\endfirsthead
 
-    \\multicolumn{{6}}{{c}}{{{{\\tablename\\ \\thetable{{}} -- continued from previous page}}}} \\\\
+    \\multicolumn{{6}}{{l}}{{{{\\tablename\\ \\thetable{{}} -- continued from previous page}}}} \\\\
     \\toprule
     PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} \\\\
     \\midrule
@@ -3541,6 +3544,11 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     {table_content}
 
     \\end{{longtable}}
+
+    \\begin{{TableNotes}}
+    \\scriptsize
+    \\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
+    \\end{{TableNotes}}
     \\end{{ThreePartTable}}
 
     \\end{{document}}
