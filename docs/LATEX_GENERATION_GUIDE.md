@@ -804,6 +804,58 @@ p < 0.001                      # Proper less-than sign
 
 ---
 
+### Bug 7: TikZ Diagram Formatting Issues
+**Commit:** `1e24d95`
+**Date:** 2025-11-05
+
+**Problem 1: Vertical dots instead of horizontal**
+- Used `\vdots` (vertical dots) in PC list
+- Should use `\dots` (horizontal dots) for better aesthetics
+
+**Problem 2: Asterisks not superscripted**
+- Total effects showed inline asterisks: `r=0.201***`
+- Should be superscripted: `r=0.201^{***}`
+- Appeared in 3 total effect correlations in the note
+
+**Symptom:**
+```latex
+\vdots                       % Vertical dots (looks odd)
+$r=0.201***$                 % Inline asterisks (not superscripted)
+```
+
+**Root Cause:**
+```latex
+% Line 2691 (WRONG):
+\vdots\\[1pt]
+
+% Line 2757 (WRONG):
+$r={te_x_ai:.3f}{sig_x_ai}$      % Asterisks not superscripted
+
+% Should be (CORRECT):
+\dots\\[1pt]                      % Horizontal dots
+
+$r={te_x_ai:.3f}^{{{sig_x_ai}}}$  % Superscripted asterisks
+```
+
+**Why this happened:**
+- `\vdots` is for vertical ellipsis (⋮), typically used in matrices
+- `\dots` is for horizontal ellipsis (…), better for lists
+- Superscript requires `^{...}` syntax in LaTeX math mode
+
+**Fix:**
+- Changed `\vdots` to `\dots` on line 2691
+- Added `^{{{...}}}` around asterisks for 3 correlations on line 2757
+- Changed final `{sig_x_ai}` to hardcoded `***` for legend
+
+**Expected output after fix:**
+```latex
+\dots                         % Horizontal dots
+$r=0.201^{***}$              % Superscripted asterisks
+*** p < .001                  % Legend at end
+```
+
+---
+
 ## 📦 LaTeX Package Requirements
 
 All generated `.tex` files are standalone documents. Required packages:
