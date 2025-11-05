@@ -3286,3 +3286,597 @@ def _render_latex_to_pdf(
             if display:
                 print(f"⚠ PDF rendering error: {str(e)}")
             return None
+
+    def create_table_zero_order_correlations(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate Table 1: Zero-Order Correlations between Validity and Judgments.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract total effects (these are zero-order correlations)
+        te = self.results.get('total_effects', {})
+
+        r_x_ai = te.get('X_AI', {}).get('coefficient', 0.0)
+        r_x_hu = te.get('X_HU', {}).get('coefficient', 0.0)
+        r_hu_ai = te.get('HU_AI', {}).get('coefficient', 0.0)
+
+        # Get p-values for significance stars
+        p_x_ai = te.get('X_AI', {}).get('p_value', 1.0)
+        p_x_hu = te.get('X_HU', {}).get('p_value', 1.0)
+        p_hu_ai = te.get('HU_AI', {}).get('p_value', 1.0)
+
+        # Add significance stars
+        sig_x_ai = self._get_sig_stars(p_x_ai)
+        sig_x_hu = self._get_sig_stars(p_x_hu)
+        sig_hu_ai = self._get_sig_stars(p_hu_ai)
+
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{caption}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{table}}[htbp]
+    \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
+    \\caption{{Table 1. \\textit{{Zero-Order Correlations (r) Between Validity and Judgments for {trait_name}}}}}
+    \\begin{{tabular}}{{@{{}}lccc@{{}}}}
+    \\toprule
+    Construct & {{Validity -- Human}} & {{Validity -- AI}} & {{Human -- AI}} \\\\
+    \\midrule
+    {trait_name}  & {r_x_hu:.3f}{sig_x_hu} & {r_x_ai:.3f}{sig_x_ai} & {r_hu_ai:.3f}{sig_hu_ai} \\\\
+    \\bottomrule
+    \\end{{tabular}}
+    \\par
+    \\vspace{{0.1cm}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} All variables were standardized. Validity refers to the self-report measure. \\\\ *** $p < .001$, ** $p < .01$, * $p < .05$.}}
+    \\end{{table}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table1_zero_order_correlations_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Table 1 (Zero-Order Correlations) saved to: {filepath}")
+
+        return {'tex_path': filepath}
+
+
+    def create_table_lasso_selection(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate Table 2: Number of Principal Components Selected by LASSO.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract LASSO selection counts
+        debiased = self.results.get('debiased_lasso', {})
+
+        n_selected_x = debiased.get('X', {}).get('n_selected', 0)
+        n_selected_ai = debiased.get('AI', {}).get('n_selected', 0)
+        n_selected_hu = debiased.get('HU', {}).get('n_selected', 0)
+
+        # Get total number of components
+        n_total = self.results.get('pca_params', {}).get('n_components', 50)
+
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{caption}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{table}}[htbp]
+    \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
+    \\caption{{Table 2. \\textit{{Number of Principal Components Selected by LASSO Regularization for {trait_name}}}}}
+    \\begin{{tabular}}{{@{{}}lccc@{{}}}}
+    \\toprule
+    & \\multicolumn{{3}}{{c}}{{Model Predicting}} \\\\
+    \\cmidrule(lr){{2-4}}
+    Construct & {{Validity}} & {{AI Judgment}} & {{Human Judgment}} \\\\
+    \\midrule
+    {trait_name}  & {n_selected_x} / {n_total} & {n_selected_ai} / {n_total} & {n_selected_hu} / {n_total} \\\\
+    \\bottomrule
+    \\end{{tabular}}
+    \\par
+    \\vspace{{0.1cm}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} Values indicate the number of principal components (out of {n_total} total) retained by the LASSO regression model for each outcome.}}
+    \\end{{table}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table2_lasso_selection_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Table 2 (LASSO Selection) saved to: {filepath}")
+
+        return {'tex_path': filepath}
+
+
+    def create_table_r2_and_poma(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate Table 3: Cross-Validated R² and PoMA with both CV and non-CV R².
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract R² values
+        debiased = self.results.get('debiased_lasso', {})
+
+        # Cross-validated R²
+        r2_cv_x = debiased.get('X', {}).get('r2_cv', 0.0)
+        r2_cv_ai = debiased.get('AI', {}).get('r2_cv', 0.0)
+        r2_cv_hu = debiased.get('HU', {}).get('r2_cv', 0.0)
+
+        # Non-CV R² (training set performance)
+        r2_x = debiased.get('X', {}).get('r2', 0.0)
+        r2_ai = debiased.get('AI', {}).get('r2', 0.0)
+        r2_hu = debiased.get('HU', {}).get('r2', 0.0)
+
+        # Extract PoMA values
+        med = self.results.get('mediation_analysis', {})
+
+        poma_ai = 0.0
+        poma_hu = 0.0
+        poma_hu_ai = 0.0
+
+        if 'AI' in med and med['AI'] is not None:
+            total_effect = med['AI'].get('total_effect', 0)
+            indirect_effect = med['AI'].get('indirect_effect', 0)
+            if abs(total_effect) > 0:
+                poma_ai = (indirect_effect / total_effect) * 100
+
+        if 'HU' in med and med['HU'] is not None:
+            total_effect = med['HU'].get('total_effect', 0)
+            indirect_effect = med['HU'].get('indirect_effect', 0)
+            if abs(total_effect) > 0:
+                poma_hu = (indirect_effect / total_effect) * 100
+
+        if 'HU_AI' in med and med['HU_AI'] is not None:
+            total_effect = med['HU_AI'].get('total_effect', 0)
+            indirect_effect = med['HU_AI'].get('indirect_effect', 0)
+            if abs(total_effect) > 0:
+                poma_hu_ai = (indirect_effect / total_effect) * 100
+
+        # PoMA range
+        poma_values = [poma_ai, poma_hu, poma_hu_ai]
+        poma_min = min(poma_values)
+        poma_max = max(poma_values)
+
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{caption}}
+    \\usepackage{{siunitx}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{table}}[htbp]
+    \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
+    \\caption{{Table 3. \\textit{{$R^2$ and PoMA for {trait_name}}}}}
+    \\begin{{tabular}}{{@{{}}l S[table-format=-1.3] S[table-format=1.3] S[table-format=1.3] c@{{}}}}
+    \\toprule
+    & \\multicolumn{{3}}{{c}}{{$R^2$}} & \\\\
+    \\cmidrule(lr){{2-4}}
+    Metric & {{Validity}} & {{AI Perception}} & {{Human Perception}} & {{PoMA Range (\\%)}} \\\\
+    \\midrule
+    Cross-Validated & {r2_cv_x:.3f} & {r2_cv_ai:.3f} & {r2_cv_hu:.3f} & {poma_min:.1f} -- {poma_max:.1f} \\\\
+    Training Set    & {r2_x:.3f} & {r2_ai:.3f} & {r2_hu:.3f} & \\\\
+    \\bottomrule
+    \\end{{tabular}}
+    \\par
+    \\vspace{{0.1cm}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} $R^2$ values from post-LASSO models. Cross-validated $R^2$ uses 5-fold cross-validation. PoMA = Proportion of Mediated Accuracy, showing range across the three mediation paths.}}
+    \\end{{table}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table3_r2_and_poma_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Table 3 (R² and PoMA) saved to: {filepath}")
+
+        return {'tex_path': filepath}
+
+
+    def create_table_dml_effects(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate Table 4: Total (β), DML Direct (β̌), and Indirect Effects.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract total effects
+        te = self.results.get('total_effects', {})
+
+        # Helper function to extract path data
+        def get_path_data(path_key, path_label):
+            if path_key not in te:
+                return None
+
+            data = te[path_key]
+            beta = data.get('coefficient', 0.0)
+            se = data.get('se', 0.0)
+            p_val = data.get('p_value', 1.0)
+            check_beta = data.get('check_beta', 0.0)  # DML direct effect
+            check_se = data.get('check_se', se)  # Use same SE if not available
+
+            # Calculate t-statistics
+            t_beta = beta / se if se > 0 else 0.0
+            t_check = check_beta / check_se if check_se > 0 else 0.0
+
+            # Calculate p-values (two-tailed)
+            p_beta = p_val
+            p_check = 2 * (1 - stats.t.cdf(abs(t_check), df=self._get_sample_size() - 2))
+
+            # Calculate 95% CIs
+            ci_beta_lower = beta - 1.96 * se
+            ci_beta_upper = beta + 1.96 * se
+            ci_check_lower = check_beta - 1.96 * check_se
+            ci_check_upper = check_beta + 1.96 * check_se
+
+            return {
+                'label': path_label,
+                'beta': beta,
+                'se_beta': se,
+                't_beta': t_beta,
+                'p_beta': p_beta,
+                'ci_beta': (ci_beta_lower, ci_beta_upper),
+                'check_beta': check_beta,
+                'se_check': check_se,
+                't_check': t_check,
+                'p_check': p_check,
+                'ci_check': (ci_check_lower, ci_check_upper)
+            }
+
+        # Extract data for three paths
+        path_x_ai = get_path_data('X_AI', 'Validity → AI')
+        path_x_hu = get_path_data('X_HU', 'Validity → HU')
+        path_hu_ai = get_path_data('HU_AI', 'Human → AI')
+
+        # Generate table rows
+        def format_row(path_data, effect_type):
+            if effect_type == 'total':
+                est = path_data['beta']
+                se = path_data['se_beta']
+                t = path_data['t_beta']
+                p = path_data['p_beta']
+                ci = path_data['ci_beta']
+                label = f"Total ($\\beta$)"
+            else:  # direct
+                est = path_data['check_beta']
+                se = path_data['se_check']
+                t = path_data['t_check']
+                p = path_data['p_check']
+                ci = path_data['ci_check']
+                label = f"DML Direct ($\\betacheck$)"
+
+            p_str = f"{{<}}0.001" if p < 0.001 else f"{p:.3f}"
+            ci_str = f"{{[{ci[0]:.3f}, {ci[1]:.3f}]}}"
+
+            return f"               & {label:30} & {est:.3f} & {se:.3f} & {t:.2f} & \\pval{{{p_str}}} & {ci_str} \\\\"
+
+        # Build table content
+        if path_x_ai and path_x_hu and path_hu_ai:
+            row_x_ai_label = f"{path_x_ai['label']:20}"
+            row_x_ai_total = format_row(path_x_ai, 'total')
+            row_x_ai_direct = format_row(path_x_ai, 'direct')
+
+            row_x_hu_label = f"{path_x_hu['label']:20}"
+            row_x_hu_total = format_row(path_x_hu, 'total')
+            row_x_hu_direct = format_row(path_x_hu, 'direct')
+
+            row_hu_ai_label = f"{path_hu_ai['label']:20}"
+            row_hu_ai_total = format_row(path_hu_ai, 'total')
+            row_hu_ai_direct = format_row(path_hu_ai, 'direct')
+        else:
+            # Fallback if data missing
+            row_x_ai_label = "Validity → AI"
+            row_x_ai_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_x_ai_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+
+            row_x_hu_label = "Validity → HU"
+            row_x_hu_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_x_hu_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+
+            row_hu_ai_label = "Human → AI"
+            row_hu_ai_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_hu_ai_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{caption}}
+    \\usepackage{{siunitx}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    % Define pval command
+    \\newcommand{{\\pval}}[1]{{#1}}
+
+    \\begin{{document}}
+
+    \\begin{{table}}[htbp]
+    \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
+    \\caption{{Table 4. \\textit{{Total ($\\beta$), DML Direct ($\\betacheck$), and Indirect Effects for {trait_name}}}}}
+    \\begin{{tabular}}{{@{{}}ll S[round-precision=3] S[round-precision=3] S[table-format=2.2, round-precision=2] c c@{{}}}}
+    \\toprule
+    Path & Effect Type & {{Estimate}} & {{SE}} & {{$t$}} & {{$p$}} & {{95\\% CI}} \\\\
+    \\midrule
+    {row_x_ai_label}
+    {row_x_ai_total}
+    {row_x_ai_direct}
+    \\midrule
+    {row_x_hu_label}
+    {row_x_hu_total}
+    {row_x_hu_direct}
+    \\midrule
+    {row_hu_ai_label}
+    {row_hu_ai_total}
+    {row_hu_ai_direct}
+    \\bottomrule
+    \\end{{tabular}}
+    \\par
+    \\vspace{{0.1cm}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} Unstandardized coefficients from DML models. HU = Human Judgment. Indirect Effect = $\\beta - \\betacheck$.}}
+    \\end{{table}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table4_dml_effects_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Table 4 (DML Effects) saved to: {filepath}")
+
+        return {'tex_path': filepath}
+
+
+    def create_table_g_and_c(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate Table 7: Policy Similarity (G) and Residual Correlation (C).
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save the .tex file
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Extract policy similarities (G)
+        ps = self.results.get('policy_similarities', {})
+        g_x_ai = ps.get('X_AI', 0.0)
+        g_x_hu = ps.get('X_HU', 0.0)
+        g_hu_ai = ps.get('AI_HU', 0.0)
+
+        # Extract residual correlations (C)
+        rc = self.results.get('residual_correlations', {})
+        c_x_ai = rc.get('X_AI', 0.0)
+        c_x_hu = rc.get('X_HU', 0.0)
+        c_hu_ai = rc.get('AI_HU', 0.0)
+
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{caption}}
+    \\usepackage{{siunitx}}
+    \\usepackage[margin=1in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{table}}[htbp]
+    \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
+    \\caption{{Table 7. \\textit{{Policy Similarity ($G$) and Residual Correlation ($C$) Between Models for {trait_name}}}}}
+    \\begin{{tabular}}{{@{{}}lccS[round-precision=3]S[round-precision=3]@{{}}}}
+    \\toprule
+    Construct & Path & {{$G$}} & {{$C$}} \\\\
+    \\midrule
+    {trait_name}  & Validity--AI   & {g_x_ai:.3f} & {c_x_ai:.3f} \\\\
+              & Validity--Human& {g_x_hu:.3f} & {c_x_hu:.3f} \\\\
+              & Human--AI      & {g_hu_ai:.3f} & {c_hu_ai:.3f} \\\\
+    \\bottomrule
+    \\end{{tabular}}
+    \\par
+    \\vspace{{0.1cm}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} $G$ = correlation between predicted scores from two models. $C$ = correlation between the residuals of two models.}}
+    \\end{{table}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table7_g_and_c_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Table 7 (G and C Parameters) saved to: {filepath}")
+
+        return {'tex_path': filepath}
+
+
+    def create_all_latex_tables(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./latex_tables",
+        display: bool = True
+    ) -> Dict[str, Dict[str, str]]:
+        """
+        Generate all LaTeX tables for a trait.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait
+        output_dir : str
+            Directory to save all .tex files
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, Dict[str, str]]
+            Dictionary with keys for each table and their file paths
+        """
+
+        results = {}
+
+        if display:
+            print(f"\n{'='*60}")
+            print(f"Generating LaTeX Tables for {trait_name}")
+            print(f"{'='*60}\n")
+
+        results['table1'] = self.create_table_zero_order_correlations(trait_name, output_dir, display)
+        results['table2'] = self.create_table_lasso_selection(trait_name, output_dir, display)
+        results['table3'] = self.create_table_r2_and_poma(trait_name, output_dir, display)
+        results['table4'] = self.create_table_dml_effects(trait_name, output_dir, display)
+        results['table7'] = self.create_table_g_and_c(trait_name, output_dir, display)
+
+        if display:
+            print(f"\n✓ All 5 tables generated in: {output_dir}")
+
+        return results
+
+
+    # Helper methods
+    def _get_sig_stars(self, p_value: float) -> str:
+        """Get significance stars based on p-value."""
+        if p_value < 0.001:
+            return "***"
+        elif p_value < 0.01:
+            return "**"
+        elif p_value < 0.05:
+            return "*"
+        else:
+            return ""
+
+
+    def _get_sample_size(self) -> int:
+        """Get sample size from results."""
+        # Try to get from stored data
+        if hasattr(self, 'n_samples'):
+            return self.n_samples
+
+        # Try to infer from debiased_lasso results
+        debiased = self.results.get('debiased_lasso', {})
+        for outcome in ['X', 'AI', 'HU']:
+            if outcome in debiased:
+                # Try to get sample size from fitted values or residuals
+                pass
+
+        # Default fallback
+        return 500
