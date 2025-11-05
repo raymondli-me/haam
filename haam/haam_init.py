@@ -1654,7 +1654,7 @@ class HAAM:
 
         # Figure 1: TikZ Diagram
         try:
-            results.update(self.create_latex_diagram(trait_name, n_pcs_diagram, output_dir, display))
+            results.update(self.create_latex_diagram(trait_name, output_dir, n_pcs_diagram, display))
         except Exception as e:
             if display:
                 print(f"  ⚠ Diagram skipped: {str(e)}")
@@ -1662,7 +1662,7 @@ class HAAM:
         # Comprehensive PC Table
         try:
             results.update(self.create_table_pc_coefficients_comprehensive(
-                trait_name, min_trisum, output_dir, display
+                trait_name, output_dir, min_trisum, display
             ))
         except Exception as e:
             if display:
