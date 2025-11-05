@@ -752,6 +752,58 @@ In-sample       & 0.073 & 0.231 & 0.478 & \\
 
 ---
 
+### Bug 6: Table 4 LaTeX Formatting Issues
+**Commit:** `8862e61`
+**Date:** 2025-11-05
+
+**Problem 1: Invalid beta check symbol**
+- Used `\betacheck` which is not proper LaTeX command
+- Should use `\check{\beta}` for checked beta symbol
+- Appeared in 7 places: caption, label, note, fallback rows
+
+**Problem 2: Less-than sign rendering incorrectly**
+- p-value `{<}0.001` showed as upside-down exclamation mark (¡)
+- Less-than sign must be in math mode
+
+**Symptom:**
+```
+DML Direct (\betacheck)  # Invalid command
+p ¡0.001                  # Upside-down ! instead of <
+```
+
+**Root Cause:**
+```latex
+% Lines 3207, 3254, 3274 etc. (WRONG):
+DML Direct ($\betacheck$)
+Indirect Effect = $\beta - \betacheck$
+
+% Line 3209 (WRONG):
+p_str = f"{{<}}0.001" if p < 0.001 else f"{p:.3f}"
+
+% Should be (CORRECT):
+DML Direct ($\check{\beta}$)
+Indirect Effect = $\beta - \check{\beta}$
+
+p_str = f"$<$0.001" if p < 0.001 else f"{p:.3f}"
+```
+
+**Why this happened:**
+- `\betacheck` is not a standard LaTeX command
+- `\check{\beta}` is the proper LaTeX syntax for accents on symbols
+- `<` character needs math mode in LaTeX: `$<$`
+
+**Fix:**
+- Changed all 7 instances of `\betacheck` to `\check{\beta}`
+- Changed `{<}` to `$<$` for proper less-than rendering
+
+**Expected output after fix:**
+```
+DML Direct ($\check{\beta}$)  # Proper checked beta
+p < 0.001                      # Proper less-than sign
+```
+
+---
+
 ## 📦 LaTeX Package Requirements
 
 All generated `.tex` files are standalone documents. Required packages:
