@@ -856,6 +856,85 @@ $r=0.201^{***}$              % Superscripted asterisks
 
 ---
 
+### Bug 8: Non-APA Formatting (Tables and Figures)
+**Commit:** `d396788`
+**Date:** 2025-11-05
+
+**Problem 1: Caption separator using colon instead of period**
+- Captions used "Table 1:" and "Figure 1:" format
+- APA 7th edition requires "Table 1." and "Figure 1." with period
+
+**Problem 2: Comprehensive PC table note above instead of below**
+- TableNotes appeared before longtable
+- APA requires notes below the table
+
+**Problem 3: Tables and figures centered instead of left-aligned**
+- Default LaTeX centering
+- APA 7th edition requires left-alignment
+
+**Symptom:**
+```latex
+% Comprehensive PC table (WRONG):
+\begin{ThreePartTable}
+\begin{TableNotes}
+  Note text here...
+\end{TableNotes}
+\begin{longtable}{llrrrr}        % Centered, no @{}
+\caption{Table 1: Title}          % Colon separator
+
+% Figure (WRONG):
+\begin{figure}[H]
+\caption{Figure 1: Title}         % Colon separator, centered
+```
+
+**Root Cause:**
+- No `\captionsetup` for APA formatting
+- Missing `@{}` in longtable column spec for left-alignment
+- Missing `\raggedright` in figure environment
+- TableNotes positioned before table instead of after
+
+**Fix:**
+
+**Comprehensive PC Table (lines 3512-3547):**
+```latex
+% Added APA caption setup
+\captionsetup{labelsep=period, justification=raggedright, singlelinecheck=false}
+
+% Left-aligned table with @{}
+\begin{longtable}{@{}llrrrr@{}}
+\caption{Principal Component Predictors...} \\  % Period in caption
+
+% ... table content ...
+
+\end{longtable}
+
+% Note moved below table
+\begin{TableNotes}
+  \scriptsize
+  \item \textit{Note.} ...
+\end{TableNotes}
+```
+
+**TikZ Diagram (lines 2647-2657):**
+```latex
+% Added caption package and setup
+\usepackage{caption}
+\captionsetup{labelsep=period, justification=raggedright, singlelinecheck=false}
+
+\begin{figure}[H]
+\raggedright  % Left-align entire figure
+\caption{The HAAM Model...}  % Period in caption
+\label{fig:...}
+```
+
+**Expected output after fix:**
+- Caption: "Table 1." (period, left-aligned)
+- Caption: "Figure 1." (period, left-aligned)
+- Note below table
+- All content left-aligned per APA 7th edition
+
+---
+
 ## 📦 LaTeX Package Requirements
 
 All generated `.tex` files are standalone documents. Required packages:
