@@ -165,6 +165,44 @@ def organize_by_table_type(model_path: str, trait_name: str):
     return results
 
 
+# Example 5: Generate comprehensive PC coefficients table
+def generate_comprehensive_pc_table(model_path: str, trait_name: str):
+    """Generate multi-page table with ALL post-LASSO PCs."""
+
+    haam_model = HAAM.load(model_path)
+
+    # All PCs (default)
+    result = haam_model.create_table_pc_coefficients_comprehensive(
+        trait_name=trait_name,
+        output_dir="./latex_tables/comprehensive",
+        min_trisum=0.0,  # Include all
+        display=True
+    )
+
+    print(f"\n✓ Comprehensive PC table: {result['tex_path']}")
+
+    return result
+
+
+# Example 6: Filtered comprehensive table (only high-impact PCs)
+def generate_filtered_pc_table(model_path: str, trait_name: str):
+    """Generate table with only high-impact PCs (tri-sum ≥ 0.15)."""
+
+    haam_model = HAAM.load(model_path)
+
+    # Filter by tri-sum
+    result = haam_model.create_table_pc_coefficients_comprehensive(
+        trait_name=trait_name,
+        output_dir="./latex_tables/comprehensive_filtered",
+        min_trisum=0.15,  # Only PCs with substantial impact
+        display=True
+    )
+
+    print(f"\n✓ Filtered PC table: {result['tex_path']}")
+
+    return result
+
+
 if __name__ == "__main__":
     print(__doc__)
 
@@ -211,6 +249,28 @@ if __name__ == "__main__":
     #     trait_name="Dominance"
     # )
 
+    # Example 5: Comprehensive PC coefficients table
+    print("\n" + "="*60)
+    print("EXAMPLE 5: Generate comprehensive PC table (ALL PCs)")
+    print("="*60)
+
+    # Uncomment and modify path:
+    # result = generate_comprehensive_pc_table(
+    #     model_path="./path/to/model.pkl",
+    #     trait_name="Social Class"
+    # )
+
+    # Example 6: Filtered PC table
+    print("\n" + "="*60)
+    print("EXAMPLE 6: Generate filtered PC table (high-impact only)")
+    print("="*60)
+
+    # Uncomment and modify path:
+    # result = generate_filtered_pc_table(
+    #     model_path="./path/to/model.pkl",
+    #     trait_name="Power"
+    # )
+
     print("\n" + "="*60)
     print("Examples shown above. Uncomment to run.")
     print("="*60)
@@ -239,4 +299,9 @@ Available table generation methods:
 
 6. create_all_latex_tables(trait_name, output_dir, display)
    - Generates all 5 tables at once
+
+7. create_table_pc_coefficients_comprehensive(trait_name, output_dir, min_trisum, display)
+   - Comprehensive PC Coefficients Table: ALL post-LASSO PCs
+   - Multi-page support via longtable
+   - Ranked by tri-sum
 """

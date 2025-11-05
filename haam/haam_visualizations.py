@@ -3880,3 +3880,377 @@ def _render_latex_to_pdf(
 
         # Default fallback
         return 500
+
+
+    def create_table_pc_coefficients_comprehensive(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        min_trisum: float = 0.0,
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate comprehensive table of ALL post-LASSO PC coefficients.
+
+        Uses longtable for multi-page support. Shows all PCs selected by ANY outcome,
+        ranked by tri-sum (|coef_X| + |coef_AI| + |coef_HU|).
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait (e.g., "Social Class", "Power")
+        output_dir : str
+            Directory to save the .tex file
+        min_trisum : float
+            Minimum tri-sum to include (default: 0.0 = include all)
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Get ALL PCs with their coefficients and stats
+        pc_data = self._get_all_postlasso_pcs_trisum_ranked(min_trisum=min_trisum)
+
+        if len(pc_data) == 0:
+            if display:
+                print("⚠ No PCs selected by LASSO")
+            return {'tex_path': None}
+
+        # Generate table rows
+        table_rows = []
+        for i, pc in enumerate(pc_data):
+            pc_num = pc['pc_num']
+
+            # Generate 3 rows for this PC (Validity, AI, Human)
+            rows = self._generate_pc_table_rows(pc, pc_num)
+
+            # Add spacing between PCs (except after last one)
+            if i < len(pc_data) - 1:
+                rows.append("\\addlinespace[0.6em]")
+
+            table_rows.extend(rows)
+
+        table_content = "\n".join(table_rows)
+        n_pcs = len(pc_data)
+
+        # Generate LaTeX document with longtable
+        latex_content = f"""\\documentclass[11pt]{{article}}
+    \\usepackage{{booktabs}}
+    \\usepackage{{longtable}}
+    \\usepackage{{multirow}}
+    \\usepackage{{array}}
+    \\usepackage{{threeparttable}}
+    \\usepackage{{caption}}
+    \\usepackage[margin=0.75in]{{geometry}}
+
+    \\begin{{document}}
+
+    \\begin{{ThreePartTable}}
+    \\begin{{TableNotes}}
+    \\scriptsize
+    \\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
+    \\end{{TableNotes}}
+
+    \\begin{{longtable}}{{llrrrr}}
+    \\caption{{Principal Component Predictors of {trait_name}: Validity and Judgment Coefficients}} \\\\
+    \\toprule
+    PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} \\\\
+    \\midrule
+    \\endfirsthead
+
+    \\multicolumn{{6}}{{c}}{{{{\\tablename\\ \\thetable{{}} -- continued from previous page}}}} \\\\
+    \\toprule
+    PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} \\\\
+    \\midrule
+    \\endhead
+
+    \\midrule
+    \\multicolumn{{6}}{{r}}{{{{Continued on next page}}}} \\\\
+    \\endfoot
+
+    \\bottomrule
+    \\insertTableNotes
+    \\endlastfoot
+
+    {table_content}
+
+    \\end{{longtable}}
+    \\end{{ThreePartTable}}
+
+    \\end{{document}}
+    """
+
+        # Save file
+        filename = f"table_pc_coefficients_comprehensive_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ Comprehensive PC Coefficients Table saved to: {filepath}")
+            print(f"  - {n_pcs} PCs included (ranked by tri-sum)")
+            print(f"  - Multi-page support via longtable")
+
+        return {'tex_path': filepath}
+
+
+    def _get_all_postlasso_pcs_trisum_ranked(
+        self,
+        min_trisum: float = 0.0
+    ) -> List[Dict[str, Any]]:
+        """
+        Get ALL PCs selected by ANY outcome, ranked by tri-sum.
+
+        Parameters
+        ----------
+        min_trisum : float
+            Minimum tri-sum to include
+
+        Returns
+        -------
+        List[Dict[str, Any]]
+            List of PC data dicts with stats for all three outcomes
+        """
+
+        debiased = self.results.get('debiased_lasso', {})
+
+        # Get all coefficient arrays
+        coefs_x = debiased.get('X', {}).get('coefs_std', np.array([]))
+        coefs_ai = debiased.get('AI', {}).get('coefs_std', np.array([]))
+        coefs_hu = debiased.get('HU', {}).get('coefs_std', np.array([]))
+
+        # Get standard errors (if available)
+        se_x = debiased.get('X', {}).get('se', np.array([]))
+        se_ai = debiased.get('AI', {}).get('se', np.array([]))
+        se_hu = debiased.get('HU', {}).get('se', np.array([]))
+
+        # Get LASSO selected indices
+        selected_x = set(debiased.get('X', {}).get('selected_indices', []))
+        selected_ai = set(debiased.get('AI', {}).get('selected_indices', []))
+        selected_hu = set(debiased.get('HU', {}).get('selected_indices', []))
+
+        # Union of all selected PCs
+        all_selected = selected_x | selected_ai | selected_hu
+
+        if len(all_selected) == 0:
+            return []
+
+        # Ensure arrays have same length
+        max_len = max(len(coefs_x), len(coefs_ai), len(coefs_hu))
+        if len(coefs_x) < max_len:
+            coefs_x = np.pad(coefs_x, (0, max_len - len(coefs_x)))
+            se_x = np.pad(se_x, (0, max_len - len(se_x)))
+        if len(coefs_ai) < max_len:
+            coefs_ai = np.pad(coefs_ai, (0, max_len - len(coefs_ai)))
+            se_ai = np.pad(se_ai, (0, max_len - len(se_ai)))
+        if len(coefs_hu) < max_len:
+            coefs_hu = np.pad(coefs_hu, (0, max_len - len(coefs_hu)))
+            se_hu = np.pad(se_hu, (0, max_len - len(se_hu)))
+
+        # Calculate tri-sum for all selected PCs
+        pc_list = []
+        for idx in all_selected:
+            pc_num = idx + 1  # 1-indexed
+
+            # Get coefficients (or 0 if not selected)
+            coef_x = coefs_x[idx] if idx in selected_x else 0.0
+            coef_ai = coefs_ai[idx] if idx in selected_ai else 0.0
+            coef_hu = coefs_hu[idx] if idx in selected_hu else 0.0
+
+            # Calculate tri-sum
+            tri_sum = abs(coef_x) + abs(coef_ai) + abs(coef_hu)
+
+            if tri_sum < min_trisum:
+                continue
+
+            # Get SEs (or 0 if not available/selected)
+            se_x_val = se_x[idx] if idx in selected_x and len(se_x) > idx else 0.0
+            se_ai_val = se_ai[idx] if idx in selected_ai and len(se_ai) > idx else 0.0
+            se_hu_val = se_hu[idx] if idx in selected_hu and len(se_hu) > idx else 0.0
+
+            # Calculate statistics for each outcome
+            stats_x = self._calculate_pc_stats(coef_x, se_x_val, idx in selected_x)
+            stats_ai = self._calculate_pc_stats(coef_ai, se_ai_val, idx in selected_ai)
+            stats_hu = self._calculate_pc_stats(coef_hu, se_hu_val, idx in selected_hu)
+
+            pc_list.append({
+                'pc_num': pc_num,
+                'tri_sum': tri_sum,
+                'selected_x': idx in selected_x,
+                'selected_ai': idx in selected_ai,
+                'selected_hu': idx in selected_hu,
+                'x': stats_x,
+                'ai': stats_ai,
+                'hu': stats_hu
+            })
+
+        # Sort by tri-sum (descending)
+        pc_list.sort(key=lambda x: x['tri_sum'], reverse=True)
+
+        return pc_list
+
+
+    def _calculate_pc_stats(
+        self,
+        coef: float,
+        se: float,
+        is_selected: bool
+    ) -> Dict[str, Any]:
+        """
+        Calculate statistics for a single PC coefficient.
+
+        Parameters
+        ----------
+        coef : float
+            Coefficient
+        se : float
+            Standard error
+        is_selected : bool
+            Whether this PC was selected by LASSO
+
+        Returns
+        -------
+        Dict[str, Any]
+            Stats dict with coef, se, t, p, ci, sig_stars, formatted strings
+        """
+
+        if not is_selected or se == 0:
+            return {
+                'coef': 0.0,
+                'se': 0.0,
+                't': 0.0,
+                'p': 1.0,
+                'ci_lower': 0.0,
+                'ci_upper': 0.0,
+                'sig_stars': '',
+                'selected': False,
+                'coef_str': '--',
+                'se_str': '--',
+                't_str': '--',
+                'ci_str': '--'
+            }
+
+        # Calculate t-statistic
+        t = coef / se if se > 0 else 0.0
+
+        # Calculate p-value (two-tailed)
+        n = self._get_sample_size()
+        df = max(n - 2, 1)
+        p = 2 * (1 - stats.t.cdf(abs(t), df=df))
+
+        # Calculate 95% CI
+        ci_lower = coef - 1.96 * se
+        ci_upper = coef + 1.96 * se
+
+        # Get significance stars
+        sig_stars = self._get_sig_stars(p)
+
+        # Format strings
+        coef_str = f"${'-' if coef < 0 else ''}${abs(coef):.3f}"
+        se_str = f"{se:.3f}"
+        t_str = f"${'-' if t < 0 else ''}${abs(t):.2f}{sig_stars}"
+        ci_str = f"[${'-' if ci_lower < 0 else ''}${abs(ci_lower):.3f}, ${'-' if ci_upper < 0 else ''}${abs(ci_upper):.3f}]"
+
+        return {
+            'coef': coef,
+            'se': se,
+            't': t,
+            'p': p,
+            'ci_lower': ci_lower,
+            'ci_upper': ci_upper,
+            'sig_stars': sig_stars,
+            'selected': True,
+            'coef_str': coef_str,
+            'se_str': se_str,
+            't_str': t_str,
+            'ci_str': ci_str
+        }
+
+
+    def _generate_pc_table_rows(
+        self,
+        pc: Dict[str, Any],
+        pc_num: int
+    ) -> List[str]:
+        """
+        Generate the 3 table rows for a single PC.
+
+        Parameters
+        ----------
+        pc : Dict[str, Any]
+            PC data from _get_all_postlasso_pcs_trisum_ranked()
+        pc_num : int
+            PC number (1-indexed)
+
+        Returns
+        -------
+        List[str]
+            List of LaTeX table row strings
+        """
+
+        rows = []
+
+        # First row: PC label + Validity stats
+        x_stats = pc['x']
+        row1 = f"\\multirow{{3}}{{*}}[\\dimexpr-\\ht\\strutbox+18pt]{{\\textbf{{PC{pc_num}}}}} & Validity & {x_stats['coef_str']} & {x_stats['se_str']} & {x_stats['t_str']} & {x_stats['ci_str']} \\\\"
+
+        # Second row: AI stats
+        ai_stats = pc['ai']
+        row2 = f"    & AI & {ai_stats['coef_str']} & {ai_stats['se_str']} & {ai_stats['t_str']} & {ai_stats['ci_str']} \\\\"
+
+        # Third row: Human stats
+        hu_stats = pc['hu']
+        row3 = f"    & Human & {hu_stats['coef_str']} & {hu_stats['se_str']} & {hu_stats['t_str']} & {hu_stats['ci_str']} \\\\"
+
+        rows.extend([row1, row2, row3])
+
+        return rows
+
+
+    def _get_sample_size(self) -> int:
+        """
+        Get sample size from results.
+
+        Returns
+        -------
+        int
+            Sample size (defaults to 500 if not found)
+        """
+
+        # Try to get from various sources
+        if hasattr(self, 'n_samples'):
+            return self.n_samples
+
+        # Try from raw data
+        if hasattr(self, 'X') and hasattr(self.X, '__len__'):
+            return len(self.X)
+
+        # Try from results
+        debiased = self.results.get('debiased_lasso', {})
+        for outcome in ['X', 'AI', 'HU']:
+            if outcome in debiased:
+                coefs = debiased[outcome].get('coefs_std', np.array([]))
+                if len(coefs) > 0:
+                    # Assume sample size >> number of features
+                    return 500  # Safe default
+
+        return 500  # Fallback
+
+
+    def _get_sig_stars(self, p_value: float) -> str:
+        """Get significance stars based on p-value."""
+        if p_value < 0.001:
+            return "***"
+        elif p_value < 0.01:
+            return "**"
+        elif p_value < 0.05:
+            return "*"
+        else:
+            return ""
