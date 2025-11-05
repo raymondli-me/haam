@@ -3574,6 +3574,237 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         return {'tex_path': filepath}
 
 
+    def create_table_pc_coefficients_with_wordclouds(
+        self,
+        trait_name: str = "Trait",
+        output_dir: str = "./",
+        wordcloud_dir: str = None,
+        min_trisum: float = 0.0,
+        image_height: str = "1.2in",
+        display: bool = True
+    ) -> Dict[str, str]:
+        """
+        Generate comprehensive PC coefficients table with word cloud images.
+
+        Landscape orientation table showing PC coefficients alongside word cloud
+        visualizations for low and high poles of each PC.
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait (e.g., "Social Class", "Power")
+        output_dir : str
+            Directory to save the .tex file
+        wordcloud_dir : str, optional
+            Directory containing word cloud images. If None, uses
+            {output_dir}/wordclouds
+        min_trisum : float
+            Minimum tri-sum to include (default: 0.0 = include all)
+        image_height : str
+            LaTeX height specification for images (e.g., "1.2in", "30mm")
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+
+        Notes
+        -----
+        - Word cloud images must be generated first
+        - Missing images show as "N/A" (graceful degradation)
+        - Requires LaTeX packages: graphicx, pdflscape
+        - Expected image naming: pc{N}_low_wordcloud.png, pc{N}_high_wordcloud.png
+        """
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Default wordcloud directory
+        if wordcloud_dir is None:
+            wordcloud_dir = os.path.join(output_dir, "wordclouds")
+
+        # Get ALL PCs with their coefficients and stats
+        pc_data = self._get_all_postlasso_pcs_trisum_ranked(min_trisum=min_trisum)
+
+        if len(pc_data) == 0:
+            if display:
+                print("⚠ No PCs selected by LASSO")
+            return {'tex_path': None}
+
+        # Generate table rows with wordcloud images
+        table_rows = []
+        n_missing_low = 0
+        n_missing_high = 0
+
+        for i, pc in enumerate(pc_data):
+            pc_num = pc['pc_num']
+
+            # Generate 3 rows for this PC with wordcloud columns
+            rows, missing = self._generate_pc_table_rows_with_wordclouds(
+                pc, pc_num, output_dir, wordcloud_dir, image_height
+            )
+
+            n_missing_low += missing['low']
+            n_missing_high += missing['high']
+
+            # Add spacing between PCs (except after last one)
+            if i < len(pc_data) - 1:
+                rows.append("\\addlinespace[0.6em]")
+
+            table_rows.extend(rows)
+
+        table_content = "\n".join(table_rows)
+        n_pcs = len(pc_data)
+
+        # Generate LaTeX document with landscape longtable
+        latex_content = f"""\\documentclass[11pt]{{article}}
+\\usepackage{{booktabs}}
+\\usepackage{{longtable}}
+\\usepackage{{multirow}}
+\\usepackage{{array}}
+\\usepackage{{threeparttable}}
+\\usepackage{{caption}}
+\\usepackage{{graphicx}}
+\\usepackage{{pdflscape}}
+\\usepackage[margin=1in]{{geometry}}
+
+% APA style: left-aligned caption with period separator
+\\captionsetup{{labelsep=period, justification=raggedright, singlelinecheck=false}}
+
+\\begin{{document}}
+
+\\begin{{landscape}}
+\\begin{{flushleft}}
+\\LTleft=0pt  % Force longtable left alignment
+\\begin{{ThreePartTable}}
+\\begin{{longtable}}{{@{{}}llrrrrcc@{{}}}}
+\\caption{{Principal Component Predictors of {trait_name}: Coefficients and Word Cloud Representations}} \\\\
+\\toprule
+PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} & \\multicolumn{{1}}{{c}}{{Low Pole}} & \\multicolumn{{1}}{{c}}{{High Pole}} \\\\
+\\midrule
+\\endfirsthead
+
+\\multicolumn{{8}}{{l}}{{{{\\tablename\\ \\thetable{{}} -- continued from previous page}}}} \\\\
+\\toprule
+PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}} & \\multicolumn{{1}}{{c}}{{\\textit{{t}}}} & \\multicolumn{{1}}{{c}}{{95\\% CI}} & \\multicolumn{{1}}{{c}}{{Low Pole}} & \\multicolumn{{1}}{{c}}{{High Pole}} \\\\
+\\midrule
+\\endhead
+
+\\midrule
+\\multicolumn{{8}}{{r}}{{{{Continued on next page}}}} \\\\
+\\endfoot
+
+\\bottomrule
+\\insertTableNotes
+\\endlastfoot
+
+{table_content}
+
+\\end{{longtable}}
+
+\\begin{{TableNotes}}
+\\scriptsize
+\\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis with word cloud visualizations of PC poles. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. Word clouds show dominant topics for low (bottom 10\\%) and high (top 10\\%) PC scores. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
+\\end{{TableNotes}}
+\\end{{ThreePartTable}}
+\\end{{flushleft}}
+\\end{{landscape}}
+
+\\end{{document}}
+"""
+
+        # Save file
+        filename = f"table_pc_coefficients_wordclouds_{trait_name.lower().replace(' ', '_')}.tex"
+        filepath = os.path.join(output_dir, filename)
+
+        with open(filepath, 'w', encoding='utf-8') as f:
+            f.write(latex_content)
+
+        if display:
+            print(f"✓ PC Coefficients + Word Clouds Table saved to: {filepath}")
+            print(f"  - {n_pcs} PCs included (ranked by tri-sum)")
+            print(f"  - Landscape orientation with images (height={image_height})")
+            if n_missing_low > 0 or n_missing_high > 0:
+                print(f"  - Missing images: {n_missing_low} low pole, {n_missing_high} high pole (showing N/A)")
+
+        return {'tex_path': filepath}
+
+
+    def _generate_pc_table_rows_with_wordclouds(
+        self,
+        pc: Dict[str, Any],
+        pc_num: int,
+        output_dir: str,
+        wordcloud_dir: str,
+        image_height: str
+    ) -> Tuple[List[str], Dict[str, int]]:
+        """
+        Generate 3 table rows for a single PC with wordcloud images.
+
+        Parameters
+        ----------
+        pc : Dict[str, Any]
+            PC data from _get_all_postlasso_pcs_trisum_ranked()
+        pc_num : int
+            PC number (1-indexed)
+        output_dir : str
+            Directory where LaTeX file will be saved
+        wordcloud_dir : str
+            Directory containing word cloud images
+        image_height : str
+            LaTeX height specification for images
+
+        Returns
+        -------
+        Tuple[List[str], Dict[str, int]]
+            (List of LaTeX table row strings, dict with missing counts)
+        """
+
+        rows = []
+        missing = {'low': 0, 'high': 0}
+
+        # Check if word cloud images exist
+        low_pole_path = os.path.join(wordcloud_dir, f"pc{pc_num}_low_wordcloud.png")
+        high_pole_path = os.path.join(wordcloud_dir, f"pc{pc_num}_high_wordcloud.png")
+
+        # Generate image cells or N/A
+        if os.path.exists(low_pole_path):
+            # Use relative path from LaTeX file location to image
+            rel_low_path = os.path.relpath(low_pole_path, output_dir)
+            low_img = f"\\includegraphics[height={image_height}]{{{rel_low_path}}}"
+        else:
+            low_img = "\\textit{N/A}"
+            missing['low'] = 1
+
+        if os.path.exists(high_pole_path):
+            rel_high_path = os.path.relpath(high_pole_path, output_dir)
+            high_img = f"\\includegraphics[height={image_height}]{{{rel_high_path}}}"
+        else:
+            high_img = "\\textit{N/A}"
+            missing['high'] = 1
+
+        # Images span all 3 rows (Validity, AI, Human)
+        low_cell = f"\\multirow{{3}}{{*}}{{{low_img}}}"
+        high_cell = f"\\multirow{{3}}{{*}}{{{high_img}}}"
+
+        # First row: PC label + Validity stats + images
+        x_stats = pc['x']
+        row1 = f"\\multirow{{3}}{{*}}[\\dimexpr-\\ht\\strutbox+18pt]{{\\textbf{{PC{pc_num}}}}} & Validity & {x_stats['coef_str']} & {x_stats['se_str']} & {x_stats['t_str']} & {x_stats['ci_str']} & {low_cell} & {high_cell} \\\\"
+
+        # Second row: AI stats (empty image cells)
+        ai_stats = pc['ai']
+        row2 = f"    & AI & {ai_stats['coef_str']} & {ai_stats['se_str']} & {ai_stats['t_str']} & {ai_stats['ci_str']} & & \\\\"
+
+        # Third row: Human stats (empty image cells)
+        hu_stats = pc['hu']
+        row3 = f"    & Human & {hu_stats['coef_str']} & {hu_stats['se_str']} & {hu_stats['t_str']} & {hu_stats['ci_str']} & & \\\\"
+
+        rows.extend([row1, row2, row3])
+
+        return rows, missing
+
+
     def _get_all_postlasso_pcs_trisum_ranked(
         self,
         min_trisum: float = 0.0

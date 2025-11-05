@@ -1582,6 +1582,46 @@ class HAAM:
             trait_name, output_dir, min_trisum, display
         )
 
+    def create_table_pc_coefficients_with_wordclouds(self, trait_name: str = "Trait",
+                                                     output_dir: str = "./",
+                                                     wordcloud_dir: str = None,
+                                                     min_trisum: float = 0.0,
+                                                     image_height: str = "1.2in",
+                                                     display: bool = True) -> Dict[str, str]:
+        """
+        Generate PC coefficients table with word cloud images (landscape).
+
+        Parameters
+        ----------
+        trait_name : str
+            Name of the trait being analyzed
+        output_dir : str
+            Directory to save the LaTeX file
+        wordcloud_dir : str, optional
+            Directory containing word cloud images (default: {output_dir}/wordclouds)
+        min_trisum : float
+            Minimum tri-sum threshold for including PCs
+        image_height : str
+            LaTeX height specification for images (e.g., "1.2in", "30mm")
+        display : bool
+            Whether to print status messages
+
+        Returns
+        -------
+        Dict[str, str]
+            Dictionary with 'tex_path' key
+
+        Notes
+        -----
+        Word cloud images must be generated first using create_pc_wordclouds().
+        Missing images will show as "N/A" (graceful degradation).
+        """
+        if self.visualizer is None:
+            raise RuntimeError("Must run analysis first")
+        return self.visualizer.create_table_pc_coefficients_with_wordclouds(
+            trait_name, output_dir, wordcloud_dir, min_trisum, image_height, display
+        )
+
     def create_all_latex_tables(self, trait_name: str = "Trait",
                                n_pcs_diagram: int = 15,
                                min_trisum: float = 0.0,
