@@ -1,6 +1,6 @@
 # HAAM: Human-AI Alignment Model
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.10-3.13](https://img.shields.io/badge/python-3.10--3.13-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://raymondli-me.github.io/haam/)
 
@@ -44,6 +44,87 @@ git clone https://github.com/raymondli-me/haam.git
 cd haam
 pip install -e .
 ```
+
+## 🚀 Quick Start Tutorial
+
+### Requirements
+
+⚠️ **Python 3.10 - 3.13 ONLY** (Python 3.14+ not yet supported due to numba dependency)
+
+### Installation
+
+Get started in 4 simple steps:
+
+```bash
+# 1. Clone and enter repository
+git clone https://github.com/raymondli-me/haam.git && cd haam
+
+# 2. Create and activate virtual environment
+#    IMPORTANT: Use the python3 command that matches versions 3.10-3.13
+#    Check your version first: python3 --version
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# 3. Install HAAM and dependencies
+pip install -e . sentence-transformers
+
+# 4. Run the tutorial
+cd tutorials/ && ./run_tutorial.sh
+```
+
+### Common Setup Issues
+
+<details>
+<summary><b>❌ "Cannot install on Python version 3.14"</b></summary>
+
+HAAM requires Python 3.10-3.13. If you have Python 3.14, install an older version:
+
+```bash
+# macOS (using Homebrew)
+brew install python@3.13
+python3.13 -m venv venv
+source venv/bin/activate
+
+# Then proceed with step 3 above
+```
+</details>
+
+<details>
+<summary><b>❌ "externally-managed-environment" error</b></summary>
+
+macOS Sonoma+ requires virtual environments (venv). Make sure you:
+1. Created a venv: `python3 -m venv venv`
+2. Activated it: `source venv/bin/activate`
+3. See `(venv)` prefix in your terminal prompt
+4. Then run: `pip install -e . sentence-transformers`
+</details>
+
+<details>
+<summary><b>❌ "command not found: pip"</b></summary>
+
+Use `pip3` instead (after activating venv):
+```bash
+pip3 install -e . sentence-transformers
+```
+
+Note: Inside an activated venv, `pip` and `pip3` both work. If you see this error, you likely forgot to activate the venv.
+</details>
+
+The tutorial includes:
+- **01_basic_example.py** - Minimal HAAM workflow (~60 lines)
+- **02_full_analysis.py** - Complete 3-construct analysis with tables
+- **03_with_visualizations.py** - Full analysis with wordclouds, UMAP, and mediation diagrams
+- **data.csv** - Example dataset (German hierarchy self-descriptions from Körner et al., 2024)
+
+See `tutorials/README.md` for detailed documentation.
+
+### Tutorial References
+
+The tutorials demonstrate the DML-LM method described in:
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://doi.org/10.31234/osf.io/ubwgk
+
+Example data from:
+> Körner, R., Overbeck, J. R., Körner, E. K., & Schütz, A. (2024). The language of power: Interpersonal perceptions of sense of power, dominance, and prestige based on word usage. *European Journal of Personality*, *38*(5), 812–838. https://doi.org/10.1177/08902070231221346
 
 ## Mini-Example: Human-GPT Perception of Anger in Reddit Comments
 
@@ -126,10 +207,26 @@ The method combines:
 
 ## Citation
 
+If you use HAAM in your research, please cite:
+
+> Li, R., & Biesanz, J. C. (2025). High-Dimensional Perception with the Double Machine Learning Lens Model. *PsyArXiv*. https://doi.org/10.31234/osf.io/ubwgk
+
+```bibtex
+@misc{li2025highdimensional,
+  title={High-Dimensional Perception with the Double Machine Learning Lens Model},
+  author={Li, Raymond and Biesanz, Jeremy C.},
+  year={2025},
+  publisher={PsyArXiv},
+  doi={10.31234/osf.io/ubwgk},
+  url={https://doi.org/10.31234/osf.io/ubwgk}
+}
+```
+
+Software citation:
 ```bibtex
 @software{haam_package,
   title={HAAM: Human-AI Alignment Model},
-  author={Raymond Li},
+  author={Li, Raymond},
   year={2025},
   version={1.0},
   url={https://github.com/raymondli-me/haam}
