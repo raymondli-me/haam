@@ -3580,13 +3580,13 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         output_dir: str = "./",
         wordcloud_dir: str = None,
         min_trisum: float = 0.0,
-        image_height: str = "1.2in",
+        image_height: str = "0.6in",
         display: bool = True
     ) -> Dict[str, str]:
         """
         Generate comprehensive PC coefficients table with word cloud images.
 
-        Landscape orientation table showing PC coefficients alongside word cloud
+        Portrait orientation table showing PC coefficients alongside word cloud
         visualizations for low and high poles of each PC.
 
         Parameters
@@ -3601,7 +3601,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         min_trisum : float
             Minimum tri-sum to include (default: 0.0 = include all)
         image_height : str
-            LaTeX height specification for images (e.g., "1.2in", "30mm")
+            LaTeX height specification for images (default: "0.6in")
         display : bool
             Whether to print status messages
 
@@ -3614,7 +3614,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         -----
         - Word cloud images must be generated first
         - Missing images show as "N/A" (graceful degradation)
-        - Requires LaTeX packages: graphicx, pdflscape
+        - Requires LaTeX packages: graphicx
         - Expected image naming: pc{N}_low_wordcloud.png, pc{N}_high_wordcloud.png
         """
 
@@ -3657,16 +3657,14 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         table_content = "\n".join(table_rows)
         n_pcs = len(pc_data)
 
-        # Generate LaTeX document with landscape longtable
+        # Generate LaTeX document with portrait longtable
         latex_content = f"""\\documentclass[11pt]{{article}}
 \\usepackage{{booktabs}}
 \\usepackage{{longtable}}
 \\usepackage{{multirow}}
 \\usepackage{{array}}
-\\usepackage{{threeparttable}}
 \\usepackage{{caption}}
 \\usepackage{{graphicx}}
-\\usepackage{{pdflscape}}
 \\usepackage[margin=1in]{{geometry}}
 
 % APA style: left-aligned caption with period separator
@@ -3674,10 +3672,8 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
 
 \\begin{{document}}
 
-\\begin{{landscape}}
 \\begin{{flushleft}}
 \\LTleft=0pt  % Force longtable left alignment
-\\begin{{ThreePartTable}}
 \\begin{{longtable}}{{@{{}}llrrrrcc@{{}}}}
 \\caption{{Principal Component Predictors of {trait_name}: Coefficients and Word Cloud Representations}} \\\\
 \\toprule
@@ -3696,20 +3692,19 @@ PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}}
 \\endfoot
 
 \\bottomrule
-\\insertTableNotes
 \\endlastfoot
 
 {table_content}
+\\addlinespace[0.4em]
 
 \\end{{longtable}}
 
-\\begin{{TableNotes}}
+\\vspace{{0.5em}}
+\\begin{{minipage}}{{\\LTcapwidth}}
 \\scriptsize
-\\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis with word cloud visualizations of PC poles. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. Word clouds show dominant topics for low (bottom 10\\%) and high (top 10\\%) PC scores. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
-\\end{{TableNotes}}
-\\end{{ThreePartTable}}
+\\textit{{Note.}} Post-LASSO coefficients from principal component analysis with word cloud visualizations of PC poles. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. Word clouds show dominant topics for low (bottom 10\\%) and high (top 10\\%) PC scores. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
+\\end{{minipage}}
 \\end{{flushleft}}
-\\end{{landscape}}
 
 \\end{{document}}
 """
@@ -3724,7 +3719,7 @@ PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}}
         if display:
             print(f"✓ PC Coefficients + Word Clouds Table saved to: {filepath}")
             print(f"  - {n_pcs} PCs included (ranked by tri-sum)")
-            print(f"  - Landscape orientation with images (height={image_height})")
+            print(f"  - Portrait orientation with thumbnail images (height={image_height})")
             if n_missing_low > 0 or n_missing_high > 0:
                 print(f"  - Missing images: {n_missing_low} low pole, {n_missing_high} high pole (showing N/A)")
 

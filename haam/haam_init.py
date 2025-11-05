@@ -1586,10 +1586,10 @@ class HAAM:
                                                      output_dir: str = "./",
                                                      wordcloud_dir: str = None,
                                                      min_trisum: float = 0.0,
-                                                     image_height: str = "1.2in",
+                                                     image_height: str = "0.6in",
                                                      display: bool = True) -> Dict[str, str]:
         """
-        Generate PC coefficients table with word cloud images (landscape).
+        Generate PC coefficients table with word cloud images (portrait).
 
         Parameters
         ----------
@@ -1602,7 +1602,7 @@ class HAAM:
         min_trisum : float
             Minimum tri-sum threshold for including PCs
         image_height : str
-            LaTeX height specification for images (e.g., "1.2in", "30mm")
+            LaTeX height specification for thumbnail images (default: "0.6in")
         display : bool
             Whether to print status messages
 
