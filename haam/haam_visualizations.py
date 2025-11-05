@@ -3204,9 +3204,9 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
                 t = path_data['t_check']
                 p = path_data['p_check']
                 ci = path_data['ci_check']
-                label = f"DML Direct ($\\betacheck$)"
+                label = f"DML Direct ($\\check{{\\beta}}$)"
 
-            p_str = f"{{<}}0.001" if p < 0.001 else f"{p:.3f}"
+            p_str = f"$<$0.001" if p < 0.001 else f"{p:.3f}"
             ci_str = f"{{[{ci[0]:.3f}, {ci[1]:.3f}]}}"
 
             return f"               & {label:30} & {est:.3f} & {se:.3f} & {t:.2f} & \\pval{{{p_str}}} & {ci_str} \\\\"
@@ -3228,15 +3228,15 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
             # Fallback if data missing
             row_x_ai_label = "Validity → AI"
             row_x_ai_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
-            row_x_ai_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_x_ai_direct = "               & DML Direct ($\\check{{\\beta}}$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
 
             row_x_hu_label = "Validity → HU"
             row_x_hu_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
-            row_x_hu_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_x_hu_direct = "               & DML Direct ($\\check{{\\beta}}$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
 
             row_hu_ai_label = "Human → AI"
             row_hu_ai_total = "               & Total ($\\beta$)      & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
-            row_hu_ai_direct = "               & DML Direct ($\\betacheck$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
+            row_hu_ai_direct = "               & DML Direct ($\\check{{\\beta}}$) & .000 & .000 & 0.00 & \\pval{1.000} & {[.000, .000]} \\\\"
 
         latex_content = f"""\\documentclass[11pt]{{article}}
     \\usepackage{{booktabs}}
@@ -3251,7 +3251,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
 
     \\begin{{table}}[htbp]
     \\captionsetup{{labelformat=empty, justification=justified, singlelinecheck=false}}
-    \\caption{{Table 4. \\textit{{Total ($\\beta$), DML Direct ($\\betacheck$), and Indirect Effects for {trait_name}}}}}
+    \\caption{{Table 4. \\textit{{Total ($\\beta$), DML Direct ($\\check{{\\beta}}$), and Indirect Effects for {trait_name}}}}}
     \\begin{{tabular}}{{@{{}}ll S[round-precision=3] S[round-precision=3] S[table-format=2.2, round-precision=2] c c@{{}}}}
     \\toprule
     Path & Effect Type & {{Estimate}} & {{SE}} & {{$t$}} & {{$p$}} & {{95\\% CI}} \\\\
@@ -3271,7 +3271,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\end{{tabular}}
     \\par
     \\vspace{{0.1cm}}
-    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} Unstandardized coefficients from DML models. HU = Human Judgment. Indirect Effect = $\\beta - \\betacheck$.}}
+    \\parbox{{\\textwidth}}{{\\small \\textit{{Note.}} Unstandardized coefficients from DML models. HU = Human Judgment. Indirect Effect = $\\beta - \\check{{\\beta}}$.}}
     \\end{{table}}
 
     \\end{{document}}
