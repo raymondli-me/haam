@@ -3700,10 +3700,8 @@ PC & Model & \\multicolumn{{1}}{{c}}{{$\\beta$}} & \\multicolumn{{1}}{{c}}{{SE}}
 \\end{{longtable}}
 
 \\vspace{{0.5em}}
-\\begin{{minipage}}{{\\LTcapwidth}}
 \\scriptsize
 \\textit{{Note.}} Post-LASSO coefficients from principal component analysis with word cloud visualizations of PC poles. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. Word clouds show dominant topics for low (bottom 10\\%) and high (top 10\\%) PC scores. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
-\\end{{minipage}}
 \\end{{flushleft}}
 
 \\end{{document}}
