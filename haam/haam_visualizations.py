@@ -3038,10 +3038,10 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         r2_cv_ai = debiased.get('AI', {}).get('r2_cv', 0.0)
         r2_cv_hu = debiased.get('HU', {}).get('r2_cv', 0.0)
 
-        # Non-CV R² (training set performance)
-        r2_x = debiased.get('X', {}).get('r2', 0.0)
-        r2_ai = debiased.get('AI', {}).get('r2', 0.0)
-        r2_hu = debiased.get('HU', {}).get('r2', 0.0)
+        # Non-CV R² (in-sample performance)
+        r2_x = debiased.get('X', {}).get('r2_insample', 0.0)
+        r2_ai = debiased.get('AI', {}).get('r2_insample', 0.0)
+        r2_hu = debiased.get('HU', {}).get('r2_insample', 0.0)
 
         # Extract PoMA values
         med = self.results.get('mediation_analysis', {})
@@ -3091,7 +3091,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     Metric & {{Validity}} & {{AI Perception}} & {{Human Perception}} & {{PoMA Range (\\%)}} \\\\
     \\midrule
     Cross-Validated & {r2_cv_x:.3f} & {r2_cv_ai:.3f} & {r2_cv_hu:.3f} & {poma_min:.1f} -- {poma_max:.1f} \\\\
-    Training Set    & {r2_x:.3f} & {r2_ai:.3f} & {r2_hu:.3f} & \\\\
+    In-sample       & {r2_x:.3f} & {r2_ai:.3f} & {r2_hu:.3f} & \\\\
     \\bottomrule
     \\end{{tabular}}
     \\par
