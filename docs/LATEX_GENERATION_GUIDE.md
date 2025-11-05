@@ -1009,11 +1009,12 @@ Human → AI     & Total (β)      & 0.489 & 0.037 & 13.29 & $<$0.001 & ...
 - Need environment wrapper to left-align the entire table block
 
 **Fix:**
-Wrapped ThreePartTable in flushleft environment:
+Wrapped ThreePartTable in flushleft environment with `\LTleft=0pt`:
 ```latex
 \begin{document}
 
 \begin{flushleft}
+\LTleft=0pt  % Force longtable left alignment
 \begin{ThreePartTable}
 \begin{longtable}{@{}llrrrr@{}}
 ...
@@ -1028,10 +1029,15 @@ Wrapped ThreePartTable in flushleft environment:
 \end{document}
 ```
 
+**Additional refinement (commit `4e69826`):**
+- Changed margin from 0.75in to 1in for APA compliance
+- Added `\LTleft=0pt` to force longtable to align at left edge (0pt from margin)
+
 **Expected output after fix:**
 - Caption: left-aligned ✓
 - Table block: left-aligned ✓
 - Note: left-aligned ✓
+- Margins: 1in all sides ✓
 - All per APA 7th edition
 
 ---
