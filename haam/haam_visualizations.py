@@ -3514,7 +3514,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\usepackage{{array}}
     \\usepackage{{threeparttable}}
     \\usepackage{{caption}}
-    \\usepackage[margin=0.75in]{{geometry}}
+    \\usepackage[margin=1in]{{geometry}}
 
     % APA style: left-aligned caption with period separator
     \\captionsetup{{labelsep=period, justification=raggedright, singlelinecheck=false}}
@@ -3522,6 +3522,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\begin{{document}}
 
     \\begin{{flushleft}}
+    \\LTleft=0pt  % Force longtable left alignment
     \\begin{{ThreePartTable}}
     \\begin{{longtable}}{{@{{}}llrrrr@{{}}}}
     \\caption{{Principal Component Predictors of {trait_name}: Validity and Judgment Coefficients}} \\\\
