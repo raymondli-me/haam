@@ -3166,8 +3166,10 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
             t_check = check_beta / check_se if check_se > 0 else 0.0
 
             # Calculate p-values (two-tailed)
-            p_beta = p_val
-            p_check = 2 * (1 - stats.t.cdf(abs(t_check), df=self._get_sample_size() - 2))
+            n = self._get_sample_size()
+            df = max(n - 2, 1)
+            p_beta = 2 * (1 - stats.t.cdf(abs(t_beta), df=df))
+            p_check = 2 * (1 - stats.t.cdf(abs(t_check), df=df))
 
             # Calculate 95% CIs
             ci_beta_lower = beta - 1.96 * se
@@ -3519,6 +3521,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
 
     \\begin{{document}}
 
+    \\begin{{flushleft}}
     \\begin{{ThreePartTable}}
     \\begin{{longtable}}{{@{{}}llrrrr@{{}}}}
     \\caption{{Principal Component Predictors of {trait_name}: Validity and Judgment Coefficients}} \\\\
@@ -3550,6 +3553,7 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
     \\item \\textit{{Note.}} Post-LASSO coefficients from principal component analysis. Validity = {trait_name}; AI = AI judgment; Human = Human judgment. PCs ranked by sum of absolute coefficients across all three outcomes. Dashes indicate predictors not selected by LASSO for that outcome. ***\\textit{{p}} $<$ .001, **\\textit{{p}} $<$ .01, *\\textit{{p}} $<$ .05. Total PCs shown: {n_pcs}.
     \\end{{TableNotes}}
     \\end{{ThreePartTable}}
+    \\end{{flushleft}}
 
     \\end{{document}}
     """
