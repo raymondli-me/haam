@@ -3587,9 +3587,9 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         coefs_hu = debiased.get('HU', {}).get('coefs_std', np.array([]))
 
         # Get standard errors (if available)
-        se_x = debiased.get('X', {}).get('se', np.array([]))
-        se_ai = debiased.get('AI', {}).get('se', np.array([]))
-        se_hu = debiased.get('HU', {}).get('se', np.array([]))
+        se_x = debiased.get('X', {}).get('ses_std', np.array([]))
+        se_ai = debiased.get('AI', {}).get('ses_std', np.array([]))
+        se_hu = debiased.get('HU', {}).get('ses_std', np.array([]))
 
         # Get LASSO selected indices
         selected_x = set(debiased.get('X', {}).get('selected', []))
