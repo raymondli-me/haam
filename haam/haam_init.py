@@ -1527,8 +1527,8 @@ class HAAM:
         return self.visualizer.create_table_g_and_c(trait_name, output_dir, display)
 
     def create_latex_diagram(self, trait_name: str = "Trait",
-                            n_pcs: int = 15,
                             output_dir: str = "./",
+                            n_pcs: int = 15,
                             display: bool = True) -> Dict[str, str]:
         """
         Generate Figure 1: TikZ HAAM Diagram.
@@ -1537,10 +1537,10 @@ class HAAM:
         ----------
         trait_name : str
             Name of the trait being analyzed
-        n_pcs : int
-            Number of top PCs to show in diagram
         output_dir : str
             Directory to save the LaTeX file
+        n_pcs : int
+            Number of top PCs to show in diagram
         display : bool
             Whether to print status messages
 
@@ -1551,11 +1551,11 @@ class HAAM:
         """
         if self.visualizer is None:
             raise RuntimeError("Must run analysis first")
-        return self.visualizer.create_latex_diagram(trait_name, n_pcs, output_dir, display)
+        return self.visualizer.create_latex_diagram(trait_name, output_dir, n_pcs, display=display)
 
     def create_table_pc_coefficients_comprehensive(self, trait_name: str = "Trait",
-                                                   min_trisum: float = 0.0,
                                                    output_dir: str = "./",
+                                                   min_trisum: float = 0.0,
                                                    display: bool = True) -> Dict[str, str]:
         """
         Generate comprehensive PC coefficients table (multi-page).
@@ -1564,10 +1564,10 @@ class HAAM:
         ----------
         trait_name : str
             Name of the trait being analyzed
-        min_trisum : float
-            Minimum tri-sum threshold for including PCs
         output_dir : str
             Directory to save the LaTeX file
+        min_trisum : float
+            Minimum tri-sum threshold for including PCs
         display : bool
             Whether to print status messages
 
@@ -1579,7 +1579,7 @@ class HAAM:
         if self.visualizer is None:
             raise RuntimeError("Must run analysis first")
         return self.visualizer.create_table_pc_coefficients_comprehensive(
-            trait_name, min_trisum, output_dir, display
+            trait_name, output_dir, min_trisum, display
         )
 
     def create_all_latex_tables(self, trait_name: str = "Trait",
