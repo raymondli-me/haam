@@ -3592,9 +3592,9 @@ Methods to add to HAAMVisualizer class in haam_visualizations.py
         se_hu = debiased.get('HU', {}).get('se', np.array([]))
 
         # Get LASSO selected indices
-        selected_x = set(debiased.get('X', {}).get('selected_indices', []))
-        selected_ai = set(debiased.get('AI', {}).get('selected_indices', []))
-        selected_hu = set(debiased.get('HU', {}).get('selected_indices', []))
+        selected_x = set(debiased.get('X', {}).get('selected', []))
+        selected_ai = set(debiased.get('AI', {}).get('selected', []))
+        selected_hu = set(debiased.get('HU', {}).get('selected', []))
 
         # Union of all selected PCs
         all_selected = selected_x | selected_ai | selected_hu
