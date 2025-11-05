@@ -935,6 +935,107 @@ $r=0.201^{***}$              % Superscripted asterisks
 
 ---
 
+### Bug 9: Table 4 Incorrect P-Values (1.000)
+**Commit:** `3f5dc2d`
+**Date:** 2025-11-05
+
+**Problem:**
+- Table 4 (DML Effects) showed p = 1.000 for all total effect rows
+- With t-values of 4.85, 6.89, 13.29, p-values should be < 0.001
+- Code was using stored p-value from dictionary instead of calculating
+
+**Symptom:**
+```latex
+Validity → AI  & Total (β)      & 0.201 & 0.041 & 4.85  & 1.000 & ...
+Validity → HU  & Total (β)      & 0.279 & 0.041 & 6.89  & 1.000 & ...
+Human → AI     & Total (β)      & 0.489 & 0.037 & 13.29 & 1.000 & ...
+```
+
+**Root Cause:**
+```python
+# Line 3160 in haam_visualizations.py:
+p_val = data.get('p_value', 1.0)  # Gets from dictionary, defaults to 1.0
+
+# Line 3169 (WRONG):
+p_beta = p_val  # Uses stored value directly
+
+# Line 3170 (CORRECT for DML direct):
+p_check = 2 * (1 - stats.t.cdf(abs(t_check), df=...))  # Calculates from t
+```
+
+**Why this happened:**
+- Stored `p_value` in `total_effects` dictionary was wrong or missing
+- Default value of 1.0 when key missing
+- Code correctly calculated p-value for DML direct effect
+- But incorrectly used stored value for total effect
+
+**Fix:**
+Changed line 3169-3172 to calculate both p-values from t-statistics:
+```python
+# Calculate p-values (two-tailed)
+n = self._get_sample_size()
+df = max(n - 2, 1)
+p_beta = 2 * (1 - stats.t.cdf(abs(t_beta), df=df))   # Now calculated
+p_check = 2 * (1 - stats.t.cdf(abs(t_check), df=df))
+```
+
+**Expected output after fix:**
+```latex
+Validity → AI  & Total (β)      & 0.201 & 0.041 & 4.85  & $<$0.001 & ...
+Validity → HU  & Total (β)      & 0.279 & 0.041 & 6.89  & $<$0.001 & ...
+Human → AI     & Total (β)      & 0.489 & 0.037 & 13.29 & $<$0.001 & ...
+```
+
+---
+
+### Bug 10: Comprehensive PC Table Not Left-Aligned
+**Commit:** `3f5dc2d`
+**Date:** 2025-11-05
+
+**Problem:**
+- Table caption was left-aligned but table block itself was centered
+- `\captionsetup` controls caption text alignment, not table block placement
+- ThreePartTable and longtable are centered by default
+
+**Symptom:**
+```latex
+% Caption left-aligned ✓
+% But table block centered on page ✗
+```
+
+**Root Cause:**
+- Missing `\begin{flushleft}...\end{flushleft}` wrapper
+- `\captionsetup{justification=raggedright}` only affects caption text
+- Need environment wrapper to left-align the entire table block
+
+**Fix:**
+Wrapped ThreePartTable in flushleft environment:
+```latex
+\begin{document}
+
+\begin{flushleft}
+\begin{ThreePartTable}
+\begin{longtable}{@{}llrrrr@{}}
+...
+\end{longtable}
+
+\begin{TableNotes}
+...
+\end{TableNotes}
+\end{ThreePartTable}
+\end{flushleft}
+
+\end{document}
+```
+
+**Expected output after fix:**
+- Caption: left-aligned ✓
+- Table block: left-aligned ✓
+- Note: left-aligned ✓
+- All per APA 7th edition
+
+---
+
 ## 📦 LaTeX Package Requirements
 
 All generated `.tex` files are standalone documents. Required packages:
