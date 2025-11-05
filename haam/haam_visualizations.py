@@ -282,16 +282,17 @@ class HAAMVisualizer:
             Dictionary containing all calculated metrics
         """
         metrics = {}
-        
+
         # R² values (cross-validated)
-        metrics['r2_x'] = self.results['debiased_lasso'].get('X', {}).get('r2_cv', 0.0)
-        metrics['r2_ai'] = self.results['debiased_lasso'].get('AI', {}).get('r2_cv', 0.0)
-        metrics['r2_hu'] = self.results['debiased_lasso'].get('HU', {}).get('r2_cv', 0.0)
+        metrics['r2_x'] = self.results.get('debiased_lasso', {}).get('X', {}).get('r2_cv', 0.0)
+        metrics['r2_y'] = metrics.get('r2_x', 0.0)  # Legacy alias for 'X' as 'Y' (criterion), with safe fallback
+        metrics['r2_ai'] = self.results.get('debiased_lasso', {}).get('AI', {}).get('r2_cv', 0.0)
+        metrics['r2_hu'] = self.results.get('debiased_lasso', {}).get('HU', {}).get('r2_cv', 0.0)
         
         # Number of selected components
-        metrics['n_selected_x'] = self.results['debiased_lasso'].get('X', {}).get('n_selected', 0)
-        metrics['n_selected_ai'] = self.results['debiased_lasso'].get('AI', {}).get('n_selected', 0)
-        metrics['n_selected_hu'] = self.results['debiased_lasso'].get('HU', {}).get('n_selected', 0)
+        metrics['n_selected_x'] = self.results.get('debiased_lasso', {}).get('X', {}).get('n_selected', 0)
+        metrics['n_selected_ai'] = self.results.get('debiased_lasso', {}).get('AI', {}).get('n_selected', 0)
+        metrics['n_selected_hu'] = self.results.get('debiased_lasso', {}).get('HU', {}).get('n_selected', 0)
         
         # Total Effects (DML coefficients)
         if 'total_effects' in self.results:
