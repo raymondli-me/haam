@@ -267,8 +267,8 @@ results = {
             'selected': [5, 6, 12, 18, ...],  # ← 'selected' NOT 'selected_indices'!
             'r2_cv': -0.0064,
             'r2': 0.0731,           # Training R² (also 'r2_insample')
-            'coefs_std': np.array([...]),  # Post-LASSO OLS coefficients
-            'se': np.array([...])   # Standard errors
+            'coefs_std': np.array([...]),  # Post-LASSO OLS coefficients (standardized)
+            'ses_std': np.array([...])   # ← Standard errors (standardized) - 'ses_std' NOT 'se'!
         },
         'AI': {...},
         'HU': {...}
@@ -664,6 +664,46 @@ selected_x = set(debiased.get('X', {}).get('selected', []))
 
 **Fix:**
 - Changed all 3 lines (X, AI, HU) to use correct key name `'selected'`
+
+---
+
+### Bug 4: Comprehensive PC Table Shows All Dashes
+**Commit:** `f527149`
+**Date:** 2025-11-05
+
+**Problem:**
+- Comprehensive PC coefficients table showed ALL PCs with dashes ("--") for all values
+- Code looked for `'se'` key for standard errors
+- Actual key in results is `'ses_std'` (standardized standard errors)
+- Empty SE arrays caused `_calculate_pc_stats` to return dashes for everything
+
+**Symptom:**
+```latex
+\multirow{3}{*}{\textbf{PC5}} & Validity & -- & -- & -- & -- \\
+    & AI & -- & -- & -- & -- \\
+    & Human & -- & -- & -- & -- \\
+```
+
+**Root Cause:**
+```python
+# Lines 3590-3592 in haam_visualizations.py (WRONG):
+se_x = debiased.get('X', {}).get('se', np.array([]))
+se_ai = debiased.get('AI', {}).get('se', np.array([]))
+se_hu = debiased.get('HU', {}).get('se', np.array([]))
+
+# Should be (CORRECT):
+se_x = debiased.get('X', {}).get('ses_std', np.array([]))
+se_ai = debiased.get('AI', {}).get('ses_std', np.array([]))
+se_hu = debiased.get('HU', {}).get('ses_std', np.array([]))
+```
+
+**Why this happened:**
+- All other code uses `'ses_std'` (plural, standardized)
+- This one method incorrectly used `'se'` (singular)
+- When SE = 0, `_calculate_pc_stats` line 3684 returns dashes
+
+**Fix:**
+- Changed all 3 lines (X, AI, HU) from `'se'` to `'ses_std'`
 
 ---
 
