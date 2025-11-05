@@ -265,8 +265,8 @@ results = {
         'X': {
             'n_selected': 14,
             'selected': [5, 6, 12, 18, ...],  # ← 'selected' NOT 'selected_indices'!
-            'r2_cv': -0.0064,
-            'r2': 0.0731,           # Training R² (also 'r2_insample')
+            'r2_cv': -0.0064,           # Cross-validated R²
+            'r2_insample': 0.0731,      # ← In-sample R² - 'r2_insample' NOT 'r2'!
             'coefs_std': np.array([...]),  # Post-LASSO OLS coefficients (standardized)
             'ses_std': np.array([...])   # ← Standard errors (standardized) - 'ses_std' NOT 'se'!
         },
@@ -704,6 +704,51 @@ se_hu = debiased.get('HU', {}).get('ses_std', np.array([]))
 
 **Fix:**
 - Changed all 3 lines (X, AI, HU) from `'se'` to `'ses_std'`
+
+---
+
+### Bug 5: Table 3 Shows Zero In-sample R²
+**Commit:** `84820cc`
+**Date:** 2025-11-05
+
+**Problem:**
+- Table 3 (R² and PoMA) showed 0.000 for all in-sample R² values
+- Code looked for `'r2'` key
+- Actual key in results is `'r2_insample'`
+- Label said "Training Set" which is ambiguous
+
+**Symptom:**
+```latex
+Cross-Validated & 0.061 & 0.148 & 0.393 & 24.7 -- 40.0 \\
+Training Set    & 0.000 & 0.000 & 0.000 & \\
+```
+
+**Root Cause:**
+```python
+# Lines 3042-3044 in haam_visualizations.py (WRONG):
+r2_x = debiased.get('X', {}).get('r2', 0.0)
+r2_ai = debiased.get('AI', {}).get('r2', 0.0)
+r2_hu = debiased.get('HU', {}).get('r2', 0.0)
+
+# Should be (CORRECT):
+r2_x = debiased.get('X', {}).get('r2_insample', 0.0)
+r2_ai = debiased.get('AI', {}).get('r2_insample', 0.0)
+r2_hu = debiased.get('HU', {}).get('r2_insample', 0.0)
+```
+
+**Why this happened:**
+- Inconsistent naming: CV uses `'r2_cv'`, in-sample uses `'r2_insample'`
+- Code mistakenly used `'r2'` which doesn't exist in dictionary
+
+**Fix:**
+- Changed all 3 lines to use `'r2_insample'` key
+- Changed label from "Training Set" to "In-sample" for clarity
+
+**Expected output after fix:**
+```latex
+Cross-Validated & 0.061 & 0.148 & 0.393 & 24.7 -- 40.0 \\
+In-sample       & 0.073 & 0.231 & 0.478 & \\
+```
 
 ---
 
